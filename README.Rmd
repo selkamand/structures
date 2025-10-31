@@ -1,0 +1,44 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# structures
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+An R package that contains a class used to store and represents chemical structures. Includes parsers for common file formats.
+
+## Installation
+
+You can install the development version of structures like so:
+
+``` r
+if (!require("remotes"))
+    install.packages("remotes")
+
+remotes::install_github("selkamand/structures")
+
+```
+
+## Quick Start
+
+
+```{r}
+
+# Load a mol2 file
+path <- system.file(package="structures", "benzene.mol2")
+read_mol2(mol2)
+```
+

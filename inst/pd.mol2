@@ -1,0 +1,14 @@
+@<TRIPOS>MOLECULE
+cubic_f_1
+     1     0     1     0     0
+SMALL
+NO_CHARGES
+****
+Generated from the CSD - Crystal connectivity not present
+
+@<TRIPOS>ATOM
+     1 Pd1     34.7707  19.7424  34.7707   Pd        1 RES1   0.0000
+@<TRIPOS>SUBSTRUCTURE
+     1 RES1        1 GROUP             0 ****  ****    0  
+@<TRIPOS>CRYSIN
+   46.3610   46.3610   46.3610   90.0000   90.0000   90.0000   226     1
