@@ -2,7 +2,7 @@
 % Please edit documentation in R/Class.R
 \name{filter_atoms}
 \alias{filter_atoms}
-\title{Filter for atoms molecule}
+\title{Filter molecule for specific atoms}
 \usage{
 filter_atoms(x, eleno)
 }

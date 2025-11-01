@@ -437,7 +437,7 @@ remove_atoms <- function(x, eleno){
 }
 
 
-#' Filter for atoms molecule
+#' Filter molecule for specific atoms
 #'
 #' Filters a molecule to include only specific atoms by atom_id (eleno).
 #' Will also drop orphaned bonds. To delete atoms from a molecule, see [remove_atoms()]
@@ -464,6 +464,24 @@ filter_atoms <- function(x, eleno){
   return(x)
 }
 
+
+#' Fetch atom identifiers by name
+#'
+#' @param x a Molecule3D object
+#' @param elena element name
+#'
+#' @returns a numeric vector of atom identifiers (eleno) corresponding to element names (elena).
+#' @export
+#'
+#' @examples
+#' path <- system.file(package="structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#' fetch_eleno_by_name(molecule, "C")
+#'
+fetch_eleno_by_name <- function(x, elena){
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  unique(unlist(x@atoms[x@atoms$elena %in% elena, "eleno", drop=FALSE]))
+}
 
 #' Apply arbitratry 3D transformations to molecule3D objects
 #'
@@ -945,3 +963,7 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
 
   return(combined)
 }
+
+# rotate_bond <- function(molecule, ){
+#
+# }
