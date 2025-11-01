@@ -1,24 +1,15 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
 
 # structures
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-An R package that contains a class used to store and represents molecular structures (Molecule3D). Includes parser for the mol2 file format.
+An R package that contains a class used to store and represents
+molecular structures (Molecule3D). Includes parser for the mol2 file
+format.
 
 ## Installation
 
@@ -29,13 +20,11 @@ if (!require("remotes"))
     install.packages("remotes")
 
 remotes::install_github("selkamand/structures")
-
 ```
 
 ## Quick Start
 
-
-```{r}
+``` r
 library(structures)
 
 # Read a mol2 file into a Molecule3D object
@@ -46,5 +35,12 @@ molecule <- read_mol2(path)
 molecule |>
   set_anchor_by_atom(eleno = 1) |>
   translate_molecule_to_origin()
+#> ===================
+#> Chemical Molecule3D
+#> ===================
+#> Name: benzene
+#> Atoms: 12
+#> Bonds: 12
+#> 
+#> See @atoms paramater for atom positions and @bonds paramater for bonds
 ```
-
