@@ -1,4 +1,194 @@
 
+# Test Add Bonds ----------------------------------------------------------------
+
+test_that("add_bonds() adds a single bond and increments bond_id", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, 1.2, -0.8),
+    y = c(0, 0, 0.5),
+    z = c(0, 0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = 1,
+    origin_atom_id = 1,
+    target_atom_id = 2,
+    bond_type = "1"
+  )
+  m <- Molecule3D("COH", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+
+  before_anchor <- m@anchor
+  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = 3, bond_type = "2")
+
+  # structure
+  expect_equal(nrow(m2@bonds), nrow(m@bonds) + 1)
+  # new row is correct
+  new_row <- m2@bonds[nrow(m2@bonds), ]
+  expect_equal(new_row$origin_atom_id, 1)
+  expect_equal(new_row$target_atom_id, 3)
+  expect_equal(new_row$bond_type, "2")
+  # id advanced from maximum_bond_id
+  expect_equal(m2@maximum_bond_id, max(m@bond_ids) + 1)
+  # anchor unchanged
+  expect_equal(m2@anchor, before_anchor)
+})
+
+test_that("add_bonds() with multiple targets creates multiple rows with sequential IDs", {
+  atoms <- data.frame(
+    eleno = 1:4,
+    elena = c("C","H","H","H"),
+    x = c(0,1,0,-1),
+    y = c(0,0,1,0),
+    z = c(0,0,0,1)
+  )
+  # start with empty bonds to ensure IDs start at 1
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = character(0),
+    target_atom_id = character(0),
+    bond_type = character(0)
+  )
+  m <- Molecule3D("Methane-ish", atoms = atoms, bonds = bonds)
+
+  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3,4), bond_type = "1")
+
+  expect_equal(nrow(m2@bonds), 3)
+  # IDs should be 1,2,3
+  expect_equal(sort(unique(m2@bonds$bond_id)), 1:3)
+  # All origin IDs should be 1
+  expect_true(all(m2@bonds$origin_atom_id == 1))
+  # Targets should match
+  expect_setequal(m2@bonds$target_atom_id, c(2,3,4))
+  # bond_type recycled properly
+  expect_true(all(m2@bonds$bond_type == "1"))
+})
+
+test_that("add_bonds() errors for missing origin or target IDs", {
+  atoms <- data.frame(
+    eleno = c(10, 20),
+    elena = c("C","O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- minimal_bonds()
+  m <- Molecule3D("TwoAtoms", atoms = atoms, bonds = bonds)
+
+  # origin missing
+  expect_error(
+    add_bonds(m, origin_atom_id = 999, target_atom_ids = 20),
+    "describes atoms not present in @atoms dataframe"
+  )
+
+  # target missing
+  expect_error(
+    add_bonds(m, origin_atom_id = 10, target_atom_ids = c(20, 999)),
+    "describes atoms not present in @atoms dataframe"
+  )
+})
+
+test_that("add_bonds() respects existing maximum_bond_id even with gaps", {
+  atoms <- data.frame(
+    eleno = c(1,2,3),
+    elena = c("C","O","H"),
+    x = c(0,1,0),
+    y = c(0,0,1),
+    z = c(0,0,0)
+  )
+  # bond IDs are non-contiguous; max is 10
+  bonds <- data.frame(
+    bond_id = c(5, 10),
+    origin_atom_id = c(1, 1),
+    target_atom_id = c(2, 3),
+    bond_type = c("1","1")
+  )
+  m <- Molecule3D("GappyIDs", atoms = atoms, bonds = bonds)
+
+  m2 <- add_bonds(m, origin_atom_id = 2, target_atom_ids = 3, bond_type = "2")
+
+  # new id should be 11
+  expect_equal(m2@maximum_bond_id, 11)
+  expect_true(any(m2@bonds$bond_id == 11))
+})
+
+test_that("add_bonds() allows vector bond_type of same length as targets", {
+  atoms <- data.frame(
+    eleno = 1:4,
+    elena = c("C","H","H","H"),
+    x = 0:3, y = 0:3, z = 0:3
+  )
+  m <- Molecule3D("VecType", atoms = atoms, bonds = minimal_bonds())
+
+  types <- c("1","2","am")
+  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3,4), bond_type = types)
+
+  # Expect types to appear exactly once each
+  expect_setequal(m2@bonds$bond_type, types)
+  expect_equal(nrow(m2@bonds), 3)
+})
+
+test_that("add_bonds() coerces ids to numeric and preserves atoms/anchor", {
+  atoms <- data.frame(
+    eleno = c(1,2),
+    elena = c("C","O"),
+    x = c(0,1), y = c(0,0), z = c(0,0)
+  )
+  m <- Molecule3D("Coerce", atoms = atoms, bonds = minimal_bonds(), anchor = c(9,9,9))
+  before_atoms  <- m@atoms
+  before_anchor <- m@anchor
+
+  # pass ids as character; function coerces to numeric internally
+  m2 <- add_bonds(m, origin_atom_id = "1", target_atom_ids = c("2"))
+
+  expect_equal(nrow(m2@bonds), 1)
+  expect_equal(m2@bonds$origin_atom_id[1], 1)
+  expect_equal(m2@bonds$target_atom_id[1], 2)
+  expect_identical(m2@atoms, before_atoms)
+  expect_identical(m2@anchor, before_anchor)
+})
+
+test_that("add_bonds() works when starting with completely empty bonds table", {
+  atoms <- data.frame(
+    eleno = c(1,2,3),
+    elena = c("C","O","H"),
+    x = c(0,1,0), y = c(0,0,1), z = c(0,0,0)
+  )
+  m <- Molecule3D("EmptyBonds", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3), bond_type = "1")
+
+  expect_equal(nrow(m2@bonds), 2)
+  expect_true(all(m2@bonds$bond_id %in% c(1,2)))
+  expect_setequal(m2@bonds$target_atom_id, c(2,3))
+  expect_true(all(m2@bonds$origin_atom_id == 1))
+})
+
+test_that("add_bonds() with one origin and multiple targets adds multiple bonds", {
+  atoms <- data.frame(
+    eleno = 1:5,
+    elena = c("C","H","H","H","O"),
+    x = c(0, 1, -1, 0, 0.5),
+    y = c(0, 0,  0, 1, 0.5),
+    z = c(0, 0,  0, 0, -0.5)
+  )
+  # start with an empty bonds table
+  m <- Molecule3D("MultiTargets", atoms = atoms, bonds = minimal_bonds())
+
+  origin <- 1
+  targets <- c(2, 3, 4, 5)
+  m2 <- add_bonds(m, origin_atom_id = origin, target_atom_ids = targets, bond_type = "1")
+
+  # number of new rows equals number of targets
+  expect_equal(nrow(m2@bonds), length(targets))
+  # all origin IDs match the single origin provided
+  expect_true(all(m2@bonds$origin_atom_id == origin))
+  # targets are exactly those supplied (order-insensitive)
+  expect_setequal(m2@bonds$target_atom_id, targets)
+  # bond ids are sequential starting at 1 when bonds were empty
+  expect_equal(sort(unique(m2@bonds$bond_id)), seq_len(length(targets)))
+})
+
+
 # Test Combine ------------------------------------------------------------
 
 test_that("combine_molecules reindexes IDs and keeps references consistent", {
@@ -412,3 +602,4 @@ test_that("center translates by the same vector as the molecule", {
   mol3 <- translate_molecule_to_position(mol3, target)
   expect_equal(mol3@center, c0 + delta, tolerance = 1e-12)
 })
+

@@ -27,7 +27,7 @@
 #'   **Essential columns**:
 #'   \itemize{
 #'     \item \code{bond_id} (numeric) unique bond identifier
-#'     \item \code{origin_atom_id}, \code{target_atom_id} (character) atom IDs
+#'     \item \code{origin_atom_id}, \code{target_atom_id} (numeric) atom IDs
 #'           that correspond to \code{atoms$eleno}
 #'   }
 #'   **Optional columns**:
@@ -781,4 +781,67 @@ combine_molecules <- function(molecule1, molecule2, update_ids = TRUE){
   new <- S7::set_props(new, atoms = atoms, bonds=bonds)
 
   return(new)
+}
+
+
+#' Add one or more bonds to a Molecule3D object
+#'
+#' Appends one or more new bond records to a \code{Molecule3D} object. Each bond
+#' connects a specified origin atom (\code{origin_atom_id}) to one or more
+#' target atoms (\code{target_atom_ids}). Bond IDs are automatically assigned by
+#' incrementing from the molecule’s current \code{@maximum_bond_id}.
+#'
+#' @param molecule A \code{Molecule3D} object.
+#' @param origin_atom_id Numeric atom ID (matching \code{atoms$eleno}) that serves
+#'   as the origin of the bond(s).
+#' @param target_atom_ids One or more **numeric** atom IDs (each matching
+#'   \code{atoms$eleno}) to connect to \code{origin_atom_id}.
+#' @param bond_type Character scalar specifying the bond type code
+#'   (e.g., `"1"`, `"2"`, `"ar"`, `"am"`, `"un"`). Defaults to `"un"`.
+#'
+#' @details
+#' This function extends the molecule’s \code{@bonds} table. It creates sequential
+#' numeric \code{bond_id}s starting from \code{molecule@maximum_bond_id + 1}.
+#' If multiple targets are supplied, one bond row is added per target.
+#'
+#' The function validates that all supplied atom IDs exist in \code{molecule@atoms$eleno}.
+#' The anchor and other properties are preserved.
+#'
+#' @return A \code{Molecule3D} object with additional rows in \code{@bonds}.
+#'
+#' @examples
+#' atoms <- data.frame(
+#'   eleno = c(1, 2, 3),
+#'   elena = c("C", "O", "H"),
+#'   x = c(0, 1.2, -0.8),
+#'   y = c(0, 0, 0.5),
+#'   z = c(0, 0, 0)
+#' )
+#' bonds <- data.frame(
+#'   bond_id = 1,
+#'   origin_atom_id = 1,
+#'   target_atom_id = 2,
+#'   bond_type = "1"
+#' )
+#' m <- Molecule3D(name = "COH", atoms = atoms, bonds = bonds)
+#' m <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(3), bond_type = "1")
+#' m@bonds
+#'
+#' @seealso [structures::valid_bond_types()], [combine_molecules()]
+#' @export
+add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un"){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  max_bond_id <- molecule@maximum_bond_id
+  origin_atom_id <- as.numeric(origin_atom_id)
+  target_atom_ids <- as.numeric(target_atom_ids)
+
+  df_additional_bonds <- data.frame(
+    bond_id = seq_along(target_atom_ids) + max_bond_id,
+    origin_atom_id = rep(origin_atom_id, times = length(target_atom_ids)),
+    target_atom_id = target_atom_ids,
+    bond_type = bond_type
+  )
+
+  molecule@bonds <- dplyr::bind_rows(molecule@bonds, df_additional_bonds)
+  return(molecule)
 }

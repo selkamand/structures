@@ -36,7 +36,7 @@ essential columns plus \code{element}.}
 \strong{Essential columns}:
 \itemize{
 \item \code{bond_id} (numeric) unique bond identifier
-\item \code{origin_atom_id}, \code{target_atom_id} (character) atom IDs
+\item \code{origin_atom_id}, \code{target_atom_id} (numeric) atom IDs
 that correspond to \code{atoms$eleno}
 }
 \strong{Optional columns}:
