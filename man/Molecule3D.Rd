@@ -68,6 +68,9 @@ An S7 object of class \code{"Molecule3D"} with the following slots and propertie
 \item \strong{misc} — list of arbitrary metadata.
 \item \strong{anchor} — numeric vector \code{c(x, y, z)}: the molecule’s reference point.
 \item \strong{atom_ids} — character vector of atom IDs.
+\item \strong{bond_ids} — numeric vector of bond IDs.
+\item \strong{maximum_atom_id} — numeric scalar giving the highest atom ID present.
+\item \strong{maximum_bond_id} — numeric scalar giving the highest bond ID present.
 \item \strong{atom_positions} — numeric matrix of atom coordinates
 (rows = atoms, columns = x/y/z).
 \item \strong{bond_positions} — data frame of bonds with start and end

@@ -79,6 +79,9 @@
 #'   \item \strong{misc} — list of arbitrary metadata.
 #'   \item \strong{anchor} — numeric vector \code{c(x, y, z)}: the molecule’s reference point.
 #'   \item \strong{atom_ids} — character vector of atom IDs.
+#'   \item \strong{bond_ids} — numeric vector of bond IDs.
+#'   \item \strong{maximum_atom_id} — numeric scalar giving the highest atom ID present.
+#'   \item \strong{maximum_bond_id} — numeric scalar giving the highest bond ID present.
 #'   \item \strong{atom_positions} — numeric matrix of atom coordinates
 #'         (rows = atoms, columns = x/y/z).
 #'   \item \strong{bond_positions} — data frame of bonds with start and end
@@ -113,7 +116,6 @@
 #'   set_anchor_by_position, set_anchor_by_atom,
 #'   translate_molecule_to_origin, translate_molecule_to_position, translate_molecule_by_vector
 #' @export
-
 Molecule3D <- S7::new_class(
   name = "Molecule3D",
   properties = list(
@@ -125,7 +127,32 @@ Molecule3D <- S7::new_class(
 
     ## COMPUTED PROPERTIES
     # List all atom ids (eleno) described by atoms data.frame
-    atom_ids = S7::new_property(class = S7::class_numeric, getter = function(self){ unique(self@atoms$eleno) }),
+    atom_ids = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){ unique(self@atoms$eleno) },
+      setter = function(self, value){stop("@atom_ids is a read only property")}
+      ),
+
+    # List all bond ids (bond_id) described by atoms data.frame
+    bond_ids = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){ unique(self@bonds$bond_id) },
+      setter = function(self, value){stop("@bond_ids is a read only property")}
+    ),
+
+    # Maximum atom id (useful to know when combining two different molecules together or adding new atoms)
+    maximum_atom_id = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){max(c(0, self@atom_ids), na.rm = TRUE)},
+      setter = function(self, value){stop("@maximum_atom_id is a read only property")}
+    ),
+
+    # Maximum bond id (useful to know when combining two different molecules together or adding new atoms)
+    maximum_bond_id = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){max(c(0, self@bond_ids), na.rm = TRUE)},
+      setter = function(self, value){stop("@maximum_bond_id is a read only property")}
+    ),
 
     # atom position matrix (row names are atom ids: eleno)
     atom_positions = S7::new_property(class = S7::class_numeric, getter = function(self){
@@ -226,6 +253,7 @@ Molecule3D <- S7::new_class(
     eleno <- self@atoms[["eleno"]]
     if(!is.numeric(eleno)) return(sprintf("@atoms column 'eleno' must be a numeric vector, not [%s]", toString(class(eleno))))
     if(anyNA(eleno)) return(sprintf("@atoms column 'eleno' must NOT contain any missing values. Found: [%d]", sum(is.na(eleno))))
+    if(any(eleno < 1)) return(sprintf("@atoms column 'eleno' must NOT contain any values < 1. Problematic values found: [%s]", toString(unique(eleno[eleno < 1]))))
     if(any(duplicated(eleno))) return(sprintf("@atoms column 'eleno' can NOT contain duplicates. Duplicates found: [%s]", toString(eleno[duplicated(eleno)])))
 
     elena <- self@atoms[["elena"]]
@@ -675,4 +703,76 @@ translate_molecule_to_position <- function(x, new_position){
 translate_molecule_by_vector <- function(x, vector){
   assertions::assert_class(x, "structures::Molecule3D")
   transform_molecule(x = x, transformation = function(original) { original + vector})
+}
+
+
+#' Combine two Molecule3D objects
+#'
+#' Merges the atoms and bonds of two \code{Molecule3D} objects into a single
+#' object. By default, identifiers from \code{molecule2} are offset so they do
+#' not clash with \code{molecule1}. A \code{source} column is added to both the
+#' atoms and bonds tables indicating the originating molecule name. The anchor
+#' and all other properties of \code{molecule1} are preserved.
+#'
+#' @param molecule1,molecule2 \code{Molecule3D} objects to combine.
+#'   \code{molecule1} provides the base object (including its \code{@anchor}).
+#' @param update_ids Logical (default \code{TRUE}). When \code{TRUE}, offsets the
+#'   atom IDs and bond IDs of \code{molecule2} by \code{molecule1@maximum_atom_id}
+#'   and \code{molecule1@maximum_bond_id}, respectively, to avoid identifier
+#'   collisions. When \code{FALSE}, IDs are used as-is (and may clash).
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Appends the atom tables and bond tables (adding a \code{source} column to each).
+#'   \item When \code{update_ids = TRUE}, increments \code{molecule2} atom IDs
+#'         (\code{eleno}) and bond IDs (\code{bond_id}) before binding.
+#'   \item Leaves \code{origin_atom_id} and \code{target_atom_id} internally consistent
+#'         with the updated \code{eleno} values.
+#'   \item Preserves \code{molecule1}'s \code{@anchor} and \code{@name}.
+#' }
+#'
+#' All non-essential columns in the atom/bond tables are preserved. The returned
+#' object inherits \code{molecule1}'s non-tabular properties.
+#'
+#' @return A \code{Molecule3D} object containing the combined atoms and bonds.
+#'
+#' @examples
+#' m1 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
+#' m2 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
+#'
+#' # Combine
+#' m12 <- combine_molecules(m1, m2)
+#'
+#' m12
+#'
+#' @seealso \code{\link{Molecule3D}}, \code{\link{translate_molecule_to_origin}},
+#'   \code{\link{set_anchor_by_atom}}
+#' @export
+combine_molecules <- function(molecule1, molecule2, update_ids = TRUE){
+  assertions::assert_class(molecule1, "structures::Molecule3D")
+  assertions::assert_class(molecule2, "structures::Molecule3D")
+
+  atoms1 <- molecule1@atoms
+  atoms2 <- molecule2@atoms
+  bonds1 <- molecule1@bonds
+  bonds2 <- molecule1@bonds
+
+  if(update_ids){
+    atoms2$eleno <- atoms2$eleno + molecule1@maximum_atom_id
+    bonds2$bond_id <- bonds2$bond_id + molecule1@maximum_bond_id
+  }
+
+  atoms1$source = molecule1@name
+  atoms2$source = molecule2@name
+  bonds1$source = molecule1@name
+  bonds2$source = molecule2@name
+
+  atoms <- dplyr::bind_rows(atoms1, atoms2)
+  bonds <- dplyr::bind_rows(bonds1, bonds2)
+
+  new <- molecule1
+  new <- S7::set_props(new, atoms = atoms, bonds=bonds)
+
+  return(new)
 }

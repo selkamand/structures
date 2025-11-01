@@ -16,6 +16,7 @@ Depends:
 LazyData: true
 Imports: 
     assertions,
+    dplyr,
     readr,
     S7,
     utils
