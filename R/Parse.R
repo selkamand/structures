@@ -1,6 +1,7 @@
 #' Read Mol2 file to a 'Structure' class object
 #'
 #' @param path path to the mol2 file
+#' @param name what is the name of this molecule. If NULL will be inferred from filename
 #'
 #' @returns a Structure class object
 #' @export
@@ -8,8 +9,9 @@
 #' @examples
 #' mol2 <- system.file(package="structures", "benzene.mol2")
 #' read_mol2(mol2)
-read_mol2 <- function(path){
+read_mol2 <- function(path, name = NULL){
   contents <- readr::read_file(path)
+  if(is.null(name)) name <- sub(x=basename(path), pattern = "\\..*$", replacement = "")
 
   # Remove carriage return character (\r) in case mol2 file was made on windows with CLRF line-endings
   contents <- gsub(x=contents, pattern = "\r", replacement = "")
@@ -43,6 +45,7 @@ read_mol2 <- function(path){
     df_bonds <- minimal_bonds()
   }
   chemical <- Molecule3D(
+    name = name,
     atoms = df_atom,
     bonds = df_bonds,
     misc = ls_contents_substplit_named

@@ -4,10 +4,12 @@
 \alias{read_mol2}
 \title{Read Mol2 file to a 'Structure' class object}
 \usage{
-read_mol2(path)
+read_mol2(path, name = NULL)
 }
 \arguments{
 \item{path}{path to the mol2 file}
+
+\item{name}{what is the name of this molecule. If NULL will be inferred from filename}
 }
 \value{
 a Structure class object
