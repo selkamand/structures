@@ -400,3 +400,69 @@ locate_molecule_center <- function(x){
   assertions::assert_class(x, "structures::Molecule3D")
   x@center
 }
+
+#' Compute distance between two points
+#'
+#' @param x a Molecule3D object.
+#' @param eleno1,eleno2 atom IDs (eleno's) of the two atoms to compute distance between
+#'
+#' @returns numeric euclidean distance between two points
+#' @export
+#'
+#' @examples
+#' path <- system.file(package="structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#' compute_distance_between_atoms(molecule, 1, 2)
+compute_distance_between_atoms <- function(x, eleno1, eleno2){
+  assertions::assert_class(x, "structures::Molecule3D")
+  valid_ids <- x@atom_ids
+  if(!eleno1 %in% valid_ids) stop("atom ID (eleno) [", eleno1, "] could not be found in molecule")
+  if(!eleno2 %in% valid_ids) stop("atom ID (eleno) [", eleno2, "] could not be found in molecule")
+
+  pos1 = fetch_atom_position(x, eleno1, careful = FALSE)
+  pos2 = fetch_atom_position(x, eleno2, careful = FALSE)
+  sqrt(sum((pos2-pos1)^2))
+}
+
+#' Fetch atom Cartesian coordinates
+#'
+#' Returns the 3D position(s) of one or more atoms by \code{eleno}.
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param eleno Character or numeric vector of atom IDs (matching \code{x@atoms$eleno}).
+#' @param careful Logical. If \code{TRUE} (default), validates \code{x} and that all
+#'   \code{eleno} exist; otherwise missing IDs yield \code{NA} coordinates.
+#'
+#' @return If a single \code{eleno} is supplied, a named numeric vector
+#'   \code{c(x, y, z)}. If multiple, a matrix with columns \code{x}, \code{y}, \code{z}
+#'   and row names equal to the requested \code{eleno}.
+#'
+#' @examples
+#' # Read Data
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Single atom position
+#' # fetch_atom_position(molecule, "1")
+#'
+#' # Multiple atoms (rows named by eleno)
+#' # fetch_atom_position(molecule, c("1","2","3"))
+#'
+#' @seealso \code{\link{compute_distance_between_atoms}}
+#' @export
+fetch_atom_position <- function(x, eleno, careful=TRUE){
+  if(careful){
+    assertions::assert_class(x, "structures::Molecule3D")
+    if(!all(eleno %in% x@atom_ids)) stop("atom ID (eleno) [", eleno, "] could not be found in molecule")
+  }
+  mx_positions <- x@atom_positions
+  idx <- match(eleno, rownames(mx_positions))
+  positions <- mx_positions[idx, ,drop=TRUE]
+
+  if(length(eleno) > 1){
+    rownames(positions) <- eleno
+  }
+
+  return(positions)
+}
+
