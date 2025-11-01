@@ -14,47 +14,92 @@ Molecule3D(
 \arguments{
 \item{name}{Character scalar. Molecule name.}
 
-\item{atoms}{Data frame with required columns:
+\item{atoms}{Data frame describing atoms in the molecule.
+\strong{Essential columns} (must be present on input):
 \itemize{
-\item \code{eleno} (character) atom ID
-\item \code{elena} (character) element symbol (e.g., "C", "H")
+\item \code{eleno} (character) atom ID (unique per atom)
+\item \code{elena} (character) element label or atom name
 \item \code{x}, \code{y}, \code{z} (numeric) Cartesian coordinates
 }
-Columns are type-normalized on construction.}
-
-\item{bonds}{Data frame with required columns:
+\strong{Optional columns} (automatically added if not supplied):
 \itemize{
-\item \code{bond_id} (character)
-\item \code{origin_atom_id}, \code{target_atom_id} (character; match \code{atoms$eleno})
+\item \code{element} (character) element symbol; if missing, it is derived from
+\code{elena} by removing digits (e.g., \code{"C3"} → \code{"C"}).
 }
-Optional \code{bond_type} (character). If missing, it is added with value \code{"un"}.}
+Data types are enforced so that \code{eleno}, \code{elena}, and \code{element}
+are character, and \code{x}, \code{y}, \code{z} are numeric.
+When accessed as \code{molecule@atoms}, the data frame always includes all
+essential columns plus \code{element}.}
 
-\item{misc}{List of arbitrary metadata (for debugging/annotations).}
+\item{bonds}{Data frame describing bonds between atoms.
+\strong{Essential columns}:
+\itemize{
+\item \code{bond_id} (character) unique bond identifier
+\item \code{origin_atom_id}, \code{target_atom_id} (character) atom IDs
+that correspond to \code{atoms$eleno}
+}
+\strong{Optional columns}:
+\itemize{
+\item \code{bond_type} (character) SYBYL/Tripos bond code (e.g. "1", "2", "ar");
+if missing, it is added with the value \code{"un"} (unknown).
+}
+All other columns are retained as-is.}
+
+\item{misc}{A list containing any additional metadata (e.g., provenance,
+notes, or debug information). Stored without modification.}
 }
 \value{
-An S7 object of class \code{"Molecule3D"} with computed properties
-(e.g., \code{atom_ids}, \code{atom_positions}, \code{bond_positions},
-\code{bond_positions_interleaved}, \code{center}).
+An S7 object of class \code{"Molecule3D"} with the following slots and properties:
+\itemize{
+\item \strong{name} — character scalar, molecule name.
+\item \strong{atoms} — data frame with atom information
+(\code{eleno}, \code{elena}, \code{element}, \code{x}, \code{y}, \code{z}).
+\item \strong{bonds} — data frame with bond information
+(\code{bond_id}, \code{origin_atom_id}, \code{target_atom_id}, \code{bond_type}).
+\item \strong{misc} — list of arbitrary metadata.
+\item \strong{atom_ids} — character vector of atom IDs.
+\item \strong{atom_positions} — numeric matrix of atom coordinates
+(rows = atoms, columns = x/y/z).
+\item \strong{bond_positions} — data frame of bonds with start and end
+coordinates for each atom pair.
+\item \strong{bond_positions_interleaved} — data.frame of bond positions in interleaved format
+(neighbouring rows = start/end points), useful for 3D plotting.
+\item \strong{center} — named numeric vector (\code{c(x, y, z)}) giving the
+geometric center of all atoms.
+}
 }
 \description{
 Constructs an S7 object representing a single molecule with 3D coordinates.
+In most workflows, you will not call this constructor directly — molecule
+objects are usually created by parsers such as \code{\link[=read_mol2]{read_mol2()}} or
+\code{\link[=read_sdf]{read_sdf()}}.
+}
+\details{
+During creation, \code{atoms} and \code{bonds} are processed using internal
+helper functions (\code{format_atoms()} and \code{format_bonds()}) to ensure
+required columns are present, types are correct, and that all bond endpoints
+refer to valid atoms.
 }
 \examples{
-# Minimal empty object
-Molecule3D()
+# Typical use via parser
+# mol <- structures::read_mol2("benzene.mol2")
 
-# From small tables
+# Direct creation
 atoms <- data.frame(
   eleno = c("1","2"),
   elena = c("C","O"),
   x = c(0, 1.2), y = c(0, 0.1), z = c(0, -0.2)
 )
 bonds <- data.frame(
-  bond_id = c("b1"),
+  bond_id = "b1",
   origin_atom_id = "1",
   target_atom_id = "2"
 )
 m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+m@atoms$element   # always available (added automatically if missing)
 m@center
 
+}
+\seealso{
+\code{\link[=read_mol2]{read_mol2()}}, \code{\link[=valid_bond_types]{valid_bond_types()}}
 }
