@@ -8,7 +8,8 @@ Molecule3D(
   name = "MyChemical",
   atoms = minimal_atoms(),
   bonds = minimal_bonds(),
-  misc = list()
+  misc = list(),
+  anchor = c(0, 0, 0)
 )
 }
 \arguments{
@@ -47,6 +48,14 @@ All other columns are retained as-is.}
 
 \item{misc}{A list containing any additional metadata (e.g., provenance,
 notes, or debug information). Stored without modification.}
+
+\item{anchor}{Numeric length-3 vector \code{c(x, y, z)} specifying the molecule’s
+reference point (default \code{c(0,0,0)}). Used by the translation helpers
+(e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
+\code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
+to this point. Typically set to an atom’s coordinates via
+\code{\link{set_anchor_by_atom}} or to an arbitrary position via
+\code{\link{set_anchor_by_position}}.}
 }
 \value{
 An S7 object of class \code{"Molecule3D"} with the following slots and properties:
@@ -57,6 +66,7 @@ An S7 object of class \code{"Molecule3D"} with the following slots and propertie
 \item \strong{bonds} — data frame with bond information
 (\code{bond_id}, \code{origin_atom_id}, \code{target_atom_id}, \code{bond_type}).
 \item \strong{misc} — list of arbitrary metadata.
+\item \strong{anchor} — numeric vector \code{c(x, y, z)}: the molecule’s reference point.
 \item \strong{atom_ids} — character vector of atom IDs.
 \item \strong{atom_positions} — numeric matrix of atom coordinates
 (rows = atoms, columns = x/y/z).
@@ -71,8 +81,7 @@ geometric center of all atoms.
 \description{
 Constructs an S7 object representing a single molecule with 3D coordinates.
 In most workflows, you will not call this constructor directly — molecule
-objects are usually created by parsers such as \code{\link[=read_mol2]{read_mol2()}} or
-\code{\link[=read_sdf]{read_sdf()}}.
+objects are usually created by parsers such as \code{\link[=read_mol2]{read_mol2()}}
 }
 \details{
 During creation, \code{atoms} and \code{bonds} are processed using internal
@@ -80,11 +89,27 @@ helper functions (\code{format_atoms()} and \code{format_bonds()}) to ensure
 required columns are present, types are correct, and that all bond endpoints
 refer to valid atoms.
 }
+\section{Anchor}{
+
+The \emph{anchor} is a persistent reference position stored as a length-3 numeric
+vector (\code{c(x, y, z)}). It does not constrain geometry by itself; instead it
+supports convenient re-positioning:
+\itemize{
+\item \code{\link{set_anchor_by_position}} — set the anchor to an arbitrary position.
+\item \code{\link{set_anchor_by_atom}} — set the anchor to the coordinates of a given atom (\code{eleno}).
+\item \code{\link{translate_molecule_to_origin}} — translate the molecule so the anchor moves to \code{c(0,0,0)}.
+\item \code{\link{translate_molecule_to_position}} — translate the molecule so the anchor moves to a specified position.
+\item \code{\link{translate_molecule_by_vector}} — translate the molecule by a specified vector.
+}
+Functions that transform coordinates (e.g., \code{transform_molecule()}) also
+update the anchor to keep it consistent with the new coordinate frame.
+}
+
 \examples{
 # Typical use via parser
 # mol <- structures::read_mol2("benzene.mol2")
 
-# Direct creation
+# Direct creation + anchor operations
 atoms <- data.frame(
   eleno = c("1","2"),
   elena = c("C","O"),
@@ -95,11 +120,14 @@ bonds <- data.frame(
   origin_atom_id = "1",
   target_atom_id = "2"
 )
-m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
-m@atoms$element   # always available (added automatically if missing)
-m@center
+m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+m <- set_anchor_by_atom(m, "1")
+m <- translate_molecule_to_origin(m) # moves so atom "1" sits at the origin
+m@anchor
 
 }
 \seealso{
-\code{\link[=read_mol2]{read_mol2()}}, \code{\link[=valid_bond_types]{valid_bond_types()}}
+\code{\link[=read_mol2]{read_mol2()}}, \code{\link[=valid_bond_types]{valid_bond_types()}},
+set_anchor_by_position, set_anchor_by_atom,
+translate_molecule_to_origin, translate_molecule_to_position, translate_molecule_by_vector
 }

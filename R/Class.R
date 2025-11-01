@@ -2,8 +2,7 @@
 #'
 #' Constructs an S7 object representing a single molecule with 3D coordinates.
 #' In most workflows, you will not call this constructor directly — molecule
-#' objects are usually created by parsers such as [structures::read_mol2()] or
-#' [structures::read_sdf()].
+#' objects are usually created by parsers such as [structures::read_mol2()]
 #'
 #' @param name Character scalar. Molecule name.
 #'
@@ -41,11 +40,34 @@
 #' @param misc A list containing any additional metadata (e.g., provenance,
 #'   notes, or debug information). Stored without modification.
 #'
+#' @param anchor Numeric length-3 vector \code{c(x, y, z)} specifying the molecule’s
+#'   reference point (default \code{c(0,0,0)}). Used by the translation helpers
+#'   (e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
+#'   \code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
+#'   to this point. Typically set to an atom’s coordinates via
+#'   \code{\link{set_anchor_by_atom}} or to an arbitrary position via
+#'   \code{\link{set_anchor_by_position}}.
+#'
 #' @details
 #' During creation, \code{atoms} and \code{bonds} are processed using internal
 #' helper functions (\code{format_atoms()} and \code{format_bonds()}) to ensure
 #' required columns are present, types are correct, and that all bond endpoints
 #' refer to valid atoms.
+#'
+#' @section Anchor:
+#' The \emph{anchor} is a persistent reference position stored as a length-3 numeric
+#' vector (\code{c(x, y, z)}). It does not constrain geometry by itself; instead it
+#' supports convenient re-positioning:
+#' \itemize{
+#'   \item \code{\link{set_anchor_by_position}} — set the anchor to an arbitrary position.
+#'   \item \code{\link{set_anchor_by_atom}} — set the anchor to the coordinates of a given atom (\code{eleno}).
+#'   \item \code{\link{translate_molecule_to_origin}} — translate the molecule so the anchor moves to \code{c(0,0,0)}.
+#'   \item \code{\link{translate_molecule_to_position}} — translate the molecule so the anchor moves to a specified position.
+#'   \item \code{\link{translate_molecule_by_vector}} — translate the molecule by a specified vector.
+#' }
+#' Functions that transform coordinates (e.g., \code{transform_molecule()}) also
+#' update the anchor to keep it consistent with the new coordinate frame.
+#'
 #'
 #' @return An S7 object of class \code{"Molecule3D"} with the following slots and properties:
 #' \itemize{
@@ -55,6 +77,7 @@
 #'   \item \strong{bonds} — data frame with bond information
 #'         (\code{bond_id}, \code{origin_atom_id}, \code{target_atom_id}, \code{bond_type}).
 #'   \item \strong{misc} — list of arbitrary metadata.
+#'   \item \strong{anchor} — numeric vector \code{c(x, y, z)}: the molecule’s reference point.
 #'   \item \strong{atom_ids} — character vector of atom IDs.
 #'   \item \strong{atom_positions} — numeric matrix of atom coordinates
 #'         (rows = atoms, columns = x/y/z).
@@ -70,7 +93,7 @@
 #' # Typical use via parser
 #' # mol <- structures::read_mol2("benzene.mol2")
 #'
-#' # Direct creation
+#' # Direct creation + anchor operations
 #' atoms <- data.frame(
 #'   eleno = c("1","2"),
 #'   elena = c("C","O"),
@@ -81,12 +104,16 @@
 #'   origin_atom_id = "1",
 #'   target_atom_id = "2"
 #' )
-#' m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
-#' m@atoms$element   # always available (added automatically if missing)
-#' m@center
+#' m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+#' m <- set_anchor_by_atom(m, "1")
+#' m <- translate_molecule_to_origin(m) # moves so atom "1" sits at the origin
+#' m@anchor
 #'
-#' @seealso [structures::read_mol2()], [structures::valid_bond_types()]
+#' @seealso [structures::read_mol2()], [structures::valid_bond_types()],
+#'   set_anchor_by_position, set_anchor_by_atom,
+#'   translate_molecule_to_origin, translate_molecule_to_position, translate_molecule_by_vector
 #' @export
+
 Molecule3D <- S7::new_class(
   name = "Molecule3D",
   properties = list(
@@ -94,6 +121,7 @@ Molecule3D <- S7::new_class(
     atoms = S7::class_data.frame,
     bonds = S7::class_data.frame,
     misc  = S7::class_list,
+    anchor = S7::class_numeric,
 
     ## COMPUTED PROPERTIES
     # Atom Ids described by atoms data.frame
@@ -142,7 +170,7 @@ Molecule3D <- S7::new_class(
   ),
 
   # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(),  misc = list()) {
+  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(),  misc = list(), anchor = c(0, 0, 0)) {
 
     # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
     bonds <- format_bonds(bonds)
@@ -156,7 +184,8 @@ Molecule3D <- S7::new_class(
       name=name,
       atoms = atoms,
       bonds = bonds,
-      misc = misc
+      misc = misc,
+      anchor = anchor
     )
   },
 
@@ -203,6 +232,9 @@ Molecule3D <- S7::new_class(
       )
     }
 
+    ## ---- Validate Anchor  ----
+    if(!is.numeric(self@anchor))  return(sprintf("@anchor must be a numeric vector, not a [%s]", class(self@anchor)))
+    if(length(self@anchor) != 3)  return(sprintf("@anchor must be a length 3 vector with values corresponding to x, y, and z. Supplied anchor only has [%d] dimensions", length(self@anchor)))
 
     ## If no problems:
     NULL
@@ -335,6 +367,10 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
 }
 
 
+
+# Non Generic Methods ---------------------------------------------------
+
+
 #' Delete atoms from molecule
 #'
 #' Removes atoms from molecule by atom_id (eleno).
@@ -430,6 +466,11 @@ transform_molecule <- function(x, transformation, ...){
   x@atoms$x <- vapply(res, FUN = \(d){d[1]}, FUN.VALUE = numeric(1))
   x@atoms$y <- vapply(res, FUN = \(d){d[2]}, FUN.VALUE = numeric(1))
   x@atoms$z <- vapply(res, FUN = \(d){d[3]}, FUN.VALUE = numeric(1))
+
+  # Also apply transformation to anchor position to
+  # preserve its relative position to the rest of the molecule
+  x@anchor <- transformation(x@anchor, ...)
+
   return(x)
 }
 
@@ -517,3 +558,111 @@ fetch_atom_position <- function(x, eleno, careful=TRUE){
   return(positions)
 }
 
+#' Set the molecule anchor by position
+#'
+#' Sets the \code{anchor} of a \code{Molecule3D} to an arbitrary position
+#' \code{c(x, y, z)}. The anchor is a reference point used by translation
+#' helpers to reposition the molecule.
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param position Numeric length-3 vector \code{c(x, y, z)}.
+#'
+#' @return A \code{Molecule3D} object with \code{x@anchor} set to \code{position}.
+#' @examples
+#' # m <- set_anchor_by_position(m, c(1, 2, 3))
+#' @seealso \code{\link{set_anchor_by_atom}},
+#'   \code{\link{translate_molecule_to_origin}},
+#'   \code{\link{translate_molecule_to_position}},
+#'   \code{\link{translate_molecule_by_vector}}
+#' @export
+set_anchor_by_position <- function(x, position){
+  x@anchor <- position
+  return(x)
+}
+
+#' Set the molecule anchor using an atom ID
+#'
+#' Sets the \code{anchor} of a \code{Molecule3D} to the current coordinates
+#' of a specified atom (\code{eleno}).
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param eleno Atom ID (matching \code{x@atoms$eleno}).
+#'
+#' @return A \code{Molecule3D} object with \code{x@anchor} set to the atom position.
+#' @examples
+#' # m <- set_anchor_by_atom(m, "5")
+#' @seealso \code{\link{set_anchor_by_position}},
+#'   \code{\link{translate_molecule_to_origin}},
+#'   \code{\link{translate_molecule_to_position}},
+#'   \code{\link{translate_molecule_by_vector}}
+#' @export
+set_anchor_by_atom <- function(x, eleno){
+  assertions::assert_class(x, "structures::Molecule3D")
+  pos = fetch_atom_position(x, eleno)
+  x@anchor <- pos
+  return(x)
+}
+
+
+#' Translate the molecule so its anchor is at the origin
+#'
+#' Moves all atom coordinates by a translation that places \code{x@anchor} at
+#' \code{c(0, 0, 0)}. The anchor is updated accordingly via
+#' \code{\link{transform_molecule}}.
+#'
+#' @param x A \code{Molecule3D} object.
+#'
+#' @return A \code{Molecule3D} object translated so \code{x@anchor == c(0,0,0)}.
+#' @examples
+#' # m <- translate_molecule_to_origin(m)
+#' @seealso \code{\link{translate_molecule_to_position}},
+#'   \code{\link{translate_molecule_by_vector}},
+#'   \code{\link{set_anchor_by_position}}, \code{\link{set_anchor_by_atom}}
+#' @export
+translate_molecule_to_origin <- function(x){
+  assertions::assert_class(x, "structures::Molecule3D")
+  translate_molecule_to_position(x, c(0, 0, 0))
+}
+
+#' Translate the molecule so its anchor matches a target position
+#'
+#' Moves all atom coordinates by a translation that places \code{x@anchor} at
+#' \code{new_position}. The anchor is updated accordingly via
+#' \code{\link{transform_molecule}}.
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param new_position Numeric length-3 vector \code{c(x, y, z)}.
+#'
+#' @return A \code{Molecule3D} object translated so \code{x@anchor == new_position}.
+#' @examples
+#' # m <- translate_molecule_to_position(m, c(5, 0, -2))
+#' @seealso \code{\link{translate_molecule_to_origin}},
+#'   \code{\link{translate_molecule_by_vector}},
+#'   \code{\link{set_anchor_by_position}}, \code{\link{set_anchor_by_atom}}
+#' @export
+translate_molecule_to_position <- function(x, new_position){
+  assertions::assert_class(x, "structures::Molecule3D")
+  translation_vec <- new_position-x@anchor
+  translate_molecule_by_vector(x, translation_vec)
+}
+
+#' Translate the molecule by a vector
+#'
+#' Adds a translation vector to all atom coordinates using
+#' \code{\link{transform_molecule}}. The anchor is translated by the same vector,
+#' keeping it consistent with the new coordinates.
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param vector Numeric length-3 vector \code{c(dx, dy, dz)}.
+#'
+#' @return A \code{Molecule3D} object translated by \code{vector}.
+#' @examples
+#' # m <- translate_molecule_by_vector(m, c(1, 0, 0))
+#' @seealso \code{\link{translate_molecule_to_origin}},
+#'   \code{\link{translate_molecule_to_position}},
+#'   \code{\link{set_anchor_by_position}}, \code{\link{set_anchor_by_atom}}
+#' @export
+translate_molecule_by_vector <- function(x, vector){
+  assertions::assert_class(x, "structures::Molecule3D")
+  transform_molecule(x = x, transformation = function(original) { original + vector})
+}
