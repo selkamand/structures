@@ -50,7 +50,7 @@ bonds <- data.frame(
   bond_type = "1"
 )
 m <- Molecule3D(name = "COH", atoms = atoms, bonds = bonds)
-m <- add_bond(m, origin_atom_id = 1, target_atom_ids = c(3), bond_type = "1")
+m <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(3), bond_type = "1")
 m@bonds
 
 }

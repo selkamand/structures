@@ -2,6 +2,7 @@
 
 export(Molecule3D)
 export(add_bonds)
+export(add_dummy_atom)
 export(combine_molecules)
 export(compute_distance_between_atoms)
 export(fetch_atom_position)

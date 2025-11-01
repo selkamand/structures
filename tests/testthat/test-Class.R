@@ -1,4 +1,5 @@
 
+
 # Test Add Bonds ----------------------------------------------------------------
 
 test_that("add_bonds() adds a single bond and increments bond_id", {
@@ -602,4 +603,207 @@ test_that("center translates by the same vector as the molecule", {
   mol3 <- translate_molecule_to_position(mol3, target)
   expect_equal(mol3@center, c0 + delta, tolerance = 1e-12)
 })
+
+
+# Test Dummy Atom Addition ------------------------------------------------
+# tests/testthat/test-add_dummy_atom.R
+
+test_that("add_dummy_atom: adds 1 atom with next ID and a single bond to C", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0),
+    bond_type = character(0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+  max_atom <- m@maximum_atom_id
+  max_bond <- m@maximum_bond_id
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = 1.5, torsion_angle = 60, bond_angle = 109.5,
+    bond_type = "1", elena = "Du"
+  )
+
+  # Atom count increases by 1
+  expect_equal(nrow(m2@atoms), nrow(m@atoms) + 1)
+
+  # New atom has next ID
+  new_id <- max_atom + 1
+  expect_true(new_id %in% m2@atoms$eleno)
+
+  # New atom has expected element label
+  expect_equal(m2@atoms$elena[m2@atoms$eleno == new_id], "Du")
+
+  # One new bond added, points to C with correct type and incremented bond_id
+  expect_equal(nrow(m2@bonds), 1)
+  expect_equal(m2@bonds$origin_atom_id[1], new_id)
+  expect_equal(m2@bonds$target_atom_id[1], 3)
+  expect_equal(m2@bonds$bond_type[1], "1")
+  expect_equal(m2@bonds$bond_id[1], max_bond + 1)
+
+  # Anchor preserved
+  expect_equal(m2@anchor, m@anchor)
+})
+
+test_that("add_dummy_atom: works when molecule already has bonds (bond_id increments)", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  bonds <- data.frame(
+    bond_id = c(1L, 2L),
+    origin_atom_id = c(1, 2),
+    target_atom_id = c(2, 3),
+    bond_type = c("1", "1")
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = bonds)
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = 1.0, torsion_angle = 0, bond_angle = 90,
+    bond_type = "ar", elena = "Du"
+  )
+
+  # Bond table got one extra row
+  expect_equal(nrow(m2@bonds), nrow(m@bonds) + 1)
+
+  # New bond_id increments from previous maximum
+  expect_equal(max(m2@bonds$bond_id), max(m@bonds$bond_id) + 1)
+
+  # New bond connects (new_id -> 3) and has the specified type
+  new_id <- max(m2@atoms$eleno)
+  expect_true(any(with(m2@bonds, origin_atom_id == new_id & target_atom_id == 3 & bond_type == "ar")))
+})
+
+test_that("add_dummy_atom: default elena can be overridden", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = 1.2, torsion_angle = 30, bond_angle = 100,
+    bond_type = "2", elena = "Xx"
+  )
+
+  new_id <- max(m2@atoms$eleno)
+  expect_equal(m2@atoms$elena[m2@atoms$eleno == new_id], "Xx")
+})
+
+test_that("add_dummy_atom: errors when reference atoms are missing", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
+
+  expect_error(
+    add_dummy_atom(
+      molecule = m,
+      atom_id_a = 1, atom_id_b = 2, atom_id_c = 999,   # <-- missing
+      bond_length = 1.0, torsion_angle = 0, bond_angle = 90
+    ),
+    regexp = "could not be found|not.*found",
+    ignore.case = TRUE
+  )
+})
+
+test_that("add_dummy_atom: creates a bond when no bonds existed before (bond_id starts at 1)", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = 1.0, torsion_angle = 0, bond_angle = 90
+  )
+
+  expect_equal(nrow(m2@bonds), 1)
+  expect_identical(m2@bonds$bond_id, 1)  # starts at 1 when previously empty
+})
+
+test_that("add_dummy_atom: geometry matches compas::calCo (if available)", {
+  testthat::skip_if_not_installed("compas")
+
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
+
+  # Reference positions for A, B, C
+  ref_pos <- fetch_atom_position(m, c(1, 2, 3))
+  # Choose simple internal coordinates
+  L <- 1.5; tau <- 60; ang <- 109.5
+
+  expected <- compas::calCo(prev_atoms = ref_pos, length = L, bAngle = ang, tAngle = tau)
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = L, torsion_angle = tau, bond_angle = ang
+  )
+
+  new_id <- max(m2@atoms$eleno)
+  got <- with(m2@atoms[m2@atoms$eleno == new_id, ], c(x, y, z))
+
+  expect_equal(got, as.numeric(expected), tolerance = 1e-7)
+})
+
+test_that("add_dummy_atom: types are correct (numeric IDs, character bond_type)", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("A", "B", "C"),
+    x = c(0,  1,  1),
+    y = c(0,  0,  1),
+    z = c(0,  0,  0)
+  )
+  m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- add_dummy_atom(
+    molecule = m,
+    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+    bond_length = 1.3, torsion_angle = 10, bond_angle = 100,
+    bond_type = "am"
+  )
+
+  expect_type(m2@atoms$eleno, "double") # numeric in R is double
+  expect_type(m2@bonds$bond_id, "double")
+  expect_type(m2@bonds$origin_atom_id, "double")
+  expect_type(m2@bonds$target_atom_id, "double")
+  expect_type(m2@bonds$bond_type, "character")
+})
+
+
 

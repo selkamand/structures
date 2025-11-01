@@ -738,8 +738,8 @@ translate_molecule_by_vector <- function(x, vector){
 #' @return A \code{Molecule3D} object containing the combined atoms and bonds.
 #'
 #' @examples
-#' m1 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
-#' m2 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
+#' m1 <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' m2 <- read_mol2(system.file("benzene.mol2", package = "structures"))
 #'
 #' # Combine
 #' m12 <- combine_molecules(m1, m2)
@@ -844,4 +844,104 @@ add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un
 
   molecule@bonds <- dplyr::bind_rows(molecule@bonds, df_additional_bonds)
   return(molecule)
+}
+
+
+#' Add a dummy atom defined by internal coordinates
+#'
+#' Inserts a “dummy” atom (default element label \code{"Du"}) into a
+#' \code{Molecule3D} using three reference atoms and internal coordinates:
+#' bond length to atom C, bond angle at B–C–D, and torsion A–B–C–D. The new
+#' atom is appended to the \code{@atoms} table and connected by a single bond
+#' to atom C (via \code{\link{add_bonds}}). Identifiers are assigned using
+#' \code{molecule@maximum_atom_id + 1}.
+#'
+#' Geometry is computed with \pkg{compas} (\code{compas::calCo()}), with angles
+#' interpreted in degrees.
+#'
+#' @param molecule A \code{Molecule3D} object.
+#' @param atom_id_a,atom_id_b,atom_id_c Numeric atom IDs (matching \code{atoms$eleno})
+#'   that define the reference frame for the new atom D. The new atom is placed at
+#'   a distance \code{bond_length} from \code{atom_id_c}, with bond angle
+#'   \code{B–C–D = bond_angle} and torsion \code{A–B–C–D = torsion_angle}.
+#' @param bond_length Numeric scalar; distance (Å) from atom C to the new atom D.
+#' @param torsion_angle Numeric scalar; dihedral angle \code{A–B–C–D} in degrees.
+#' @param bond_angle Numeric scalar; bond angle \code{B–C–D} in degrees.
+#' @param bond_type Character scalar specifying the SYBYL/Tripos bond code for the
+#'   new C–D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"1"}.
+#' @param elena Character scalar atom label for the dummy atom (default \code{"Du"}).
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Retrieves the Cartesian coordinates of atoms A, B, C via
+#'         \code{\link{fetch_atom_position}}.
+#'   \item Calls \code{compas::calCo()} to compute the D coordinates from
+#'         \code{bond_length}, \code{bond_angle}, and \code{torsion_angle}
+#'         (angles in degrees).
+#'   \item Creates a one-row atoms table for D (\code{eleno = maximum\_atom\_id + 1},
+#'         \code{elena = elena}, and computed \code{x,y,z}), then merges it into
+#'         the input molecule via \code{\link{combine_molecules}} (with
+#'         \code{update_ids = FALSE}).
+#'   \item Adds a single bond between C (\code{atom_id_c}) and D using
+#'         \code{\link{add_bonds}} with the supplied \code{bond_type}.
+#' }
+#'
+#' The molecule’s \code{@anchor} and other properties are preserved.
+#'
+#' @return A \code{Molecule3D} object containing the appended dummy atom and its bond to C.
+#'
+#' @examples
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#'
+#' # Suppose atoms 1-2-3 exist and define a sensible frame.
+#' m2 <- add_dummy_atom(
+#'   molecule = m,
+#'   atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
+#'   bond_length = 1.5,
+#'   torsion_angle = 60,
+#'   bond_angle = 109.5,
+#'   bond_type = "1",
+#'   elena = "Du"
+#' )
+#' tail(m2@atoms)
+#' tail(m2@bonds)
+#'
+#' @seealso \code{\link{add_bonds}}, \code{\link{combine_molecules}},
+#'   \code{\link{fetch_atom_position}}, \code{\link{Molecule3D}}
+#' @export
+add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_length, torsion_angle, bond_angle, bond_type = "1", elena = "Du"){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+
+  # positions is a 3x3 (or 3xN) matrix of A,B,C coordinates (rows = eleno, cols x/y/z)
+  positions <- fetch_atom_position(molecule, eleno = c(atom_id_a, atom_id_b, atom_id_c))
+
+  # compas expects angles in degrees
+  dummy_position <- compas::calCo(
+    prev_atoms = positions,
+    length = bond_length,
+    bAngle = bond_angle,
+    tAngle = torsion_angle
+  )
+
+  dummy_id <- molecule@maximum_atom_id + 1
+
+  additional_atoms <- data.frame(
+    eleno = dummy_id,
+    elena = elena,
+    x = dummy_position[1],
+    y = dummy_position[2],
+    z = dummy_position[3]
+  )
+
+  dummy_molecule <- Molecule3D(name = "Dummy", atoms = additional_atoms)
+  combined <- combine_molecules(molecule, dummy_molecule, update_ids = FALSE)
+  combined <- add_bonds(
+    molecule = combined,
+    origin_atom_id = dummy_id,
+    target_atom_ids = atom_id_c,
+    bond_type = bond_type
+  )
+
+  return(combined)
 }

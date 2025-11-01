@@ -40,8 +40,8 @@ All non-essential columns in the atom/bond tables are preserved. The returned
 object inherits \code{molecule1}'s non-tabular properties.
 }
 \examples{
-m1 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
-m2 <- read_mol2(system.file("extdata", "benzene.mol2", package = "structures"))
+m1 <- read_mol2(system.file("benzene.mol2", package = "structures"))
+m2 <- read_mol2(system.file("benzene.mol2", package = "structures"))
 
 # Combine
 m12 <- combine_molecules(m1, m2)
