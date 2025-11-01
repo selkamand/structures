@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-An R package that contains a class used to store and represents chemical structures. Includes parsers for common file formats.
+An R package that contains a class used to store and represents molecular structures (Molecule3D). Includes parser for the mol2 file format.
 
 ## Installation
 
@@ -37,8 +37,8 @@ remotes::install_github("selkamand/structures")
 
 ```{r}
 
-# Load a mol2 file
+# Read a mol2 file into a Molecule3D object
 path <- system.file(package="structures", "benzene.mol2")
-read_mol2(mol2)
+molecule <- read_mol2(mol2)
 ```
 
