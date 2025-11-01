@@ -161,9 +161,9 @@ Molecule3D <- S7::new_class(
     center = S7::new_property(class = S7::class_numeric, getter = function(self){
       mx_positions <- self@atom_positions
       center <- c(
-        x = mean(mx_positions[1]),
-        y = mean(mx_positions[2]),
-        z=  mean(mx_positions[3])
+        x = mean(mx_positions[,1]),
+        y = mean(mx_positions[,2]),
+        z=  mean(mx_positions[,3])
       )
       return(center)
     })
