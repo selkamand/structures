@@ -483,6 +483,24 @@ fetch_eleno_by_name <- function(x, elena){
   unique(unlist(x@atoms[x@atoms$elena %in% elena, "eleno", drop=FALSE]))
 }
 
+#' Fetch atom identifiers by element
+#'
+#' @param x a Molecule3D object
+#' @param element element name
+#'
+#' @returns a numeric vector of atom identifiers (eleno) corresponding to element names (elena).
+#' @export
+#'
+#' @examples
+#' path <- system.file(package="structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#' fetch_eleno_by_element(molecule, "C")
+#'
+fetch_eleno_by_element <- function(x, element){
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  unique(unlist(x@atoms[x@atoms$element %in% element, "eleno", drop=FALSE]))
+}
+
 #' Apply arbitratry 3D transformations to molecule3D objects
 #'
 #' Applies a user-supplied transformation function to atoms in a Molecule3D object.
