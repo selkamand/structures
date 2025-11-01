@@ -347,7 +347,7 @@ format_atoms <- function(atoms){
   if("z" %in% cols){ atoms[["z"]] <- as.numeric(atoms[["z"]])}
 
   # Add element column
-  if(!"element" %in% cols){ atoms[["element"]] <- gsub(x=atoms[["elena"]], pattern = "[0-9]", replacement = "")}
+  if(!"element" %in% cols){ atoms[["element"]] <- elena_to_element(atoms[["elena"]]) }
 
   return(atoms)
 }

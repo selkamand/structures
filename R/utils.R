@@ -59,3 +59,10 @@ to_interleaved <- function(df, coord = c("x", "y", "z"), end_suffix = "end") {
 
   out
 }
+
+# Convert elena to element
+elena_to_element <- function(elena){
+  element <- gsub(x=elena, pattern = "[0-9]", replacement = "")
+  element <- gsub(x=element, pattern = "(.)[A-Z]+", replacement = "\\1")
+  return(element)
+}
