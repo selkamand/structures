@@ -363,8 +363,8 @@ format_bonds <- function(bonds){
   cols <- colnames(bonds)
 
   if("bond_id" %in% cols){ bonds[["bond_id"]] <- as.numeric(bonds[["bond_id"]])}
-  if("origin_atom_id" %in% cols){ bonds[["origin_atom_id"]] <- as.character(bonds[["origin_atom_id"]])}
-  if("target_atom_id" %in% cols){ bonds[["target_atom_id"]] <- as.character(bonds[["target_atom_id"]])}
+  if("origin_atom_id" %in% cols){ bonds[["origin_atom_id"]] <- as.numeric(bonds[["origin_atom_id"]])}
+  if("target_atom_id" %in% cols){ bonds[["target_atom_id"]] <- as.numeric(bonds[["target_atom_id"]])}
   if("bond_type" %in% cols){ bonds[["bond_type"]] <- as.character(bonds[["bond_type"]])}
 
   return(bonds)
@@ -756,17 +756,23 @@ combine_molecules <- function(molecule1, molecule2, update_ids = TRUE){
   atoms1 <- molecule1@atoms
   atoms2 <- molecule2@atoms
   bonds1 <- molecule1@bonds
-  bonds2 <- molecule1@bonds
+  bonds2 <- molecule2@bonds
 
   if(update_ids){
+    old_ids <- atoms2$eleno
+    new_ids <- atoms2$eleno + molecule1@maximum_atom_id
     atoms2$eleno <- atoms2$eleno + molecule1@maximum_atom_id
-    bonds2$bond_id <- bonds2$bond_id + molecule1@maximum_bond_id
+
+    bonds2$bond_id <- if(nrow(bonds2) > 0) bonds2$bond_id + molecule1@maximum_bond_id
+    bonds2$origin_atom_id <- new_ids[match(bonds2$origin_atom_id, old_ids)]
+    bonds2$target_atom_id <- new_ids[match(bonds2$target_atom_id, old_ids)]
   }
 
   atoms1$source = molecule1@name
   atoms2$source = molecule2@name
-  bonds1$source = molecule1@name
-  bonds2$source = molecule2@name
+
+  bonds1$source <- if(nrow(bonds1) > 0) molecule1@name else character(0)
+  bonds2$source <- if(nrow(bonds2) > 0) molecule2@name else character(0)
 
   atoms <- dplyr::bind_rows(atoms1, atoms2)
   bonds <- dplyr::bind_rows(bonds1, bonds2)

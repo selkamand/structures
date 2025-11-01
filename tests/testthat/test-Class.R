@@ -31,7 +31,6 @@ test_that("combine_molecules reindexes IDs and keeps references consistent", {
 
   # Combine with reindexing (update_ids = TRUE)
   cmb <- combine_molecules(m1, m2, update_ids = TRUE)
-  # browser()
   expect_true(inherits(cmb, "structures::Molecule3D"))
 
   # Expect atoms count sums and bonds count sums
@@ -183,6 +182,130 @@ test_that("combine_molecules keeps bonds aligned with atoms after reindex", {
   expect_true(all(cmb@bonds$target_atom_id[b_rows] %in% eleno_chr))
 })
 
+test_that("combine_molecules works when m1 has no bonds", {
+  # m1: one atom, no bonds
+  atoms1 <- data.frame(
+    eleno = 1,
+    elena = "C",
+    x = 0, y = 0, z = 0
+  )
+  bonds1 <- minimal_bonds()
+  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, anchor = c(1,2,3))
+
+  # m2: two atoms, one bond (1-2)
+  atoms2 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("H", "H"),
+    x = c(1, 2), y = 0, z = 0
+  )
+  bonds2 <- data.frame(
+    bond_id = 1,
+    origin_atom_id = "1",
+    target_atom_id = "2"
+  )
+  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2)
+
+  cmb <- combine_molecules(m1, m2, update_ids = TRUE)
+
+  # Atoms = sum; Bonds = from m2 only
+  expect_equal(nrow(cmb@atoms), nrow(m1@atoms) + nrow(m2@atoms))
+  expect_equal(nrow(cmb@bonds), nrow(m2@bonds))
+
+  # Bond IDs from m2 shouldn't shift because m1@maximum_bond_id == 0
+  expect_equal(unique(cmb@bonds$bond_id), m2@bonds$bond_id)
+
+  # Sources: bonds only from B
+  expect_true("source" %in% names(cmb@bonds))
+  expect_setequal(unique(cmb@bonds$source), "B")
+
+  # Anchor/name preserved from m1
+  expect_equal(cmb@anchor, m1@anchor)
+  expect_equal(cmb@name, m1@name)
+
+  # All bond endpoints exist in the combined atom table
+  eleno_chr <- as.character(cmb@atoms$eleno)
+  expect_true(all(cmb@bonds$origin_atom_id %in% eleno_chr))
+  expect_true(all(cmb@bonds$target_atom_id %in% eleno_chr))
+})
+
+test_that("combine_molecules works when m2 has no bonds", {
+  # m1: two atoms, one bond (1-2)
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1), y = 0, z = 0
+  )
+  bonds1 <- data.frame(
+    bond_id = 1,
+    origin_atom_id = "1",
+    target_atom_id = "2"
+  )
+  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, anchor = c(4,5,6))
+
+  # m2: one atom, no bonds
+  atoms2 <- data.frame(
+    eleno = 1,
+    elena = "H",
+    x = 2, y = 0, z = 0
+  )
+  bonds2 <- minimal_bonds()
+  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2)
+
+  cmb <- combine_molecules(m1, m2, update_ids = TRUE)
+
+  # Atoms = sum; Bonds = from m1 only
+  expect_equal(nrow(cmb@atoms), nrow(m1@atoms) + nrow(m2@atoms))
+  expect_equal(nrow(cmb@bonds), nrow(m1@bonds))
+
+  # Sources: bonds only from A
+  expect_true("source" %in% names(cmb@bonds))
+  expect_setequal(unique(cmb@bonds$source), "A")
+
+  # m2's atom ID should be offset by m1@maximum_atom_id (which is 2)
+  expect_true(any(cmb@atoms$source == "B"))
+  eleno_B <- cmb@atoms$eleno[cmb@atoms$source == "B"]
+  expect_setequal(eleno_B, 1 + m1@maximum_atom_id)
+
+  # Anchor/name preserved from m1
+  expect_equal(cmb@anchor, m1@anchor)
+  expect_equal(cmb@name, m1@name)
+})
+
+test_that("combine_molecules works when both molecules have no bonds", {
+  # m1: one atom, no bonds
+  atoms1 <- data.frame(
+    eleno = 10,
+    elena = "C",
+    x = 0, y = 0, z = 0
+  )
+  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = minimal_bonds(), anchor = c(1,1,1))
+
+  # m2: one atom, no bonds
+  atoms2 <- data.frame(
+    eleno = 1,
+    elena = "H",
+    x = 1, y = 0, z = 0
+  )
+  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = minimal_bonds(), anchor = c(9,9,9))
+
+  cmb <- combine_molecules(m1, m2, update_ids = TRUE)
+
+  # Bond table should exist and be empty
+  expect_true(is.data.frame(cmb@bonds))
+  expect_equal(nrow(cmb@bonds), 0)
+
+  # Columns should include the canonical set (and 'source' added by combine)
+  expect_true(all(c("bond_id","origin_atom_id","target_atom_id","bond_type","source") %in% names(cmb@bonds)))
+
+  # Atoms are combined and 'source' present
+  expect_equal(nrow(cmb@atoms), 2)
+  expect_true("source" %in% names(cmb@atoms))
+  expect_setequal(unique(cmb@atoms$source), c("A", "B"))
+
+  # Anchor/name preserved from m1
+  expect_equal(cmb@anchor, c(1,1,1))
+  expect_equal(cmb@name, "A")
+})
 
 
 # Test Center -------------------------------------------------------------
