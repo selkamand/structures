@@ -22,5 +22,6 @@ Imports:
     S7,
     utils
 Suggests: 
+    igraph,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

@@ -1,3 +1,7 @@
+
+# Molecule3D Class -------------------------------------------------------------------
+
+
 #' Create a Molecule3D object
 #'
 #' Constructs an S7 object representing a single molecule with 3D coordinates.
@@ -403,6 +407,7 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
   rownames(mx) <- x@atoms[["eleno"]]
   return(mx)
 }
+
 
 
 
@@ -981,6 +986,16 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
 
   return(combined)
 }
+
+# select_all_downstream_atoms <- function(molecule, breakpoint_atom_id){
+#   # h_atom_ids <- fetch_eleno_by_element(molecule, element = "H")
+#   # heavy_molecule <- remove_atoms(molecule, eleno = h_atom_ids)
+#   # df_bonds <- heavy_molecule@bonds
+#   #
+#   # breakpoint_atom
+#   breakpoint_removed <- remove_atoms(molecule, breakpoint_atom_id)
+#   clusters =
+# }
 
 # rotate_bond <- function(molecule, ){
 #
