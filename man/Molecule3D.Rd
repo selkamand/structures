@@ -18,7 +18,7 @@ Molecule3D(
 \item{atoms}{Data frame describing atoms in the molecule.
 \strong{Essential columns} (must be present on input):
 \itemize{
-\item \code{eleno} (character) atom ID (unique per atom)
+\item \code{eleno} (numeric) atom ID (unique per atom)
 \item \code{elena} (character) element label or atom name
 \item \code{x}, \code{y}, \code{z} (numeric) Cartesian coordinates
 }
@@ -35,7 +35,7 @@ essential columns plus \code{element}.}
 \item{bonds}{Data frame describing bonds between atoms.
 \strong{Essential columns}:
 \itemize{
-\item \code{bond_id} (character) unique bond identifier
+\item \code{bond_id} (numeric) unique bond identifier
 \item \code{origin_atom_id}, \code{target_atom_id} (character) atom IDs
 that correspond to \code{atoms$eleno}
 }

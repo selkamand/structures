@@ -9,7 +9,7 @@
 #' @param atoms Data frame describing atoms in the molecule.
 #'   **Essential columns** (must be present on input):
 #'   \itemize{
-#'     \item \code{eleno} (character) atom ID (unique per atom)
+#'     \item \code{eleno} (numeric) atom ID (unique per atom)
 #'     \item \code{elena} (character) element label or atom name
 #'     \item \code{x}, \code{y}, \code{z} (numeric) Cartesian coordinates
 #'   }
@@ -26,7 +26,7 @@
 #' @param bonds Data frame describing bonds between atoms.
 #'   **Essential columns**:
 #'   \itemize{
-#'     \item \code{bond_id} (character) unique bond identifier
+#'     \item \code{bond_id} (numeric) unique bond identifier
 #'     \item \code{origin_atom_id}, \code{target_atom_id} (character) atom IDs
 #'           that correspond to \code{atoms$eleno}
 #'   }
@@ -124,7 +124,7 @@ Molecule3D <- S7::new_class(
     anchor = S7::class_numeric,
 
     ## COMPUTED PROPERTIES
-    # Atom Ids described by atoms data.frame
+    # List all atom ids (eleno) described by atoms data.frame
     atom_ids = S7::new_property(class = S7::class_numeric, getter = function(self){ unique(self@atoms$eleno) }),
 
     # atom position matrix (row names are atom ids: eleno)
@@ -209,7 +209,7 @@ Molecule3D <- S7::new_class(
       ))
     }
 
-    if(!is.character(self@bonds$bond_id)) {return(sprintf("@bonds data.frame bond_id column must be a character, not %s", toString(class(self@bonds$bond_id))))}
+    if(!is.numeric(self@bonds$bond_id)) {return(sprintf("@bonds data.frame bond_id column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))}
 
     ## ---- Validate Atom Columns ----
     required_atom_cols <- c("eleno", "elena", "element", "x", "y", "z")
@@ -222,6 +222,16 @@ Molecule3D <- S7::new_class(
         toString(missing)
       ))
     }
+
+    eleno <- self@atoms[["eleno"]]
+    if(!is.numeric(eleno)) return(sprintf("@atoms column 'eleno' must be a numeric vector, not [%s]", toString(class(eleno))))
+    if(anyNA(eleno)) return(sprintf("@atoms column 'eleno' must NOT contain any missing values. Found: [%d]", sum(is.na(eleno))))
+    if(any(duplicated(eleno))) return(sprintf("@atoms column 'eleno' can NOT contain duplicates. Duplicates found: [%s]", toString(eleno[duplicated(eleno)])))
+
+    elena <- self@atoms[["elena"]]
+    if(!is.character(elena)) return(sprintf("@atoms column 'elena' must be a character vector, not [%s]", toString(class(elena))))
+    if(anyNA(elena)) return(sprintf("@atoms column 'elena' must NOT contain any missing values. Found: [%d]", sum(is.na(elena))))
+
 
     ## ---- Ensure all origin/target atom Ids in bonds dataframe are in atom dataframe  ----
     atom_ids <- self@atoms$eleno
@@ -263,7 +273,7 @@ Molecule3D <- S7::new_class(
 #' @export
 minimal_atoms <- function(){
   data.frame(
-    "eleno" = character(0),
+    "eleno" = numeric(0),
     "elena" = character(0),
     "x" = numeric(0),
     "y" = numeric(0),
@@ -302,7 +312,7 @@ minimal_bonds <- function(){
 # Also add an 'element' column representing elena with numbers stripped out
 format_atoms <- function(atoms){
   cols <- colnames(atoms)
-  if("eleno" %in% cols){ atoms[["eleno"]] <- as.character(atoms[["eleno"]])}
+  if("eleno" %in% cols){ atoms[["eleno"]] <- as.numeric(atoms[["eleno"]])}
   if("elena" %in% cols){ atoms[["elena"]] <- as.character(atoms[["elena"]])}
   if("x" %in% cols){ atoms[["x"]] <- as.numeric(atoms[["x"]])}
   if("y" %in% cols){ atoms[["y"]] <- as.numeric(atoms[["y"]])}
@@ -324,7 +334,7 @@ format_bonds <- function(bonds){
   #  Recast columns
   cols <- colnames(bonds)
 
-  if("bond_id" %in% cols){ bonds[["bond_id"]] <- as.character(bonds[["bond_id"]])}
+  if("bond_id" %in% cols){ bonds[["bond_id"]] <- as.numeric(bonds[["bond_id"]])}
   if("origin_atom_id" %in% cols){ bonds[["origin_atom_id"]] <- as.character(bonds[["origin_atom_id"]])}
   if("target_atom_id" %in% cols){ bonds[["target_atom_id"]] <- as.character(bonds[["target_atom_id"]])}
   if("bond_type" %in% cols){ bonds[["bond_type"]] <- as.character(bonds[["bond_type"]])}
@@ -388,7 +398,7 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
 #' remove_atoms(molecule, c(1,2,3))
 remove_atoms <- function(x, eleno){
   assertions::assert_class(x, class = "structures::Molecule3D")
-  in_eleno <- x@atoms$eleno %in% as.character(eleno)
+  in_eleno <- x@atoms$eleno %in% eleno
   new_atom_data <- x@atoms[!in_eleno, ,drop=FALSE]
   new_bond_data <- x@bonds[x@bonds$origin_atom_id %in% new_atom_data$eleno & x@bonds$target_atom_id %in% new_atom_data$eleno, , drop=FALSE]
 
@@ -416,7 +426,7 @@ remove_atoms <- function(x, eleno){
 #' filter_atoms(molecule, c(1,2,3))
 filter_atoms <- function(x, eleno){
   assertions::assert_class(x, class = "structures::Molecule3D")
-  in_eleno <- x@atoms$eleno %in% as.character(eleno)
+  in_eleno <- x@atoms$eleno %in% eleno
   new_atom_data <- x@atoms[in_eleno, ,drop=FALSE]
   new_bond_data <- x@bonds[x@bonds$origin_atom_id %in% new_atom_data$eleno & x@bonds$target_atom_id %in% new_atom_data$eleno, , drop=FALSE]
 
@@ -538,7 +548,7 @@ compute_distance_between_atoms <- function(x, eleno1, eleno2){
 #' # fetch_atom_position(molecule, "1")
 #'
 #' # Multiple atoms (rows named by eleno)
-#' # fetch_atom_position(molecule, c("1","2","3"))
+#' # fetch_atom_position(molecule, c(1, 2, 3))
 #'
 #' @seealso \code{\link{compute_distance_between_atoms}}
 #' @export

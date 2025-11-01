@@ -31,7 +31,7 @@ molecule <- read_mol2(path)
 # fetch_atom_position(molecule, "1")
 
 # Multiple atoms (rows named by eleno)
-# fetch_atom_position(molecule, c("1","2","3"))
+# fetch_atom_position(molecule, c(1, 2, 3))
 
 }
 \seealso{
