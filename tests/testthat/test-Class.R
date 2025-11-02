@@ -806,4 +806,97 @@ test_that("add_dummy_atom: types are correct (numeric IDs, character bond_type)"
 })
 
 
+# Test eleno by bond network ----------------------------------------------
+
+
+# Helper to make a simple Molecule3D from an undirected edge list
+.make_mol_from_edges <- function(edges, n_atoms = NULL, name = "testmol") {
+  if (is.null(n_atoms)) {
+    n_atoms <- max(if (length(edges)) unlist(edges) else 0)
+  }
+  atoms <- data.frame(
+    eleno = seq_len(n_atoms),
+    elena = rep("C", n_atoms),
+    x = seq_len(n_atoms), y = 0, z = 0
+  )
+  if (is.null(edges) || nrow(edges) == 0) {
+    bonds <- minimal_bonds()
+  } else {
+    bonds <- data.frame(
+      bond_id = seq_len(nrow(edges)),
+      origin_atom_id = edges[, 1],
+      target_atom_id = edges[, 2],
+      bond_type = "1"
+    )
+  }
+  Molecule3D(name = name, atoms = atoms, bonds = bonds)
+}
+
+testthat::test_that("Linear chain splits correctly and honors direction", {
+  # Chain 1-2-3-4; break bond between 2-3
+  edges <- rbind(
+    c(1, 2),
+    c(2, 3),
+    c(3, 4)
+  )
+  m <- .make_mol_from_edges(edges, n_atoms = 4)
+
+  # Direction toward atom 2 => cluster should be {1,2}
+  ids_left <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 2)
+  testthat::expect_setequal(ids_left, c(1, 2))
+  testthat::expect_true(2 %in% ids_left)
+  testthat::expect_type(ids_left, "double")
+
+  # Direction toward atom 3 => cluster should be {3,4}
+  ids_right <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 3)
+  testthat::expect_setequal(ids_right, c(3, 4))
+  testthat::expect_true(3 %in% ids_right)
+})
+
+testthat::test_that("Errors when direction atom not on the bond", {
+  # Chain 1-2-3-4; ask for bond (2) but direction atom 4 (not an endpoint of bond 2)
+  edges <- rbind(c(1,2), c(2,3), c(3,4))
+  m <- .make_mol_from_edges(edges, n_atoms = 4)
+
+  testthat::expect_error(
+    fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 4),
+    "is not connected by bond id"
+  )
+})
+
+testthat::test_that("Errors when bond_id is invalid", {
+  edges <- rbind(c(1,2), c(2,3))
+  m <- .make_mol_from_edges(edges, n_atoms = 3)
+
+  testthat::expect_error(
+    fetch_eleno_downstream_of_bond(m, bond_id = 999, direction_atom_id = 2)
+  )
+})
+
+testthat::test_that("Non-splitting break (cycle) raises 'All points remain connected.'", {
+  # Triangle cycle 1-2-3-1; remove one endpoint of bond 1-2
+  edges <- rbind(
+    c(1, 2),
+    c(2, 3),
+    c(3, 1)
+  )
+  m <- .make_mol_from_edges(edges, n_atoms = 3)
+
+  # Bond 1 (1-2), pick direction 1 -> removing atom 2 leaves {1,3} still connected => single component
+  testthat::expect_error(
+    fetch_eleno_downstream_of_bond(m, bond_id = 1, direction_atom_id = 1),
+    "All points remain connected\\."
+  )
+})
+
+testthat::test_that("Return includes the direction atom and is numeric", {
+  edges <- rbind(c(1,2), c(2,3), c(3,4))
+  m <- .make_mol_from_edges(edges, n_atoms = 4)
+
+  res <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 3)
+  testthat::expect_true(3 %in% res)
+  testthat::expect_true(is.numeric(res))
+})
+
+
 

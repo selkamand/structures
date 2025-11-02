@@ -68,6 +68,10 @@ elena_to_element <- function(elena){
 }
 
 
+# Exported ----------------------------------------------------------------
+
+
+
 #' Convert a Molecule3D's bonds to an igraph graph
 #'
 #' Builds an undirected \pkg{igraph} graph from a \code{Molecule3D}'s bond table.
@@ -150,6 +154,18 @@ as_igraph <- function(molecule,
   return(g)
 }
 
-# Once its an igraph we can use igraph::components(mode = "weak")
 
-
+#' Parallel mean (like pmax / pmin)
+#'
+#' Computes the elementwise mean of multiple numeric vectors.
+#'
+#' @param ... Numeric vectors of equal length (or scalars recycled).
+#' @param na.rm Logical; if TRUE, ignore NA values when computing the mean.
+#'
+#' @return A numeric vector of the same length as the longest input.
+pmean <- function(..., na.rm = FALSE) {
+  args <- list(...)
+  n <- max(vapply(args, length, 1L))
+  args <- lapply(args, rep_len, length.out = n)
+  rowMeans(do.call(cbind, args), na.rm = na.rm)
+}

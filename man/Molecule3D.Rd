@@ -73,8 +73,9 @@ An S7 object of class \code{"Molecule3D"} with the following slots and propertie
 \item \strong{maximum_bond_id} — numeric scalar giving the highest bond ID present.
 \item \strong{atom_positions} — numeric matrix of atom coordinates
 (rows = atoms, columns = x/y/z).
-\item \strong{bond_positions} — data frame of bonds with start and end
-coordinates for each atom pair.
+\item \strong{bond_positions} — data frame of bonds with start (\code{x,y,z}),
+end (\code{xend,yend,zend}), and midpoint (\code{x_middle,y_middle,z_middle})
+coordinates for each bond, derived from the atom positions.
 \item \strong{bond_positions_interleaved} — data.frame of bond positions in interleaved format
 (neighbouring rows = start/end points), useful for 3D plotting.
 \item \strong{center} — named numeric vector (\code{c(x, y, z)}) giving the

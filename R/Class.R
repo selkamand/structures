@@ -88,8 +88,9 @@
 #'   \item \strong{maximum_bond_id} — numeric scalar giving the highest bond ID present.
 #'   \item \strong{atom_positions} — numeric matrix of atom coordinates
 #'         (rows = atoms, columns = x/y/z).
-#'   \item \strong{bond_positions} — data frame of bonds with start and end
-#'         coordinates for each atom pair.
+#'   \item \strong{bond_positions} — data frame of bonds with start (\code{x,y,z}),
+#'         end (\code{xend,yend,zend}), and midpoint (\code{x_middle,y_middle,z_middle})
+#'         coordinates for each bond, derived from the atom positions.
 #'   \item \strong{bond_positions_interleaved} — data.frame of bond positions in interleaved format
 #'         (neighbouring rows = start/end points), useful for 3D plotting.
 #'   \item \strong{center} — named numeric vector (\code{c(x, y, z)}) giving the
@@ -180,13 +181,24 @@ Molecule3D <- S7::new_class(
       bonds$xend <- atoms[["x"]][it]
       bonds$yend <- atoms[["y"]][it]
       bonds$zend <- atoms[["z"]][it]
+
+      # Add middle positions (useful for labelling)
+      bonds[["x_middle"]] <- pmean(bonds$x, bonds$xend)
+      bonds[["y_middle"]] <- pmean(bonds$y, bonds$yend)
+      bonds[["z_middle"]] <- pmean(bonds$z, bonds$zend)
+
       return(bonds)
-    }),
+    },
+    setter = function(self, value){stop("@bond_positions is a read only property")}
+    ),
 
     # Interleaved bond positions (pairs of rows = start and end point of bonds) useful for plotting in rgl
-    bond_positions_interleaved = S7::new_property(class = S7::class_numeric, getter = function(self){
-      to_interleaved(self@bond_positions)
-    }),
+    bond_positions_interleaved = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){ to_interleaved(self@bond_positions) },
+      setter = function(self, value){stop("@bond_positions_interleaved is a read only property")}
+      ),
+
 
     # Center position of all atoms
     center = S7::new_property(class = S7::class_numeric, getter = function(self){
@@ -197,8 +209,22 @@ Molecule3D <- S7::new_class(
         z=  mean(mx_positions[,3])
       )
       return(center)
-    })
+    }),
+
+    # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
+    # Requires igraph
+    connectivity = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){
+        graph <- as_igraph(self);
+        components <- igraph::components(graph, mode = "weak")
+        lapply(split(names(components$membership), components$membership), as.numeric)
+      },
+      setter = function(self, value){stop("@components is a read only property")}
+    )
   ),
+
+
 
   # Add/normalize columns as the object is being created
   constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(),  misc = list(), anchor = c(0, 0, 0)) {
@@ -987,16 +1013,68 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
   return(combined)
 }
 
-# select_all_downstream_atoms <- function(molecule, breakpoint_atom_id){
-#   # h_atom_ids <- fetch_eleno_by_element(molecule, element = "H")
-#   # heavy_molecule <- remove_atoms(molecule, eleno = h_atom_ids)
-#   # df_bonds <- heavy_molecule@bonds
-#   #
-#   # breakpoint_atom
-#   breakpoint_removed <- remove_atoms(molecule, breakpoint_atom_id)
-#   clusters =
-# }
+#' Fetch downstream atoms for a directed bond break
+#'
+#' Given a bond ID and a "direction" atom on that bond, returns the set of atom
+#' IDs (\code{eleno}) that remain connected to the \emph{direction} atom after
+#' virtually breaking the bond (i.e., removing the other endpoint atom). This is
+#' useful for identifying the substructure that would rotate or translate when
+#' treating the chosen bond as a rotatable hinge.
+#'
+#' @param molecule A \code{Molecule3D} object.
+#' @param bond_id Numeric bond identifier (must exist in \code{molecule@bond_ids}).
+#' @param direction_atom_id Numeric atom ID (\code{eleno}) that is one endpoint of
+#'   \code{bond_id}. The returned cluster is the connected component containing
+#'   this atom after the opposite endpoint is removed.
+#'
+#' @details
+#' The algorithm:
+#' \enumerate{
+#'   \item Validates that \code{bond_id} exists and locates its two endpoint atom IDs.
+#'   \item Checks that \code{direction_atom_id} is one of the endpoints; otherwise
+#'         an error is thrown.
+#'   \item Removes the \emph{other} endpoint atom from the molecule via
+#'         \code{\link{remove_atoms}} (this simulates breaking the bond).
+#'   \item Uses the molecule's \code{@connectivity} property (list of connected
+#'         components, as numeric \code{eleno} vectors) to select the component
+#'         that contains \code{direction_atom_id}.
+#' }
+#'
+#' If no disconnection occurs (i.e., only one connected component remains),
+#' the function errors with \code{"All points remain connected."}
+#'
+#' @return A numeric vector of atom IDs (\code{eleno}) forming the downstream
+#'   connected component that includes \code{direction_atom_id}.
+#'
+#' @note The \code{@connectivity} property relies on \pkg{igraph} (via an
+#'   internal conversion to an igraph and \code{igraph::components()}).
+#'
+#' @seealso \code{\link{remove_atoms}}, \code{\link{compute_distance_between_atoms}}
+#'
+#' @examples
+#' \dontrun{
+#' m <- structures::read_mol2(system.file("benzene.mol2", package="structures"))
+#' # Suppose bond 7 connects atoms 10 and 12, and we want the side attached to atom 10:
+#' ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 7, direction_atom_id = 10)
+#' ids
+#' }
+#'
+#' @export
+fetch_eleno_downstream_of_bond <- function(molecule, bond_id, direction_atom_id){
 
-# rotate_bond <- function(molecule, ){
-#
-# }
+  assertions::assert_includes(molecule@bond_ids, required = bond_id)
+
+  df_bonds <- molecule@bonds
+  df_bond_of_interest <- utils::head(df_bonds[df_bonds[["bond_id"]] == bond_id,,drop=FALSE], n=1)
+  connected_atom_ids <- c(df_bond_of_interest$origin_atom_id, df_bond_of_interest$target_atom_id)
+  if(!direction_atom_id %in% connected_atom_ids) stop(sprintf("direction atom id: [%s] is not connected by bond id [%s]. Valid atom IDs are: [%s]", direction_atom_id, bond_id, toString(connected_atom_ids)))
+
+  other_atom_id <- setdiff(connected_atom_ids, direction_atom_id)
+  molecule_broken <- remove_atoms(molecule, other_atom_id)
+  clusters <- molecule_broken@connectivity
+  if(length(clusters) == 1) stop("All points remain connected.")
+  chosen_cluster <- clusters[vapply(clusters, FUN = function(ids){ direction_atom_id %in% ids }, FUN.VALUE = logical(1))]
+  cluster_atom_ids <- unlist(utils::head(chosen_cluster, n=1))
+  return(cluster_atom_ids)
+}
+
