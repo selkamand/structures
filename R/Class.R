@@ -266,7 +266,12 @@ Molecule3D <- S7::new_class(
       ))
     }
 
-    if(!is.numeric(self@bonds$bond_id)) {return(sprintf("@bonds data.frame bond_id column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))}
+    bond_ids <- self@bonds$bond_id
+    if(!is.numeric(bond_ids)) {return(sprintf("@bonds data.frame bond_id column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))}
+    if(anyNA(bond_ids)) return(sprintf("@bonds column 'bond_id' must NOT contain any missing values. Found: [%d]", sum(is.na(bond_ids))))
+    if(any(bond_ids < 1)) return(sprintf("@bonds column 'bond_id' must NOT contain any values < 1. Problematic values found: [%s]", toString(unique(bond_ids[bond_ids < 1]))))
+    if(any(duplicated(bond_ids))) return(sprintf("@bonds column 'bond_id' can NOT contain duplicates. Duplicates found: [%s]", toString(bond_ids[duplicated(bond_ids)])))
+    if(!is.numeric(bond_ids)) {return(sprintf("@bonds data.frame 'bond_id' column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))}
 
     ## ---- Validate Atom Columns ----
     required_atom_cols <- c("eleno", "elena", "element", "x", "y", "z")
@@ -308,6 +313,10 @@ Molecule3D <- S7::new_class(
     NULL
   }
 )
+
+
+# Constructor helpers -----------------------------------------------------
+
 
 #' Create a Minimal Atoms Data Frame
 #'
@@ -440,6 +449,8 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
 # Non Generic Methods ---------------------------------------------------
 
 
+## Modifying Atoms ---------------------------------------------------------
+
 #' Delete atoms from molecule
 #'
 #' Removes atoms from molecule by atom_id (eleno).
@@ -496,6 +507,53 @@ filter_atoms <- function(x, eleno){
 }
 
 
+
+## Fetch -------------------------------------------------------------------
+
+#' Fetch atom Cartesian coordinates
+#'
+#' Returns the 3D position(s) of one or more atoms by \code{eleno}.
+#'
+#' @param x A \code{Molecule3D} object.
+#' @param eleno Character or numeric vector of atom IDs (matching \code{x@atoms$eleno}).
+#' @param careful Logical. If \code{TRUE} (default), validates \code{x} and that all
+#'   \code{eleno} exist; otherwise missing IDs yield \code{NA} coordinates.
+#'
+#' @return If a single \code{eleno} is supplied, a named numeric vector
+#'   \code{c(x, y, z)}. If multiple, a matrix with columns \code{x}, \code{y}, \code{z}
+#'   and row names equal to the requested \code{eleno}.
+#'
+#' @examples
+#' # Read Data
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Single atom position
+#' # fetch_atom_position(molecule, "1")
+#'
+#' # Multiple atoms (rows named by eleno)
+#' # fetch_atom_position(molecule, c(1, 2, 3))
+#'
+#' @seealso \code{\link{compute_distance_between_atoms}}
+#' @export
+fetch_atom_position <- function(x, eleno, careful=TRUE){
+  if(careful){
+    assertions::assert_class(x, "structures::Molecule3D")
+    if(!all(eleno %in% x@atom_ids)) stop("atom ID (eleno) [", eleno, "] could not be found in molecule")
+  }
+  mx_positions <- x@atom_positions
+  idx <- match(eleno, rownames(mx_positions))
+  positions <- mx_positions[idx, ,drop=TRUE]
+
+  if(length(eleno) > 1){
+    rownames(positions) <- eleno
+  }
+
+  return(positions)
+}
+
+
+
 #' Fetch atom identifiers by name
 #'
 #' @param x a Molecule3D object
@@ -532,6 +590,96 @@ fetch_eleno_by_element <- function(x, element){
   unique(unlist(x@atoms[x@atoms$element %in% element, "eleno", drop=FALSE]))
 }
 
+#' Fetch all atoms on one side of a bond
+#'
+#' Given a bond ID and a "direction" atom on that bond, returns the set of atom
+#' IDs (\code{eleno}) that remain connected to the \emph{direction} atom after
+#' virtually breaking the bond (i.e., removing the other endpoint atom). This is
+#' useful for identifying the substructure that would rotate or translate when
+#' treating the chosen bond as a rotatable hinge.
+#'
+#' @param molecule A \code{Molecule3D} object.
+#' @param bond_id Numeric bond identifier (must exist in \code{molecule@bond_ids}).
+#' @param direction_atom_id Numeric atom ID (\code{eleno}) that is one endpoint of
+#'   \code{bond_id}. The returned cluster is the connected component containing
+#'   this atom after the opposite endpoint is removed.
+#'
+#' @details
+#' The algorithm:
+#' \enumerate{
+#'   \item Validates that \code{bond_id} exists and locates its two endpoint atom IDs.
+#'   \item Checks that \code{direction_atom_id} is one of the endpoints; otherwise
+#'         an error is thrown.
+#'   \item Removes the \emph{other} endpoint atom from the molecule via
+#'         \code{\link{remove_atoms}} (this simulates breaking the bond).
+#'   \item Uses the molecule's \code{@connectivity} property (list of connected
+#'         components, as numeric \code{eleno} vectors) to select the component
+#'         that contains \code{direction_atom_id}.
+#' }
+#'
+#' If no disconnection occurs (i.e., only one connected component remains),
+#' the function errors with \code{"All points remain connected."}
+#'
+#' @return A numeric vector of atom IDs (\code{eleno}) forming the downstream
+#'   connected component that includes \code{direction_atom_id}.
+#'
+#' @note The \code{@connectivity} property relies on \pkg{igraph} (via an
+#'   internal conversion to an igraph and \code{igraph::components()}).
+#'
+#' @seealso \code{\link{remove_atoms}}, \code{\link{compute_distance_between_atoms}}
+#'
+#' @examples
+#' m <- read_mol2(system.file("fe_tripod.mol2", package="structures"))
+#' # Suppose bond 4 connects atoms 10 and 12, and we want the side attached to atom 10:
+#' ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 16, direction_atom_id = 20)
+#' ids
+#'
+#' @export
+fetch_eleno_downstream_of_bond <- function(molecule, bond_id, direction_atom_id){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  assertions::assert_includes(molecule@bond_ids, required = bond_id)
+
+  connected_atom_ids <- fetch_eleno_connected_by_bond(molecule, bond_id = bond_id)
+  if(!direction_atom_id %in% connected_atom_ids) stop(sprintf("direction atom id: [%s] is not connected by bond id [%s]. Valid atom IDs are: [%s]", direction_atom_id, bond_id, toString(connected_atom_ids)))
+
+  other_atom_id <- setdiff(connected_atom_ids, direction_atom_id)
+  molecule_broken <- remove_atoms(molecule, other_atom_id)
+  clusters <- molecule_broken@connectivity
+
+  if(length(clusters) == 1) stop("All points remain connected.")
+
+  chosen_cluster <- clusters[vapply(clusters, FUN = function(ids){ direction_atom_id %in% ids }, FUN.VALUE = logical(1))]
+  cluster_atom_ids <- unname(unlist(utils::head(chosen_cluster, n=1)))
+  return(cluster_atom_ids)
+}
+
+#' Fetch the two atoms connected by a bond
+#'
+#' Returns the numeric atom IDs (\code{eleno}) of the two atoms joined by a given
+#' bond in a \code{Molecule3D} object. This is a convenience helper to quickly
+#' inspect bond connectivity or to use as input for other geometric operations.
+#'
+#' @param molecule A \code{Molecule3D} object.
+#' @param bond_id Numeric bond identifier (must exist in \code{molecule@bond_ids}).
+#'
+#' @return A numeric vector of length 2 giving the \code{origin_atom_id} and
+#'   \code{target_atom_id} for the specified bond.
+#'
+#' @seealso \code{\link{fetch_eleno_downstream_of_bond}}, \code{\link{add_bonds}}
+#'
+#' @examples
+#' m <- read_mol2(system.file("fe_tripod.mol2", package="structures"))
+#' fetch_eleno_connected_by_bond(m, bond_id = 16)
+#'
+#' @export
+fetch_eleno_connected_by_bond <- function(molecule, bond_id){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  unname(unlist(molecule@bonds[molecule@bonds$bond_id %in% bond_id, c("origin_atom_id", "target_atom_id")]))
+}
+
+
+
+## Transformations ---------------------------------------------------------
 #' Apply arbitratry 3D transformations to molecule3D objects
 #'
 #' Applies a user-supplied transformation function to atoms in a Molecule3D object.
@@ -619,48 +767,6 @@ compute_distance_between_atoms <- function(x, eleno1, eleno2){
   pos1 = fetch_atom_position(x, eleno1, careful = FALSE)
   pos2 = fetch_atom_position(x, eleno2, careful = FALSE)
   sqrt(sum((pos2-pos1)^2))
-}
-
-#' Fetch atom Cartesian coordinates
-#'
-#' Returns the 3D position(s) of one or more atoms by \code{eleno}.
-#'
-#' @param x A \code{Molecule3D} object.
-#' @param eleno Character or numeric vector of atom IDs (matching \code{x@atoms$eleno}).
-#' @param careful Logical. If \code{TRUE} (default), validates \code{x} and that all
-#'   \code{eleno} exist; otherwise missing IDs yield \code{NA} coordinates.
-#'
-#' @return If a single \code{eleno} is supplied, a named numeric vector
-#'   \code{c(x, y, z)}. If multiple, a matrix with columns \code{x}, \code{y}, \code{z}
-#'   and row names equal to the requested \code{eleno}.
-#'
-#' @examples
-#' # Read Data
-#' path <- system.file(package = "structures", "benzene.mol2")
-#' molecule <- read_mol2(path)
-#'
-#' # Single atom position
-#' # fetch_atom_position(molecule, "1")
-#'
-#' # Multiple atoms (rows named by eleno)
-#' # fetch_atom_position(molecule, c(1, 2, 3))
-#'
-#' @seealso \code{\link{compute_distance_between_atoms}}
-#' @export
-fetch_atom_position <- function(x, eleno, careful=TRUE){
-  if(careful){
-    assertions::assert_class(x, "structures::Molecule3D")
-    if(!all(eleno %in% x@atom_ids)) stop("atom ID (eleno) [", eleno, "] could not be found in molecule")
-  }
-  mx_positions <- x@atom_positions
-  idx <- match(eleno, rownames(mx_positions))
-  positions <- mx_positions[idx, ,drop=TRUE]
-
-  if(length(eleno) > 1){
-    rownames(positions) <- eleno
-  }
-
-  return(positions)
 }
 
 #' Set the molecule anchor by position
@@ -772,6 +878,9 @@ translate_molecule_by_vector <- function(x, vector){
   transform_molecule(x = x, transformation = function(original) { original + vector})
 }
 
+
+
+## Operators (Adding and subtracting molecules)---------------------------------------------------------------
 
 #' Combine two Molecule3D objects
 #'
@@ -1013,68 +1122,4 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
   return(combined)
 }
 
-#' Fetch downstream atoms for a directed bond break
-#'
-#' Given a bond ID and a "direction" atom on that bond, returns the set of atom
-#' IDs (\code{eleno}) that remain connected to the \emph{direction} atom after
-#' virtually breaking the bond (i.e., removing the other endpoint atom). This is
-#' useful for identifying the substructure that would rotate or translate when
-#' treating the chosen bond as a rotatable hinge.
-#'
-#' @param molecule A \code{Molecule3D} object.
-#' @param bond_id Numeric bond identifier (must exist in \code{molecule@bond_ids}).
-#' @param direction_atom_id Numeric atom ID (\code{eleno}) that is one endpoint of
-#'   \code{bond_id}. The returned cluster is the connected component containing
-#'   this atom after the opposite endpoint is removed.
-#'
-#' @details
-#' The algorithm:
-#' \enumerate{
-#'   \item Validates that \code{bond_id} exists and locates its two endpoint atom IDs.
-#'   \item Checks that \code{direction_atom_id} is one of the endpoints; otherwise
-#'         an error is thrown.
-#'   \item Removes the \emph{other} endpoint atom from the molecule via
-#'         \code{\link{remove_atoms}} (this simulates breaking the bond).
-#'   \item Uses the molecule's \code{@connectivity} property (list of connected
-#'         components, as numeric \code{eleno} vectors) to select the component
-#'         that contains \code{direction_atom_id}.
-#' }
-#'
-#' If no disconnection occurs (i.e., only one connected component remains),
-#' the function errors with \code{"All points remain connected."}
-#'
-#' @return A numeric vector of atom IDs (\code{eleno}) forming the downstream
-#'   connected component that includes \code{direction_atom_id}.
-#'
-#' @note The \code{@connectivity} property relies on \pkg{igraph} (via an
-#'   internal conversion to an igraph and \code{igraph::components()}).
-#'
-#' @seealso \code{\link{remove_atoms}}, \code{\link{compute_distance_between_atoms}}
-#'
-#' @examples
-#' \dontrun{
-#' m <- structures::read_mol2(system.file("benzene.mol2", package="structures"))
-#' # Suppose bond 7 connects atoms 10 and 12, and we want the side attached to atom 10:
-#' ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 7, direction_atom_id = 10)
-#' ids
-#' }
-#'
-#' @export
-fetch_eleno_downstream_of_bond <- function(molecule, bond_id, direction_atom_id){
-
-  assertions::assert_includes(molecule@bond_ids, required = bond_id)
-
-  df_bonds <- molecule@bonds
-  df_bond_of_interest <- utils::head(df_bonds[df_bonds[["bond_id"]] == bond_id,,drop=FALSE], n=1)
-  connected_atom_ids <- c(df_bond_of_interest$origin_atom_id, df_bond_of_interest$target_atom_id)
-  if(!direction_atom_id %in% connected_atom_ids) stop(sprintf("direction atom id: [%s] is not connected by bond id [%s]. Valid atom IDs are: [%s]", direction_atom_id, bond_id, toString(connected_atom_ids)))
-
-  other_atom_id <- setdiff(connected_atom_ids, direction_atom_id)
-  molecule_broken <- remove_atoms(molecule, other_atom_id)
-  clusters <- molecule_broken@connectivity
-  if(length(clusters) == 1) stop("All points remain connected.")
-  chosen_cluster <- clusters[vapply(clusters, FUN = function(ids){ direction_atom_id %in% ids }, FUN.VALUE = logical(1))]
-  cluster_atom_ids <- unlist(utils::head(chosen_cluster, n=1))
-  return(cluster_atom_ids)
-}
 

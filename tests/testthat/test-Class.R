@@ -900,3 +900,74 @@ testthat::test_that("Return includes the direction atom and is numeric", {
 
 
 
+# Test eleno connected by class -------------------------------------------
+
+test_that("fetch_eleno_connected_by_bond returns the two endpoints in order", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, 1, 2),
+    y = c(0, 0, 0),
+    z = c(0, 0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = c(10, 11),
+    origin_atom_id = c(1, 2),
+    target_atom_id = c(2, 3),
+    bond_type = c("1", "2")
+  )
+  m <- Molecule3D(name = "test", atoms = atoms, bonds = bonds)
+
+  expect_equal(fetch_eleno_connected_by_bond(m, 10), c(1, 2))
+  expect_equal(fetch_eleno_connected_by_bond(m, 11), c(2, 3))
+})
+
+test_that("fetch_eleno_connected_by_bond accepts bond_id as character too", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = 10,
+    origin_atom_id = 1,
+    target_atom_id = 2,
+    bond_type = "1"
+  )
+  m <- Molecule3D(name = "test", atoms = atoms, bonds = bonds)
+
+  # `%in%` will coerce types, so this should still work
+  expect_equal(fetch_eleno_connected_by_bond(m, "10"), c(1, 2))
+})
+
+test_that("fetch_eleno_connected_by_bond returns numeric(0) for missing bond_id", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = 10,
+    origin_atom_id = 1,
+    target_atom_id = 2,
+    bond_type = "1"
+  )
+  m <- Molecule3D(name = "test", atoms = atoms, bonds = bonds)
+
+  res <- fetch_eleno_connected_by_bond(m, 99)
+  expect_identical(res, numeric(0))
+})
+
+test_that("fetch_eleno_connected_by_bond enforces Molecule3D class", {
+  expect_error(
+    fetch_eleno_connected_by_bond(list(), 10),
+    regexp = "structures::Molecule3D"
+  )
+})
+
+
+

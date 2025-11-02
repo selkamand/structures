@@ -2,7 +2,7 @@
 % Please edit documentation in R/Class.R
 \name{fetch_eleno_downstream_of_bond}
 \alias{fetch_eleno_downstream_of_bond}
-\title{Fetch downstream atoms for a directed bond break}
+\title{Fetch all atoms on one side of a bond}
 \usage{
 fetch_eleno_downstream_of_bond(molecule, bond_id, direction_atom_id)
 }
@@ -47,12 +47,10 @@ The \code{@connectivity} property relies on \pkg{igraph} (via an
 internal conversion to an igraph and \code{igraph::components()}).
 }
 \examples{
-\dontrun{
-m <- structures::read_mol2(system.file("benzene.mol2", package="structures"))
-# Suppose bond 7 connects atoms 10 and 12, and we want the side attached to atom 10:
-ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 7, direction_atom_id = 10)
+m <- read_mol2(system.file("fe_tripod.mol2", package="structures"))
+# Suppose bond 4 connects atoms 10 and 12, and we want the side attached to atom 10:
+ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 16, direction_atom_id = 20)
 ids
-}
 
 }
 \seealso{
