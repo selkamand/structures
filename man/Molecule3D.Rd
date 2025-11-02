@@ -115,14 +115,14 @@ update the anchor to keep it consistent with the new coordinate frame.
 
 # Direct creation + anchor operations
 atoms <- data.frame(
-  eleno = c("1","2"),
+  eleno = c(1, 2),
   elena = c("C","O"),
   x = c(0, 1.2), y = c(0, 0.1), z = c(0, -0.2)
 )
 bonds <- data.frame(
-  bond_id = "b1",
-  origin_atom_id = "1",
-  target_atom_id = "2"
+  bond_id = 1,
+  origin_atom_id = 1,
+  target_atom_id = 2
 )
 m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
 m <- set_anchor_by_atom(m, "1")
