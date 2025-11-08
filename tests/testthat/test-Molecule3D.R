@@ -329,7 +329,7 @@ test_that("combine_molecules preserves non-tabular columns and adds sources", {
   expect_setequal(unique(cmb@bonds$source), c("A", "B"))
 
   # anchor and name preserved from m1
-  expect_equal(cmb@anchor, c(1,1,1))
+  expect_equal(cmb@anchor, c(x=1,y=1,z=1))
   expect_equal(cmb@name, "A")
 
   # maximum_* derived from combined tables
@@ -494,7 +494,7 @@ test_that("combine_molecules works when both molecules have no bonds", {
   expect_setequal(unique(cmb@atoms$source), c("A", "B"))
 
   # Anchor/name preserved from m1
-  expect_equal(cmb@anchor, c(1,1,1))
+  expect_equal(cmb@anchor, c(x=1,y=1,z=1))
   expect_equal(cmb@name, "A")
 })
 
@@ -602,6 +602,120 @@ test_that("center translates by the same vector as the molecule", {
   delta <- target - mol3@anchor
   mol3 <- translate_molecule_to_position(mol3, target)
   expect_equal(mol3@center, c0 + delta, tolerance = 1e-12)
+})
+
+
+# Test Anchor Defaults-------------------------------------------------------------
+
+test_that("constructor defaults anchor to atom center when anchor is NULL", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 10),
+    elena = c("C", "O", "H"),
+    x = c(0, 2, 4),
+    y = c(-1, 1, 3),
+    z = c(10, 12, 14)
+  )
+  bonds <- data.frame(
+    bond_id = 1,
+    origin_atom_id = 1,
+    target_atom_id = 2,
+    bond_type = "1"
+  )
+
+  m <- Molecule3D(name = "test", atoms = atoms, bonds = bonds, anchor = NULL)
+
+  expected <- c(
+    x = mean(atoms$x, na.rm = TRUE),
+    y = mean(atoms$y, na.rm = TRUE),
+    z = mean(atoms$z, na.rm = TRUE)
+  )
+
+  expect_equal(m@anchor, expected)
+})
+
+test_that("constructor anchor falls back to 0,0,0 when atoms are empty", {
+  m <- Molecule3D(name = "empty", atoms = minimal_atoms(), bonds = minimal_bonds(), anchor = NULL)
+  expect_equal(m@anchor, c(x=0, y=0, z=0))
+})
+
+test_that("explicit anchor is respected (no override)", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(100, 200),
+    y = c(0, 0),
+    z = c(-5, 5)
+  )
+
+  a <- c(x=1, y=2, z=3)
+  m <- Molecule3D(name = "explicit", atoms = atoms, bonds = minimal_bonds(), anchor = a)
+  expect_equal(m@anchor, a)
+})
+
+test_that("transform_molecule preserves original atom and bond IDs (non-contiguous) and moves anchor", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 5, 8),           # non-contiguous IDs
+    elena = c("C", "O", "H", "H"),
+    x = c(0, 1, 2, 3),
+    y = c(0, 0, 0, 0),
+    z = c(0, 0, 0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = c(10, 20),
+    origin_atom_id = c(1, 5),
+    target_atom_id = c(2, 8),
+    bond_type = c("1", "1")
+  )
+
+  m <- Molecule3D(name = "ids", atoms = atoms, bonds = bonds, anchor = NULL)
+
+  # Save IDs and current anchor
+  atom_ids_before <- m@atom_ids
+  bond_ids_before <- m@bond_ids
+  anchor_before <- m@anchor
+
+  # Simple translation
+  shift <- c(10, -2, 7)
+  tfn <- function(p) c(x = p["x"] + shift[1], y = p["y"] + shift[2], z = p["z"] + shift[3])
+
+  m2 <- transform_molecule(m, tfn)
+
+  # IDs unchanged
+  expect_equal(sort(m2@atom_ids), sort(atom_ids_before))
+  expect_equal(sort(m2@bond_ids), sort(bond_ids_before))
+
+  # browser()
+  # Anchor moved consistently
+  expect_equal(m2@anchor, anchor_before + shift)
+})
+
+test_that("anchor defaulting uses z coordinate (regression guard)", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 0),
+    y = c(0, 0),
+    z = c(5, 7)
+  )
+  m <- Molecule3D(name = "reg", atoms = atoms, bonds = minimal_bonds(), anchor = NULL)
+  # If z is mistakenly computed from y, this would be 0 instead of 6
+  expect_equal(m@anchor, c(x=0, y=0, z=6))
+})
+
+test_that("anchor default handles NA coordinates by ignoring them (if any present)", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, NA, 2),
+    y = c(NA, 4, 6),
+    z = c(1, 3, NA)
+  )
+  # When NA present and na.rm=TRUE, means are computed from available values
+  m <- Molecule3D(name = "na", atoms = atoms, bonds = minimal_bonds(), anchor = NULL)
+  expect_equal(
+    m@anchor,
+    c(x=mean(c(0, 2), na.rm = TRUE), y=mean(c(4, 6), na.rm = TRUE), z=mean(c(1, 3), na.rm = TRUE))
+  )
 })
 
 

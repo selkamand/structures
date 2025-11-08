@@ -44,8 +44,10 @@
 #' @param misc A list containing any additional metadata (e.g., provenance,
 #'   notes, or debug information). Stored without modification.
 #'
-#' @param anchor Numeric length-3 vector \code{c(x, y, z)} specifying the molecule’s
-#'   reference point (default \code{c(0,0,0)}). Used by translation helpers
+#' @param anchor Numeric length-3 vector c(x, y, z) specifying the molecule’s
+#'   reference point. If NULL (default), it is set to the geometric center of
+#'   all atoms at construction time; if no atoms are present it falls back to
+#'   c(0, 0, 0). Used by translation helpers
 #'   (e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
 #'   \code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
 #'   to this point. Typically set to an atom’s coordinates via
@@ -137,7 +139,25 @@ Molecule3D <- S7::new_class(
     atoms = S7::class_data.frame,
     bonds = S7::class_data.frame,
     misc  = S7::class_list,
-    anchor = S7::class_numeric,
+    anchor = S7::new_property(
+      S7::class_numeric,
+      setter = function(self, value){
+
+        # If anchor vector has x, y, and z names sort vector in xyz order
+        current_names <- names(value)
+        if(all(c("x", "y", "z") %in% current_names)) {
+          value <- value[c("x", "y", "z")]
+        }
+        # Otherwise set the names to x,y,z
+        else{
+          names(value) <- c("x", "y", "z")[seq_along(value)]
+        }
+
+        # Set anchor and return self
+        self@anchor <- value
+        return(self)
+      }
+    ),
 
     ## COMPUTED PROPERTIES
     # List all atom ids (eleno) described by atoms data.frame
@@ -213,9 +233,9 @@ Molecule3D <- S7::new_class(
     center = S7::new_property(class = S7::class_numeric, getter = function(self){
       mx_positions <- self@atom_positions
       center <- c(
-        x = mean(mx_positions[,1]),
-        y = mean(mx_positions[,2]),
-        z=  mean(mx_positions[,3])
+        x = mean(mx_positions[,1], na.rm = TRUE),
+        y = mean(mx_positions[,2], na.rm = TRUE),
+        z=  mean(mx_positions[,3], na.rm = TRUE)
       )
       return(center)
     }),
@@ -324,13 +344,25 @@ Molecule3D <- S7::new_class(
 
 
   # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_axes = list(), misc = list(), anchor = c(0, 0, 0)) {
+  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_axes = list(), misc = list(), anchor = NULL) {
 
     # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
     bonds <- format_bonds(bonds)
 
     # Fix column types (and add 'element' column if not present)
     atoms <- format_atoms(atoms)
+
+    # If anchor is NULL, default to the geometric center of atoms (or 0,0,0 if empty)
+    if(is.null(anchor)){
+      if(nrow(atoms) > 0){
+        center_x <- mean(atoms$x, na.rm = TRUE)
+        center_y <- mean(atoms$y, na.rm = TRUE)
+        center_z <- mean(atoms$z, na.rm = TRUE)
+        anchor <- c(center_x, center_y, center_z)
+      }
+      else
+        anchor <- c(0, 0, 0)
+    }
 
     # Return the S7 object
     S7::new_object(

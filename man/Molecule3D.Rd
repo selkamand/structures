@@ -10,7 +10,7 @@ Molecule3D(
   bonds = minimal_bonds(),
   symmetry_axes = list(),
   misc = list(),
-  anchor = c(0, 0, 0)
+  anchor = NULL
 )
 }
 \arguments{
@@ -55,8 +55,10 @@ symmetry axes have been annotated yet.}
 \item{misc}{A list containing any additional metadata (e.g., provenance,
 notes, or debug information). Stored without modification.}
 
-\item{anchor}{Numeric length-3 vector \code{c(x, y, z)} specifying the molecule’s
-reference point (default \code{c(0,0,0)}). Used by translation helpers
+\item{anchor}{Numeric length-3 vector c(x, y, z) specifying the molecule’s
+reference point. If NULL (default), it is set to the geometric center of
+all atoms at construction time; if no atoms are present it falls back to
+c(0, 0, 0). Used by translation helpers
 (e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
 \code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
 to this point. Typically set to an atom’s coordinates via
