@@ -5,7 +5,7 @@ Authors@R:
     c(
     person("Sam", "El-Kamand", , "selkamand@ccia.org.au", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/0000-0003-2270-8088")),
-    person("Matthew", "Wallis", , , role = c("aut", "cre"),
+    person("Matthew", "Wallis", , , role = c("aut"),
            comment = c(ORCID = "https://orcid.org/0009-0004-8113-9342"))
    )
 Description: Provides object-oriented classes and utilities for representing, 
