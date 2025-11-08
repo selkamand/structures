@@ -1181,9 +1181,8 @@ test_that("add_symmetry_axis rejects wrong classes", {
 })
 
 
-# IDs ---------------------------------------------------------------------
-# tests/testthat/test-symmetry-axis-ids.R
 
+# Test Symmetry Axes IDs ---------------------------------------------------------------------
 test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
   ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
   ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
@@ -1320,6 +1319,104 @@ test_that("transform_molecule keeps the symmetry axis IDs intact", {
   expect_identical(names(m2@symmetry_axes), ids_before)
 })
 
+
+
+# Test Symmetry Axes Dataframe --------------------------------------------
+
+test_that("symmetry_axes_dataframe returns zero-row df with expected columns when no axes", {
+  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
+  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list())
+
+  df <- m@symmetry_axes_dataframe
+
+  expect_true(is.data.frame(df))
+  expect_equal(nrow(df), 0L)
+  expect_identical(
+    names(df),
+    c("id", "label", "Cn", "x", "y", "z", "xend", "yend", "zend")
+  )
+})
+
+test_that("symmetry_axes_dataframe returns one row with correct values and id", {
+  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
+  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+
+  ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "axis-A")
+  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list("5" = ax))
+
+  df <- m@symmetry_axes_dataframe
+
+  expect_equal(nrow(df), 1L)
+  expect_identical(df$id, "5")
+  expect_identical(df$label, "axis-A")
+  expect_identical(as.integer(df$Cn), 3L)
+  expect_equal(unname(c(df$x, df$y, df$z)), c(0,0,0))
+  expect_equal(unname(c(df$xend, df$yend, df$zend)), c(0,0,1))
+})
+
+test_that("symmetry_axes_dataframe preserves order and IDs for multiple axes", {
+  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
+  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1), label = "B")
+  ax3 <- SymAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1), label = "C")
+
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_axes = list("10" = ax1, "20" = ax2, "30" = ax3)
+  )
+
+  df <- m@symmetry_axes_dataframe
+
+  expect_equal(nrow(df), 3L)
+  expect_identical(df$id, c("10","20","30"))
+  expect_identical(df$label, c("A","B","C"))
+  expect_identical(as.integer(df$Cn), c(2L, 3L, 4L))
+  expect_equal(df$x, c(0,1,2))
+  expect_equal(df$xend, c(0,1,2))
+})
+
+test_that("symmetry_axes_dataframe updates after transform_molecule and preserves IDs", {
+  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
+  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(1,0,0), label = "A")
+  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list("7" = ax))
+
+  # Translate by (+1, +2, +3)
+  translate <- function(p, dx=0, dy=0, dz=0) {
+    c(x = p["x"] + dx, y = p["y"] + dy, z = p["z"] + dz)
+  }
+  m2 <- transform_molecule(m, translate, dx = 1, dy = 2, dz = 3)
+
+  # Dataframe should reflect transformed axis endpoints; id unchanged
+  df <- m2@symmetry_axes_dataframe
+  expect_equal(df$id, "7")
+  expect_equal(unname(c(df$x, df$y, df$z)), c(1,2,3))
+  expect_equal(unname(c(df$xend, df$yend, df$zend)), c(2,2,3))
+})
+
+test_that("symmetry_axes_dataframe cooperates with add_symmetry_axis auto-ID generation", {
+  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
+  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
+  ax2 <- SymAxis(Cn = 3L, posA = c(0,1,0), posB = c(0,1,1), label = "B")
+
+  m <- add_symmetry_axis(m, ax1)
+  m <- add_symmetry_axis(m, ax2)
+
+  df <- m@symmetry_axes_dataframe
+
+  # IDs should be distinct, non-empty, and match names(m@symmetry_axes)
+  expect_false(any(duplicated(df$id)))
+  expect_true(all(nzchar(df$id)))
+  expect_identical(df$id, names(m@symmetry_axes))
+})
 
 
 # Test Print Generic ------------------------------------------------------

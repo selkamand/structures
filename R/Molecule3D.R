@@ -95,6 +95,11 @@
 #'   \item \strong{symmetry_axes} — list of [`structures::SymAxis`] objects
 #'   \item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
 #'   \item \strong{contains_symmetry_axes} — logical (read-only)
+#'   \item \strong{symmetry_axes_dataframe} — data frame (read-only) with one row per
+#'   symmetry axis. Columns: \code{id} (character; the axis ID = list name),
+#'   \code{label} (character), \code{Cn} (integer-like), \code{x,y,z} (numeric; start
+#'   point), \code{xend,yend,zend} (numeric; end point). Returns a zero-row data frame
+#'   with the same columns when no axes are present.
 #' }
 #'
 #' @examples
@@ -117,6 +122,7 @@
 #'                 symmetry_axes = list(ax), anchor = c(0,0,0))
 #' m@symmetry_axes_orders
 #' m@contains_symmetry_axes
+#' m@symmetry_axes_dataframe
 #'
 #' @seealso
 #' [structures::read_mol2()],
@@ -246,6 +252,41 @@ Molecule3D <- S7::new_class(
           toString(unique(ids[duplicated(ids)]))
         ))
       }
+    ),
+
+    # Get All Symmetry axes as a dataframe
+    symmetry_axes_dataframe = S7::new_property(
+      class = S7::class_data.frame,
+      getter = function(self) {
+        axes <- self@symmetry_axes
+
+        # Empty: return a zero-row df with stable column types
+        if (length(axes) == 0L) {
+          return(data.frame(
+            id    = character(0),
+            label = character(0),
+            Cn    = integer(0),
+            x     = numeric(0),
+            y     = numeric(0),
+            z     = numeric(0),
+            xend  = numeric(0),
+            yend  = numeric(0),
+            zend  = numeric(0),
+            stringsAsFactors = FALSE
+          ))
+        }
+
+        dfs <- lapply(axes, as.data.frame)  # one row per SymAxis
+        df  <- do.call(rbind, dfs)
+        df$id <- names(axes)
+
+        # Clean and stabilize column order
+        rownames(df) <- NULL
+        df <- df[, c("id", "label", "Cn", "x", "y", "z", "xend", "yend", "zend")]
+
+        return(df)
+      },
+      setter = function(self, value){stop("@symmetry_axes_dataframe is a read only property")}
     ),
 
     # Fetch unique list of symmetry axis orders

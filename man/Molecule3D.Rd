@@ -73,6 +73,11 @@ An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 \item \strong{symmetry_axes} — list of \code{\link{SymAxis}} objects
 \item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
 \item \strong{contains_symmetry_axes} — logical (read-only)
+\item \strong{symmetry_axes_dataframe} — data frame (read-only) with one row per
+symmetry axis. Columns: \code{id} (character; the axis ID = list name),
+\code{label} (character), \code{Cn} (integer-like), \code{x,y,z} (numeric; start
+point), \code{xend,yend,zend} (numeric; end point). Returns a zero-row data frame
+with the same columns when no axes are present.
 }
 }
 \description{
@@ -131,6 +136,7 @@ m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds,
                 symmetry_axes = list(ax), anchor = c(0,0,0))
 m@symmetry_axes_orders
 m@contains_symmetry_axes
+m@symmetry_axes_dataframe
 
 }
 \seealso{
