@@ -58,8 +58,7 @@ SymAxis <- S7::new_class(
 
         if (!is_integerlike(value))
           return(sprintf("SymAxis fold symmetry (Cn) must be a whole number, not [%g]", value))
-
-      }
+      },
     ),
     posA = S7::new_property(
       class = S7::class_numeric,
@@ -73,6 +72,11 @@ SymAxis <- S7::new_class(
           )
         if (any(!is.finite(value)) || any(is.na(value)))
           return("posA must contain only finite, non-NA values.")
+      },
+      setter = function(self, value){
+        names(value) <- c("x", "y", "z")[seq_along(value)]
+        S7::prop(self, "posA") <- value
+        return(self)
       }
     ),
     posB = S7::new_property(
@@ -87,6 +91,11 @@ SymAxis <- S7::new_class(
           )
         if (any(!is.finite(value)) || any(is.na(value)))
           return("posB must contain only finite, non-NA values.")
+      },
+      setter = function(self, value){
+        names(value) <- c("x", "y", "z")[seq_along(value)]
+        S7::prop(self, "posB") <- value
+        return(self)
       }
     )
   ),
@@ -133,3 +142,72 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5){
   if (anyNA(x) || any(!is.finite(x))) return(FALSE)
   all(abs(x - round(x)) <= tol)
 }
+
+
+
+# Non-Generic Methods -----------------------------------------------------
+
+#' Apply a 3D transformation to a SymAxis
+#'
+#' @description
+#' Applies a user-supplied transformation function to the two endpoints (`posA`, `posB`)
+#' that define a [`SymAxis`] line in 3D. This is useful for translating, rotating, or
+#' otherwise mapping the axis to a new position/orientation in space. The symmetry order
+#' `Cn` is left unchanged.
+#'
+#' @param x A [`structures::SymAxis`] object.
+#' @param transformation A function that takes a length-3 coordinate and returns a
+#'   transformed length-3 coordinate. The input will be passed as a named numeric
+#'   vector `c(x=..., y=..., z=...)`. The function must return either:
+#'   - a named numeric vector with names `x`, `y`, `z`, or
+#'   - a list with elements `x`, `y`, `z` coercible to numeric.
+#' @param ... Additional arguments forwarded to `transformation`.
+#'
+#' @return The same `SymAxis` object `x` with updated `posA` and `posB`.
+#'
+#' @details
+#' The transformation is applied independently to `posA` and `posB`. No attempt is made
+#' to renormalize or reorder points; the function simply replaces both endpoints with
+#' their transformed coordinates. It is the caller's responsibility to ensure the
+#' transformation preserves distinct endpoints and yields finite numeric results.
+#'
+#' @examples
+#' # Define an axis along +Z through the origin
+#' ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+#'
+#' # 1) Translate by (+1, +2, +3)
+#' translate <- function(p, dx=0, dy=0, dz=0) {
+#'   c(x = p["x"] + dx, y = p["y"] + dy, z = p["z"] + dz)
+#' }
+#' ax_t <- transform_symmetry_axis(ax, translate, dx = 1, dy = 2, dz = 3)
+#'
+#' # 2) Rotate around Z by 90 degrees about the origin
+#' rotate_z <- function(p, theta) {
+#'   c(x =  cos(theta)*p["x"] - sin(theta)*p["y"],
+#'     y =  sin(theta)*p["x"] + cos(theta)*p["y"],
+#'     z =  p["z"])
+#' }
+#' ax_r <- transform_symmetry_axis(ax, rotate_z, theta = pi/2)
+#'
+#' # 3) A transform that returns a list is also accepted
+#' as_list <- function(p) list(x = p["x"] + 1, y = p["y"], z = p["z"])
+#' ax_l <- transform_symmetry_axis(ax, as_list)
+#'
+transform_symmetry_axis <- function(x, transformation, ...){
+  assertions::assert_class(x, "structures::SymAxis")
+  assertions::assert_function(transformation)
+
+  posA <- x@posA
+  posB <- x@posB
+
+  posAnew <- transformation(posA, ...)
+  posBnew <- transformation(posB, ...)
+
+  posAnew <- if(is.list(posAnew)) unlist(posAnew) else posAnew
+  posBnew <- if(is.list(posBnew)) unlist(posBnew) else posBnew
+
+  new_axis <- S7::set_props(x, posA=posAnew, posB = posBnew)
+
+  return(new_axis)
+}
+

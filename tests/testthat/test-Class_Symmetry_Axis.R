@@ -1,3 +1,7 @@
+
+# SymAxis Class Tests -----------------------------------------------------
+
+
 test_that("SymAxis constructs with integer Cn", {
   ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
   expect_s3_class(ax, "structures::SymAxis")
@@ -47,6 +51,7 @@ test_that("Cn must be length 1, finite, and >= 1", {
 test_that("posA / posB length and finiteness validated", {
   expect_error(SymAxis(Cn = 2L, posA = c(0,0), posB = c(0,0,1)),
                "posA.*length 3", ignore.case = TRUE)
+
   expect_error(Symaxis <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0)),
                "posB.*length 3", ignore.case = TRUE)
   expect_error(SymAxis(Cn = 2L, posA = c(NA,0,0), posB = c(0,0,1)),
@@ -78,4 +83,63 @@ test_that("setter works when assigning after construction", {
   expect_identical(ax@Cn, 6L)
   # reject decimal
   expect_error({ ax@Cn <- 2.5 }, "must be a whole number", ignore.case = TRUE)
+})
+
+
+# SymAxis Transformation Tests -----------------------------------------------------
+test_that("translation transform updates endpoints and preserves Cn", {
+  ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+
+  translate <- function(p, dx=0, dy=0, dz=0) {
+    unname(c(p["x"] + dx, p["y"] + dy, p["z"] + dz))
+  }
+
+  ax2 <- transform_symmetry_axis(ax, translate, dx = 1, dy = 2, dz = 3)
+
+  expect_s3_class(ax2, "structures::SymAxis")
+  expect_identical(ax2@Cn, 3L)                 # Cn unchanged
+  expect_equal(unname(ax2@posA), c(1,2,3), tolerance = 1e-12)
+  expect_equal(unname(ax2@posB), c(1,2,4), tolerance = 1e-12)
+})
+
+test_that("rotation around Z by 90 deg moves X-axis endpoints as expected", {
+  # Start with an axis along +X: from (1,0,0) to (2,0,0)
+  ax <- SymAxis(Cn = 2L, posA = c(1,0,0), posB = c(2,0,0))
+
+  rotate_z <- function(p, theta) {
+    c(x =  cos(theta)*p["x"] - sin(theta)*p["y"],
+      y =  sin(theta)*p["x"] + cos(theta)*p["y"],
+      z =  p["z"])
+  }
+
+  axr <- transform_symmetry_axis(ax, rotate_z, theta = pi/2)
+
+  expect_identical(axr@Cn, 2L)
+  expect_equal(unname(axr@posA), c(0,1,0), tolerance = 1e-12)
+  expect_equal(unname(axr@posB), c(0,2,0), tolerance = 1e-12)
+})
+
+test_that("transformation returning a list is accepted", {
+  ax <- SymAxis(Cn = 4L, posA = c(0,0,0), posB = c(1,1,1))
+
+  as_list <- function(p) list(x = p["x"] + 1, y = p["y"], z = p["z"])
+  ax2 <- transform_symmetry_axis(ax, as_list)
+
+  expect_identical(ax2@Cn, 4L)
+  expect_equal(unname(ax2@posA), c(1,0,0), tolerance = 1e-12)
+  expect_equal(unname(ax2@posB), c(2,1,1), tolerance = 1e-12)
+})
+
+test_that("bad transformation outputs error: unnamed, missing fields, or non-finite", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+
+  # Missing 'z'
+  missing_z <- function(p) c(x = p["x"], y = p["y"])
+  expect_error(transform_symmetry_axis(ax, missing_z),
+               "must be a numeric vector of length 3")
+
+  # Non-finite
+  nonfinite <- function(p) c(x = NA_real_, y = p["y"], z = p["z"])
+  expect_error(transform_symmetry_axis(ax, nonfinite),
+               "finite")
 })
