@@ -151,19 +151,17 @@ package using:
 
 ``` r
 citation("structures")
-#> Warning in citation("structures"): could not determine year for 'structures'
-#> from package DESCRIPTION file
 #> To cite package 'structures' in publications use:
 #> 
-#>   El-Kamand S (????). _structures: What the Package Does (One Line,
-#>   Title Case)_. R package version 0.0.0.9000,
+#>   El-Kamand S, Wallis M (????). _structures: Classes and Tools for 3D
+#>   Molecular Structures and Symmetry_. R package version 0.0.0.9000,
 #>   <https://github.com/selkamand/structures>.
 #> 
 #> A BibTeX entry for LaTeX users is
 #> 
 #>   @Manual{,
-#>     title = {structures: What the Package Does (One Line, Title Case)},
-#>     author = {Sam El-Kamand},
+#>     title = {structures: Classes and Tools for 3D Molecular Structures and Symmetry},
+#>     author = {Sam El-Kamand and Matthew Wallis},
 #>     note = {R package version 0.0.0.9000},
 #>     url = {https://github.com/selkamand/structures},
 #>   }

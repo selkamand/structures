@@ -119,6 +119,6 @@ fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
 
 If you use **structures** in research or publications, please cite the package using:
 
-```{r}
+```{r warning=FALSE}
 citation("structures")
 ```
