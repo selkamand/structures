@@ -211,6 +211,17 @@ Molecule3D <- S7::new_class(
       return(center)
     }),
 
+    # Symmetry axes
+    symmetry_axes = S7::new_property(
+      class = S7::class_list,
+      validator = function(value){
+        if(length(value) == 0) return(NULL)
+        for (axis in value){
+
+        }
+      }
+    ),
+
     # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
     # Requires igraph
     connectivity = S7::new_property(
@@ -227,7 +238,7 @@ Molecule3D <- S7::new_class(
 
 
   # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(),  misc = list(), anchor = c(0, 0, 0)) {
+  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_axes = list(), misc = list(), anchor = c(0, 0, 0)) {
 
     # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
     bonds <- format_bonds(bonds)
@@ -242,6 +253,7 @@ Molecule3D <- S7::new_class(
       atoms = atoms,
       bonds = bonds,
       misc = misc,
+      symmetry_axes = symmetry_axes,
       anchor = anchor
     )
   },
