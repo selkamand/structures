@@ -684,7 +684,6 @@ test_that("transform_molecule preserves original atom and bond IDs (non-contiguo
   expect_equal(sort(m2@atom_ids), sort(atom_ids_before))
   expect_equal(sort(m2@bond_ids), sort(bond_ids_before))
 
-  # browser()
   # Anchor moved consistently
   expect_equal(m2@anchor, anchor_before + shift)
 })
