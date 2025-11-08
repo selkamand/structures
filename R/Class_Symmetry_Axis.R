@@ -28,16 +28,6 @@
 #' # Coercion to integer for Cn if passed as numeric
 #' SymAxis(Cn = 4, posA = c(0, 1, 0), posB = c(0, 2, 0))
 #'
-#' # \dontrun{
-#' # Fails: posA and posB must be length-3
-#' SymAxis(Cn = 2L, posA = c(0, 0), posB = c(0, 0, 1))
-#'
-#' # Fails: posA and posB must be distinct
-#' SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 0))
-#'
-#' # Fails: Cn must be >= 1
-#' SymAxis(Cn = 0L, posA = c(0, 0, 0), posB = c(0, 0, 1))
-#' # }
 #'
 #' @export
 SymAxis <- S7::new_class(
