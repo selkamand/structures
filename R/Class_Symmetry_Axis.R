@@ -147,6 +147,24 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5){
 
 # Non-Generic Methods -----------------------------------------------------
 
+#' Check if an object is a SymAxis
+#'
+#' Tests whether an object inherits from the [`structures::SymAxis`] class.
+#'
+#' @param x An object to test.
+#'
+#' @return A logical scalar: `TRUE` if `x` is a `SymAxis`, otherwise `FALSE`.
+#'
+#' @examples
+#' ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+#' is_symmetry_axis(ax)
+#' is_symmetry_axis("not_an_axis")
+#'
+#' @export
+is_symmetry_axis <- function(x){
+  inherits(x, "structures::SymAxis")
+}
+
 #' Apply a 3D transformation to a SymAxis
 #'
 #' @description
