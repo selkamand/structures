@@ -1,19 +1,25 @@
 #' SymAxis: a simple S7 class for a rotational symmetry axis (C_n)
 #'
 #' @description
-#' Represents a proper rotation axis in molecular/solid-state symmetry.
-#' The axis is specified by two points in 3D space (`posA`, `posB`) and an
+#' Represents a proper rotation axis in molecular or solid-state symmetry.
+#' The axis is defined by two points in 3D space (`posA`, `posB`) and an
 #' integer fold/order `Cn` (e.g., 1, 2, 3, 4, ...).
 #'
 #' @details
 #' - `Cn` is the **order (fold)** of the axis, i.e. rotation by `360/Cn` degrees.
 #' - `posA` and `posB` are two distinct points (length-3 numeric vectors) that define
-#'   the axis direction in the order x, y, z.
-#' - This class does not normalize or store a direction vector; it stores the points as given.
+#'   the axis direction in Cartesian coordinates (x, y, z).
+#' - The class stores both endpoints as supplied and does not normalize or store a
+#'   direction vector explicitly.
+#' - A human-readable `label` can be assigned to identify or describe the axis.
+#'   This label is optional but useful when managing multiple symmetry axes within
+#'   a molecule.
 #'
 #' @param Cn Numeric (length 1). The axis fold/order (must be \eqn{\ge} 1).
-#' @param posA Numeric (length 3). A point on the axis: c(x, y, z).
-#' @param posB Numeric (length 3). A different point on the axis: c(x, y, z).
+#' @param posA Numeric (length 3). A point on the axis: `c(x, y, z)`.
+#' @param posB Numeric (length 3). A different point on the axis: `c(x, y, z)`.
+#' @param label Character scalar. An optional user-defined name or description
+#'   for the symmetry axis.
 #'
 #' @return An S7 object of class `SymAxis`.
 #'
@@ -22,17 +28,28 @@
 #' ax <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 #' print(ax)
 #'
+#' # You can also add a label for clarity
+#' SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "principal_z")
+#'
 #' # C1 is allowed (the trivial/identity axis)
 #' SymAxis(Cn = 1L, posA = c(1, 0, 0), posB = c(1, 0, 2))
 #'
 #' # Coercion to integer for Cn if passed as numeric
 #' SymAxis(Cn = 4, posA = c(0, 1, 0), posB = c(0, 2, 0))
 #'
-#'
 #' @export
 SymAxis <- S7::new_class(
   name = "SymAxis",
   properties = list(
+    label = S7::new_property(
+      class = S7::class_character,
+      validator = function(value){
+        if (length(value) != 1) return(sprintf("Symmetry axis label must be a string, not a character vector of length [%s]", length(value)))
+        if(is.na(value)) return("Symmetry axis label must NOT be a missing (NA) value")
+        if(nchar(value) == 0) return("Symmetry axis label must NOT be an empty string")
+      }
+
+    ),
     Cn = S7::new_property(
       class = S7::class_numeric,
       setter = function(self, value){
@@ -99,14 +116,15 @@ SymAxis <- S7::new_class(
       }
     )
   ),
-  constructor = function(Cn, posA, posB) {
+  constructor = function(Cn, posA, posB, label = "unnamed") {
 
     # Return the S7 object of the correct class
     S7::new_object(
       S7::S7_object(),
       Cn   = Cn,
       posA = posA,
-      posB = posB
+      posB = posB,
+      label = label
     )
   },
 
@@ -128,13 +146,15 @@ S7::method(print, SymAxis) <- function(x, ...) {
     "===================\n",
     "Symmetry Axis\n",
     "===================\n",
-    sprintf("Fold Symmetry (Cn): C%g\n", x@Cn),
+    sprintf("Fold Symmetry / Order (Cn): C%g\n", x@Cn),
     sprintf("PosA: %s\n", toString(x@posA)),
     sprintf("PosB: %s\n", toString(x@posB)),
+    sprintf("Label: %s\n", toString(x@label)),
     sep = ""
   )
   return(invisible(x))
 }
+
 
 
 # Helpers -----------------------------------------------------------------

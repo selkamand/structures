@@ -68,6 +68,112 @@ elena_to_element <- function(elena){
 }
 
 
+
+# --- ID utilities -------------------------------------------------------------
+
+# Safely extract names as character (may be NULL)
+axis_ids <- function(x) {
+  ids <- names(x)
+  if (is.null(ids)) return(rep("", length(x)))
+  as.character(ids)
+}
+
+# Parse numeric part of IDs (non-numeric -> NA)
+numeric_ids <- function(ids) {
+  suppressWarnings(as.numeric(ids))
+}
+
+# Next numeric ID given existing IDs (numeric portion only)
+next_axis_numeric_id <- function(existing_ids) {
+  nums <- numeric_ids(existing_ids)
+  max_num <- max(c(nums, 0), na.rm = TRUE)
+  max_num + 1L
+}
+
+# Produce k fresh numeric IDs that don't collide with any existing names
+fresh_numeric_ids <- function(k, existing_ids) {
+  start <- next_axis_numeric_id(existing_ids)
+  candidates <- as.character(seq(from = start, length.out = k))
+  # Protect against rare collisions with string IDs identical to numbers
+  while (any(candidates %in% existing_ids)) {
+    start <- as.integer(max(as.numeric(candidates), na.rm = TRUE)) + 1L
+    candidates <- as.character(seq(from = start, length.out = k))
+  }
+  candidates
+}
+
+# --- Validation ---------------------------------------------------------------
+
+ensure_axes_are_symaxis <- function(value) {
+  if (length(value) == 0L) return(invisible(TRUE))
+  for (axis in value) {
+    if (!is_symmetry_axis(axis)) {
+      stop(sprintf(
+        "All symmetry_axes must be `structures::SymAxis`. Invalid: [%s]",
+        toString(class(axis))
+      ), call. = FALSE)
+    }
+  }
+  invisible(TRUE)
+}
+
+validate_symmetry_axes_list <- function(value) {
+  # Class check
+  ensure_axes_are_symaxis(value)
+
+  # Names: exist, non-empty, unique
+  ids <- names(value)
+  if (is.null(ids)) {
+    stop("symmetry_axes must be a named list with unique IDs.", call. = FALSE)
+  }
+  if (any(!nzchar(ids))) {
+    stop(sprintf("Found %d empty symmetry axis IDs.", sum(!nzchar(ids))), call. = FALSE)
+  }
+  if (any(duplicated(ids))) {
+    dupes <- unique(ids[duplicated(ids)])
+    stop(sprintf("Duplicate symmetry axis IDs: %s", toString(dupes)), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# --- Normalisation (auto-name + uniqueness) ----------------------------------
+
+# Normalize a symmetry_axes list:
+#  - ensure all elements are SymAxis
+#  - ensure names exist
+#  - fill any empty names with fresh numeric IDs that don't collide
+normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
+  if (!is.list(value)) stop("symmetry_axes must be a list.", call. = FALSE)
+  ensure_axes_are_symaxis(value)
+
+  ids <- axis_ids(value)
+
+  # If all unnamed, assign "1","2",...
+  if (all(!nzchar(ids))) {
+    ids <- as.character(seq_along(value))
+  } else {
+    # Fill empty slots with fresh numeric IDs avoiding collisions with
+    # both provided non-empty IDs and any external 'existing_ids'
+    blanks <- !nzchar(ids)
+    if (any(blanks)) {
+      # Collisions to avoid:
+      forbid <- c(existing_ids, ids[!blanks])
+      ids[blanks] <- fresh_numeric_ids(sum(blanks), forbid)
+    }
+  }
+
+  # Final uniqueness check (should be fine, but be strict)
+  if (any(duplicated(ids))) {
+    dupes <- unique(ids[duplicated(ids)])
+    stop(sprintf("Duplicate symmetry axis IDs after normalisation: %s",
+                 toString(dupes)), call. = FALSE)
+  }
+
+  names(value) <- ids
+  value
+}
+
+
 # Exported ----------------------------------------------------------------
 
 

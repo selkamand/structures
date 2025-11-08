@@ -1181,6 +1181,147 @@ test_that("add_symmetry_axis rejects wrong classes", {
 })
 
 
+# IDs ---------------------------------------------------------------------
+# tests/testthat/test-symmetry-axis-ids.R
+
+test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- Molecule3D(
+    name = "X",
+    atoms = minimal_atoms(),
+    bonds = minimal_bonds(),
+    symmetry_axes = list(ax1, ax2)  # both unnamed
+  )
+
+  expect_true(m@contains_symmetry_axes)
+  expect_identical(names(m@symmetry_axes), c("1","2"))
+})
+
+test_that("partially named symmetry_axes: blanks are filled with fresh numeric IDs", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax3 <- SymAxis(Cn = 3L, posA = c(2,0,0), posB = c(2,0,1))
+
+  lst <- list(ax1, ax2, ax3)
+  names(lst) <- c("A", "", "")  # assign blanks post-creation
+
+  m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_axes = lst)
+
+  ids <- names(m@symmetry_axes)
+  expect_length(ids, 3L)
+  expect_true(all(nzchar(ids)))
+  expect_true("A" %in% ids)
+  expect_true(all(grepl("^[0-9]+$", setdiff(ids, "A"))))
+  expect_length(unique(ids), 3L)
+})
+
+test_that("pre-existing numeric IDs cause fresh IDs to start at max(existing)+1", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax3 <- SymAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1))
+
+  lst <- list(ax1, ax2, ax3)
+  names(lst) <- c("2", "", "")  # keep "2", leave two blanks
+
+  m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_axes = lst)
+
+  ids <- names(m@symmetry_axes)
+  expect_setequal(ids, c("2","3","4"))
+})
+
+test_that("setting symmetry_axes with duplicate IDs errors (validator)", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
+
+  m@symmetry_axes <- list("1" = ax1)
+  expect_error(
+    { m@symmetry_axes <- list("1" = ax1, "1" = ax2) },
+    regexp = "unique|duplicate|ID|identifier",
+    ignore.case = TRUE
+  )
+})
+
+test_that("add_symmetry_axis appends with next numeric ID when none exist", {
+  m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+
+  m <- add_symmetry_axis(m, ax)
+  expect_identical(names(m@symmetry_axes), "1")
+
+  m <- add_symmetry_axis(m, ax)
+  expect_identical(names(m@symmetry_axes), c("1","2"))
+})
+
+test_that("add_symmetry_axis uses max numeric among existing IDs, ignoring non-numeric names", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+
+  m <- Molecule3D(
+    name = "X",
+    atoms = minimal_atoms(),
+    bonds = minimal_bonds(),
+    symmetry_axes = list("foo" = ax, "7" = ax)
+  )
+
+  m <- add_symmetry_axis(m, ax)
+  ids <- names(m@symmetry_axes)
+
+  expect_true("8" %in% ids)          # next after 7
+  expect_true(all(nzchar(ids)))
+  expect_length(unique(ids), length(ids))
+})
+
+test_that("add_symmetry_axis starts at '1' if all existing IDs are non-numeric", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+
+  m <- Molecule3D(
+    name = "X",
+    atoms = minimal_atoms(),
+    bonds = minimal_bonds(),
+    symmetry_axes = list("alpha" = ax, "beta" = ax)
+  )
+
+  m <- add_symmetry_axis(m, ax)
+  expect_true("1" %in% names(m@symmetry_axes))
+})
+
+test_that("replacing symmetry_axes preserves uniqueness and non-emptiness of IDs", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
+
+  m@symmetry_axes <- list(ax, ax, ax)
+  expect_setequal(names(m@symmetry_axes), c("1","2","3"))
+
+  m@symmetry_axes <- list(ax, ax)
+  names(m@symmetry_axes) <- c("X", "")  # assign one blank post-creation
+  ids <- names(m@symmetry_axes)
+  expect_true(all(nzchar(ids)))
+  expect_length(unique(ids), 2L)
+})
+
+test_that("transform_molecule keeps the symmetry axis IDs intact", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- Molecule3D(
+    name = "X",
+    atoms = data.frame(eleno = 1, elena = "C", x = 0, y = 0, z = 0),
+    bonds = minimal_bonds(),
+    symmetry_axes = list("a" = ax1, "2" = ax2)
+  )
+
+  ids_before <- names(m@symmetry_axes)
+  trans <- function(p) c(x = p["x"] + 1, y = p["y"] + 2, z = p["z"] + 3)
+  m2 <- transform_molecule(m, trans)
+
+  expect_identical(names(m2@symmetry_axes), ids_before)
+})
+
+
+
 # Test Print Generic ------------------------------------------------------
 
 
@@ -1483,5 +1624,34 @@ test_that("transform_molecule() surfaces errors from malformed transformation re
 })
 
 
+test_that("transform_molecule preserves original symmetry axis IDs even when non-contiguous or non-numeric", {
+  # Build three axes
+  axA <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  axB <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  axC <- SymAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1))
+
+  # Name them with sparse, mixed IDs
+  axes <- list(axA, axB, axC)
+  names(axes) <- c("axis-99", "5", "foo")
+
+  # Minimal molecule (one atom, no bonds) with those axes
+  atoms <- data.frame(eleno = 1, elena = "C", x = 0, y = 0, z = 0)
+  m <- Molecule3D(name = "X", atoms = atoms, bonds = minimal_bonds(), symmetry_axes = axes)
+
+  ids_before <- names(m@symmetry_axes)
+
+  # Simple translation so we know a transform occurred
+  trans <- function(p) c(x = p["x"] + 1, y = p["y"] + 2, z = p["z"] + 3)
+
+  m2 <- transform_molecule(m, trans)
+
+  # IDs should be identical (order and values)
+  expect_identical(names(m2@symmetry_axes), ids_before)
+
+  # Sanity check: positions actually changed for one axis, but ID stayed the same
+  before_posA <- m@symmetry_axes[["axis-99"]]@posA
+  after_posA  <- m2@symmetry_axes[["axis-99"]]@posA
+  expect_equal(after_posA, before_posA + c(1,2,3))
+})
 
 

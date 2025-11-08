@@ -217,6 +217,14 @@ Molecule3D <- S7::new_class(
     # Symmetry axes
     symmetry_axes = S7::new_property(
       class = S7::class_list,
+      setter = function(self, value){
+        # Make IDs stable and valid; avoid collisions with any current IDs
+        current_ids <- names(self@symmetry_axes) %||% character()
+        value <- normalize_symmetry_axes_list(value, existing_ids = current_ids)
+
+        S7::prop(self, "symmetry_axes") <- value
+        return(self)
+      },
       validator = function(value){
 
         # An empty list is a perfectly valid value
@@ -225,8 +233,18 @@ Molecule3D <- S7::new_class(
         # Check all values are of class SymAxis
         for (axis in value){
           if(!is_symmetry_axis(axis))
-            return(sprintf("symmetry_axes must only include elements of class `structures::SymAxis`. Invalid Class: [%s]", toString(class(axis))))
+            return(sprintf("Symmetry axes must only include elements of class `structures::SymAxis`. Invalid Class: [%s]", toString(class(axis))))
         }
+
+        # Check all list entries are named with a unique ID
+        ids = names(value)
+        if(is.null(ids)) return("Symmetry axes must all have a unique ID (name in the @symmetry_axes list)")
+        if(any(!nzchar(ids))) return(sprintf("Symmetry axes must all have a unique identifer (name in the @symmetry_axes list). Found %d with no ID", sum(!nzchar(ids))))
+        if(any(duplicated(ids))) return(sprintf(
+          "Symmetry axes must all have a unique identifer (name in the @symmetry_axes list). Found %d duplicates: %s",
+          sum(duplicated(ids)),
+          toString(unique(ids[duplicated(ids)]))
+        ))
       }
     ),
 
@@ -586,7 +604,7 @@ filter_atoms <- function(x, eleno){
 #'
 #' @description
 #' Adds a single [`structures::SymAxis`] object to the \code{@symmetry_axes} list
-#' of a [`structures::Molecule3D`]. The axis is appended (order preserved).
+#' of a [`structures::Molecule3D`]. The axis is appended (order preserved) and given a unique ID.
 #'
 #' @param molecule A [`structures::Molecule3D`] object.
 #' @param symmetry_axis A [`structures::SymAxis`] object to append.
@@ -611,10 +629,15 @@ filter_atoms <- function(x, eleno){
 #'   [fetch_all_symmetry_axes_with_order()], [transform_symmetry_axis()]
 #' @export
 add_symmetry_axis <- function(molecule, symmetry_axis){
-  assertions::assert_class(molecule, class = "structures::Molecule3D")
-  assertions::assert_class(symmetry_axis, class = "structures::SymAxis")
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  assertions::assert_class(symmetry_axis, "structures::SymAxis")
 
-  molecule@symmetry_axes <- c(molecule@symmetry_axes, list(symmetry_axis))
+  existing_ids <- names(molecule@symmetry_axes) %||% character()
+  new_id <- fresh_numeric_ids(1L, existing_ids)
+  append_list <- list(symmetry_axis)
+  names(append_list) <- new_id
+
+  molecule@symmetry_axes <- c(molecule@symmetry_axes, append_list)
   return(molecule)
 }
 
@@ -830,6 +853,13 @@ fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
   return(axes_with_order)
 }
 
+# fetch_symmetry_axis_by_id <- function(molecule, id){
+#   if(!molecule@contains_symmetry_axes) return(NULL)
+#   axes <- molecule@symmetry_axes
+#   axis_names <- names(axes)
+#   if(!name %in% axis_names)
+# }
+
 ## Transformations ---------------------------------------------------------
 #' Apply arbitratry 3D transformations to molecule3D objects
 #'
@@ -876,10 +906,12 @@ transform_molecule <- function(x, transformation, ...){
   x@anchor <- transformation(x@anchor, ...)
 
   # Also apply transformation to all symmetry axes to
-  # preserve their relative position to the rest of the molecule
+  # preserve their relative position to the rest of the molecule.
+  # Note lapply preserves names so our unique axis 'IDs' stay the same!
   new_symmetry_axes <- lapply(x@symmetry_axes, FUN = function(axis){
     transform_symmetry_axis(axis, transformation = transformation, ... = ...)
     })
+
   x@symmetry_axes <- new_symmetry_axes
 
   return(x)

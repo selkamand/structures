@@ -4,29 +4,36 @@
 \alias{SymAxis}
 \title{SymAxis: a simple S7 class for a rotational symmetry axis (C_n)}
 \usage{
-SymAxis(Cn, posA, posB)
+SymAxis(Cn, posA, posB, label = "unnamed")
 }
 \arguments{
 \item{Cn}{Numeric (length 1). The axis fold/order (must be \eqn{\ge} 1).}
 
-\item{posA}{Numeric (length 3). A point on the axis: c(x, y, z).}
+\item{posA}{Numeric (length 3). A point on the axis: \code{c(x, y, z)}.}
 
-\item{posB}{Numeric (length 3). A different point on the axis: c(x, y, z).}
+\item{posB}{Numeric (length 3). A different point on the axis: \code{c(x, y, z)}.}
+
+\item{label}{Character scalar. An optional user-defined name or description
+for the symmetry axis.}
 }
 \value{
 An S7 object of class \code{SymAxis}.
 }
 \description{
-Represents a proper rotation axis in molecular/solid-state symmetry.
-The axis is specified by two points in 3D space (\code{posA}, \code{posB}) and an
+Represents a proper rotation axis in molecular or solid-state symmetry.
+The axis is defined by two points in 3D space (\code{posA}, \code{posB}) and an
 integer fold/order \code{Cn} (e.g., 1, 2, 3, 4, ...).
 }
 \details{
 \itemize{
 \item \code{Cn} is the \strong{order (fold)} of the axis, i.e. rotation by \code{360/Cn} degrees.
 \item \code{posA} and \code{posB} are two distinct points (length-3 numeric vectors) that define
-the axis direction in the order x, y, z.
-\item This class does not normalize or store a direction vector; it stores the points as given.
+the axis direction in Cartesian coordinates (x, y, z).
+\item The class stores both endpoints as supplied and does not normalize or store a
+direction vector explicitly.
+\item A human-readable \code{label} can be assigned to identify or describe the axis.
+This label is optional but useful when managing multiple symmetry axes within
+a molecule.
 }
 }
 \examples{
@@ -34,11 +41,13 @@ the axis direction in the order x, y, z.
 ax <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 print(ax)
 
+# You can also add a label for clarity
+SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "principal_z")
+
 # C1 is allowed (the trivial/identity axis)
 SymAxis(Cn = 1L, posA = c(1, 0, 0), posB = c(1, 0, 2))
 
 # Coercion to integer for Cn if passed as numeric
 SymAxis(Cn = 4, posA = c(0, 1, 0), posB = c(0, 2, 0))
-
 
 }

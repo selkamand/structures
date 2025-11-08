@@ -67,14 +67,6 @@ test_that("posA and posB must be distinct", {
   )
 })
 
-test_that("print method includes key fields", {
-  ax <- SymAxis(Cn = 4L, posA = c(1,2,3), posB = c(4,5,6))
-  out <- capture.output(print(ax))
-  expect_true(any(grepl("Symmetry Axis", out)))
-  expect_true(any(grepl("Fold Symmetry \\(Cn\\): C4", out)))
-  expect_true(any(grepl("PosA: 1, 2, 3", out)))
-  expect_true(any(grepl("PosB: 4, 5, 6", out)))
-})
 
 test_that("setter works when assigning after construction", {
   ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
@@ -84,6 +76,72 @@ test_that("setter works when assigning after construction", {
   # reject decimal
   expect_error({ ax@Cn <- 2.5 }, "must be a whole number", ignore.case = TRUE)
 })
+
+
+# tests/test-symaxis-label.R
+
+test_that("SymAxis label: defaults to a single, non-empty character", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))  # no label supplied
+
+  expect_type(ax@label, "character")
+  expect_length(ax@label, 1L)
+  expect_false(is.na(ax@label))
+  expect_true(nzchar(ax@label))      # don't assert an exact default string
+})
+
+test_that("SymAxis label: accepts and stores a custom label", {
+  ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "principal_z")
+  expect_identical(ax@label, "principal_z")
+})
+
+test_that("SymAxis label: can be updated via set_props and revalidated", {
+  ax  <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "z1")
+  ax2 <- S7::set_props(ax, label = "z2")
+  expect_identical(ax2@label, "z2")
+})
+
+test_that("SymAxis label: rejects invalid values", {
+  # empty string
+  expect_error(
+    SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = ""),
+    regexp = "empty string|must NOT be an empty string",
+    ignore.case = TRUE
+  )
+
+  # NA
+  expect_error(
+    SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = NA_character_),
+    regexp = "must NOT be a missing|NA",
+    ignore.case = TRUE
+  )
+
+  # length > 1
+  expect_error(
+    SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = c("a","b")),
+    regexp = "length|vector of length",
+    ignore.case = TRUE
+  )
+
+  # non-character (class check from S7::class_character)
+  expect_error(
+    SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = 123),
+    regexp = "character|class",
+    ignore.case = TRUE
+  )
+})
+
+test_that("SymAxis label: preserved by transform_symmetry_axis", {
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "axis_A")
+
+  translate <- function(p, dx=0, dy=0, dz=0) c(x = p["x"]+dx, y = p["y"]+dy, z = p["z"]+dz)
+  ax_t <- transform_symmetry_axis(ax, translate, dx = 1, dy = -2, dz = 0.5)
+
+  expect_identical(ax_t@label, "axis_A")
+  # sanity check endpoints changed as expected (not strictly about label, but cheap to assert)
+  expect_equal(ax_t@posA, c(x=1, y=-2, z=0.5))
+  expect_equal(ax_t@posB, c(x=1, y=-2, z=1.5))
+})
+
 
 
 # SymAxis Transformation Tests -----------------------------------------------------

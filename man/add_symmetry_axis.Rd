@@ -4,7 +4,7 @@
 \alias{add_symmetry_axis}
 \title{Append a symmetry axis to a Molecule3D}
 \usage{
-add_symmetry_axis(molecule, symmetry_axis, label = "Symmetry Axis")
+add_symmetry_axis(molecule, symmetry_axis)
 }
 \arguments{
 \item{molecule}{A \code{\link{Molecule3D}} object.}
@@ -17,7 +17,7 @@ A \code{Molecule3D} object with \code{symmetry_axis} appended to
 }
 \description{
 Adds a single \code{\link{SymAxis}} object to the \code{@symmetry_axes} list
-of a \code{\link{Molecule3D}}. The axis is appended (order preserved).
+of a \code{\link{Molecule3D}}. The axis is appended (order preserved) and given a unique ID.
 }
 \examples{
 atoms <- data.frame(
