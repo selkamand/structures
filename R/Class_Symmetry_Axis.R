@@ -212,6 +212,7 @@ is_symmetry_axis <- function(x){
 #' as_list <- function(p) list(x = p["x"] + 1, y = p["y"], z = p["z"])
 #' ax_l <- transform_symmetry_axis(ax, as_list)
 #'
+#'@export
 transform_symmetry_axis <- function(x, transformation, ...){
   assertions::assert_class(x, "structures::SymAxis")
   assertions::assert_function(transformation)
