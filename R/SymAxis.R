@@ -156,6 +156,26 @@ S7::method(print, SymAxis) <- function(x, ...) {
 }
 
 
+#' @export
+S7::method(as.data.frame, SymAxis) <- function(x, ...) {
+  posA = x@posA
+  posB = x@posB
+  label = x@label
+  Cn = x@Cn
+
+  data.frame(
+    label = label,
+    Cn = Cn,
+    x=posA["x"],
+    y=posA["y"],
+    z=posA["z"],
+    xend=posB["x"],
+    yend=posB["y"],
+    zend=posB["z"],
+    row.names = NULL
+  )
+}
+
 
 # Helpers -----------------------------------------------------------------
 is_integerlike <- function(x, tol = .Machine$double.eps^0.5){

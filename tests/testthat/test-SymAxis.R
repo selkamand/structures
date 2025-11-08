@@ -144,7 +144,7 @@ test_that("SymAxis label: preserved by transform_symmetry_axis", {
 
 
 
-# SymAxis Transformation Tests -----------------------------------------------------
+# Test Transformations Work Sensibly -----------------------------------------------------
 test_that("translation transform updates endpoints and preserves Cn", {
   ax <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
 
@@ -203,7 +203,7 @@ test_that("bad transformation outputs error: unnamed, missing fields, or non-fin
 })
 
 
-# Print Generic ------------------------------------------------------
+# Test Print Generic ------------------------------------------------------
 
 test_that("print.SymAxis runs without error and returns invisible SymAxis", {
   ax <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
@@ -216,3 +216,61 @@ test_that("print.SymAxis runs without error and returns invisible SymAxis", {
   expect_identical(out, ax)
 
 })
+
+
+# Test as.data.frame generic ---------------------------------------------------
+
+test_that("as.data.frame(SymAxis) returns a single-row data.frame with expected columns and types", {
+  ax <- SymAxis(Cn = 3L, posA = c(0, 1, 2), posB = c(3, 4, 5), label = "axis-A")
+  df <- as.data.frame(ax)
+
+  # Structure
+  expect_true(is.data.frame(df))
+  expect_equal(nrow(df), 1L)
+  expect_identical(
+    names(df),
+    c("label", "Cn", "x", "y", "z", "xend", "yend", "zend")
+  )
+
+  # Types
+  expect_type(df$label, "character")
+  # Cn should remain integer-like; the class may be "integer" within a data.frame
+  expect_true(is.integer(df$Cn) || is.numeric(df$Cn))
+
+  # Values
+  expect_identical(df$label, "axis-A")
+  expect_identical(as.integer(df$Cn), 3L)
+  expect_equal(unname(c(df$x, df$y, df$z)), c(0, 1, 2))
+  expect_equal(unname(c(df$xend, df$yend, df$zend)), c(3, 4, 5))
+})
+
+test_that("as.data.frame(SymAxis) respects numeric Cn input via coercion and preserves label", {
+  # Pass Cn as numeric; class constructor coerces to integer
+  ax <- SymAxis(Cn = 4, posA = c(1, 0, 0), posB = c(0, 1, 0), label = "axis-B")
+  df <- as.data.frame(ax)
+
+  expect_identical(df$label, "axis-B")
+  expect_identical(as.integer(df$Cn), 4L)
+  expect_equal(unname(c(df$x, df$y, df$z)), c(1, 0, 0))
+  expect_equal(unname(c(df$xend, df$yend, df$zend)), c(0, 1, 0))
+})
+
+test_that("rbind of multiple as.data.frame(SymAxis) rows preserves labels and values", {
+  ax1 <- SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1), label = "A")
+  ax2 <- SymAxis(Cn = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1), label = "B")
+
+  rows <- lapply(list(ax1, ax2), as.data.frame)
+  df <- do.call(rbind, rows)
+
+  expect_equal(nrow(df), 2L)
+  expect_identical(df$label, c("A", "B"))
+  expect_identical(as.integer(df$Cn), c(2L, 3L))
+
+  expect_equal(df$x,    c(0, 1))
+  expect_equal(df$y,    c(0, 0))
+  expect_equal(df$z,    c(0, 0))
+  expect_equal(df$xend, c(0, 1))
+  expect_equal(df$yend, c(0, 0))
+  expect_equal(df$zend, c(1, 1))
+})
+
