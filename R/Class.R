@@ -877,9 +877,10 @@ transform_molecule <- function(x, transformation, ...){
 
   # Also apply transformation to all symmetry axes to
   # preserve their relative position to the rest of the molecule
-  for (axis in x@symmetry_axes){
-   transform_symmetry_axis(axis, transformation = transformation, ... = ...)
-  }
+  new_symmetry_axes <- lapply(x@symmetry_axes, FUN = function(axis){
+    transform_symmetry_axis(axis, transformation = transformation, ... = ...)
+    })
+  x@symmetry_axes <- new_symmetry_axes
 
   return(x)
 }

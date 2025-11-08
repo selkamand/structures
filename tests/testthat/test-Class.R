@@ -1229,4 +1229,259 @@ test_that("print.Molecule3D works even with symmetry axes present", {
 })
 
 
+# Test Transformations ----------------------------------------------------
+
+# tests/testthat/test-transform_molecule.R
+
+test_that("transform_molecule() translates atoms, anchor, and symmetry axes", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  axis  <- SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_axes = list(axis),
+    anchor = c(0, 0, 0)
+  )
+
+  translate_by_one <- function(p) p + 1
+
+  m2 <- transform_molecule(m, translate_by_one)
+
+  # atoms
+  expected_positions <- m@atoms[, c("x", "y", "z")] + 1
+  expect_equal(m2@atoms[, c("x", "y", "z")], expected_positions)
+
+  # anchor
+  expect_equal(m2@anchor, m@anchor + 1)
+
+  # symmetry axes
+  expect_length(m2@symmetry_axes, 1)
+  ax_new <- m2@symmetry_axes[[1]]
+  expect_equal(ax_new@posA, axis@posA + 1)
+  expect_equal(ax_new@posB, axis@posB + 1)
+  expect_identical(ax_new@Cn, axis@Cn)
+})
+
+test_that("transform_molecule() works when no symmetry axes exist", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+
+  translate_by_one <- function(p) p + 1
+  m2 <- transform_molecule(m, translate_by_one)
+
+  expect_equal(m2@atoms[, c("x", "y", "z")], m@atoms[, c("x", "y", "z")] + 1)
+  expect_false(m2@contains_symmetry_axes)
+})
+
+test_that("transform_molecule() preserves Cn and rotates correctly about Z", {
+  atoms <- data.frame(
+    eleno = 1,
+    elena = "C",
+    x = 1, y = 0, z = 0
+  )
+  bonds <- minimal_bonds()
+  axis  <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+
+  m <- Molecule3D("Rot", atoms = atoms, bonds = bonds,
+                  symmetry_axes = list(axis),
+                  anchor = c(0, 0, 0))
+
+  rotate90_z <- function(p) {
+    a <- pi/2
+    c(
+      x = p[1] * cos(a) - p[2] * sin(a),
+      y = p[1] * sin(a) + p[2] * cos(a),
+      z = p[3]
+    )
+  }
+
+  m2 <- transform_molecule(m, rotate90_z)
+
+  # atom moved (1,0,0) -> (0,1,0)
+  expect_equal(unname(unlist(m2@atoms[1, c("x", "y", "z")])),
+               c(0, 1, 0), tolerance = 1e-8)
+
+  # axis along Z unchanged by rotation about Z
+  expect_equal(m2@symmetry_axes[[1]]@posA, axis@posA, tolerance = 1e-12)
+  expect_equal(m2@symmetry_axes[[1]]@posB, axis@posB, tolerance = 1e-12)
+  expect_equal(m2@symmetry_axes[[1]]@Cn, axis@Cn)
+})
+
+test_that("transform_molecule() handles multiple symmetry axes and preserves orders", {
+  atoms <- data.frame(
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, 1, -1),
+    y = c(0, 0,  0),
+    z = c(0, 0,  0)
+  )
+  bonds <- data.frame(
+    bond_id = c(1, 2),
+    origin_atom_id = c(1, 1),
+    target_atom_id = c(2, 3)
+  )
+  ax1 <- SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2 <- SymAxis(Cn = 3L, posA = c(1, 0, 0), posB = c(1, 1, 0))
+
+  m <- Molecule3D(
+    name = "COH",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_axes = list(ax1, ax2),
+    anchor = c(0, 0, 0)
+  )
+  expect_setequal(m@symmetry_axes_orders, c(2, 3))
+
+  # translation by arbitrary vector
+  v <- c(2, -1, 5)
+  translate_vec <- function(p) p + v
+
+  m2 <- transform_molecule(m, translate_vec)
+
+  # atoms translated
+  expect_equal(m2@atoms[, c("x", "y", "z")], m@atoms[, c("x", "y", "z")] +
+                 matrix(rep(v, each = nrow(m@atoms)), ncol = 3, byrow = FALSE))
+
+  # axes translated
+  expect_equal(m2@symmetry_axes[[1]]@posA, ax1@posA + v)
+  expect_equal(m2@symmetry_axes[[1]]@posB, ax1@posB + v)
+  expect_equal(m2@symmetry_axes[[2]]@posA, ax2@posA + v)
+  expect_equal(m2@symmetry_axes[[2]]@posB, ax2@posB + v)
+
+  # orders unchanged
+  expect_setequal(m2@symmetry_axes_orders, c(2, 3))
+
+  # fetch_all_symmetry_axes_with_order remains coherent after transform
+  c2_axes <- fetch_all_symmetry_axes_with_order(m2, 2)
+  c3_axes <- fetch_all_symmetry_axes_with_order(m2, 3)
+  expect_equal(length(c2_axes), 1)
+  expect_equal(length(c3_axes), 1)
+  expect_true(is_symmetry_axis(c2_axes[[1]]))
+  expect_true(is_symmetry_axis(c3_axes[[1]]))
+})
+
+test_that("transform_molecule() forwards ... arguments to transformation function", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(1, 2),
+    y = c(1, 2),
+    z = c(1, 2)
+  )
+  bonds <- minimal_bonds()
+  ax <- SymAxis(Cn = 2L, posA = c(1, 1, 1), posB = c(2, 2, 2))
+
+  m <- Molecule3D("scale", atoms = atoms, bonds = bonds,
+                  symmetry_axes = list(ax), anchor = c(1, 1, 1))
+
+  # scale by factor passed through ...
+  scale_by <- function(p, k) p * k
+
+  m2 <- transform_molecule(m, scale_by, k = 3)
+
+  # atoms scaled
+  expect_equal(m2@atoms[, c("x", "y", "z")], m@atoms[, c("x", "y", "z")] * 3)
+
+  # anchor scaled
+  expect_equal(m2@anchor, m@anchor * 3)
+
+  # axes scaled
+  expect_equal(m2@symmetry_axes[[1]]@posA, ax@posA * 3)
+  expect_equal(m2@symmetry_axes[[1]]@posB, ax@posB * 3)
+})
+
+test_that("transform_molecule() keeps bond_positions coherent with atoms after transform", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+
+  v <- c(0.5, -2, 7)
+  translate_vec <- function(p) p + v
+  m2 <- transform_molecule(m, translate_vec)
+
+  # recompute (property is read-only getter, so reading it is enough)
+  bp <- m2@bond_positions
+
+  # Expect bond start equals translated atom 1, end equals translated atom 2
+  expect_equal(unname(unlist(bp[1, c("x", "y", "z")])),
+               unname(unlist(m2@atoms[m2@atoms$eleno == 1, c("x", "y", "z")])))
+  expect_equal(unname(unlist(bp[1, c("xend", "yend", "zend")])),
+               unname(unlist(m2@atoms[m2@atoms$eleno == 2, c("x", "y", "z")])))
+})
+
+test_that("transform_molecule() returns a Molecule3D and mutates as expected", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- minimal_bonds()
+  m <- Molecule3D("CO", atoms = atoms, bonds = bonds, anchor = c(0, 0, 0))
+  saved_m_atoms <- m@atoms
+
+  trans <- function(p) p + 2
+  m2 <- transform_molecule(m, trans)
+
+  expect_true(inherits(m2, "structures::Molecule3D"))
+
+  # Ensure transform_molecule returns new Molecule3D object without modifying the original object
+  expect_identical(
+    saved_m_atoms,
+    m@atoms
+  )
+})
+
+test_that("transform_molecule() errors on wrong inputs", {
+  atoms <- data.frame(
+    eleno = 1, elena = "C", x = 0, y = 0, z = 0
+  )
+  m <- Molecule3D("bad", atoms = atoms, bonds = minimal_bonds())
+
+  not_a_function <- 123
+  expect_error(transform_molecule(m, not_a_function))
+
+  # wrong class for x
+  expect_error(transform_molecule(list(), function(p) p))
+})
+
+test_that("transform_molecule() surfaces errors from malformed transformation return values", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  m <- Molecule3D("CO", atoms = atoms, bonds = minimal_bonds(), anchor = c(0, 0, 0))
+  # Return wrong length -> vapply should error
+  bad_transform <- function(p) c(99, 100) # length 2 instead of 3
+  expect_error(transform_molecule(m, bad_transform))
+})
+
+
+
 
