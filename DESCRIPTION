@@ -1,10 +1,20 @@
 Package: structures
-Title: What the Package Does (One Line, Title Case)
+Title: Classes and Tools for 3D Molecular Structures and Symmetry
 Version: 0.0.0.9000
 Authors@R: 
+    c(
     person("Sam", "El-Kamand", , "selkamand@ccia.org.au", role = c("aut", "cre"),
-           comment = c(ORCID = "https://orcid.org/0000-0003-2270-8088"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "https://orcid.org/0000-0003-2270-8088")),
+    person("Matthew", "Wallis", , , role = c("aut", "cre"),
+           comment = c(ORCID = "https://orcid.org/0009-0004-8113-9342"))
+   )
+Description: Provides object-oriented classes and utilities for representing, 
+    manipulating, and analyzing three-dimensional molecular structures. 
+    The core 'Molecule3D' class stores atomic coordinates, bonds, and anchors 
+    for positioning molecules, while the 'SymAxis' class represents proper 
+    rotational symmetry axes (Cₙ). Includes functionality for reading Tripos MOL2 
+    files, geometric transformations, anchor manipulation, and integration with 
+    cheminformatics toolkits for coordinate-based modeling.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
