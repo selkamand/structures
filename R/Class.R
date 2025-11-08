@@ -6,7 +6,7 @@
 #'
 #' Constructs an S7 object representing a single molecule with 3D coordinates.
 #' In most workflows, you will not call this constructor directly — molecule
-#' objects are usually created by parsers such as [structures::read_mol2()]
+#' objects are usually created by parsers such as [structures::read_mol2()].
 #'
 #' @param name Character scalar. Molecule name.
 #'
@@ -45,18 +45,32 @@
 #'   notes, or debug information). Stored without modification.
 #'
 #' @param anchor Numeric length-3 vector \code{c(x, y, z)} specifying the molecule’s
-#'   reference point (default \code{c(0,0,0)}). Used by the translation helpers
+#'   reference point (default \code{c(0,0,0)}). Used by translation helpers
 #'   (e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
 #'   \code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
 #'   to this point. Typically set to an atom’s coordinates via
 #'   \code{\link{set_anchor_by_atom}} or to an arbitrary position via
 #'   \code{\link{set_anchor_by_position}}.
 #'
+#' @param symmetry_axes List of zero or more [`structures::SymAxis`] objects
+#'   describing proper rotation axes embedded in the molecule. Each element must
+#'   satisfy [is_symmetry_axis()]. An empty list is valid and indicates that no
+#'   symmetry axes have been annotated yet.
+#'
 #' @details
 #' During creation, \code{atoms} and \code{bonds} are processed using internal
-#' helper functions (\code{format_atoms()} and \code{format_bonds()}) to ensure
+#' helpers (\code{format_atoms()} and \code{format_bonds()}) to ensure
 #' required columns are present, types are correct, and that all bond endpoints
-#' refer to valid atoms.
+#' refer to valid atoms. If \code{symmetry_axes} is supplied, each element is
+#' validated to be a [`structures::SymAxis`]. The class also exposes derived,
+#' read-only properties related to symmetry:
+#' \itemize{
+#'   \item \code{@symmetry_axes_orders} — unique set of \code{Cn} values present.
+#'   \item \code{@contains_symmetry_axes} — logical flag indicating whether any axes exist.
+#' }
+#' Coordinate transforms applied via \code{\link{transform_molecule}} will also
+#' transform the endpoints of each stored symmetry axis so they remain consistent
+#' with atom coordinates (the axis order \code{Cn} is preserved).
 #'
 #' @section Anchor:
 #' The \emph{anchor} is a persistent reference position stored as a length-3 numeric
@@ -65,43 +79,29 @@
 #' \itemize{
 #'   \item \code{\link{set_anchor_by_position}} — set the anchor to an arbitrary position.
 #'   \item \code{\link{set_anchor_by_atom}} — set the anchor to the coordinates of a given atom (\code{eleno}).
-#'   \item \code{\link{translate_molecule_to_origin}} — translate the molecule so the anchor moves to \code{c(0,0,0)}.
-#'   \item \code{\link{translate_molecule_to_position}} — translate the molecule so the anchor moves to a specified position.
-#'   \item \code{\link{translate_molecule_by_vector}} — translate the molecule by a specified vector.
+#'   \item \code{\link{translate_molecule_to_origin}} — translate so the anchor moves to \code{c(0,0,0)}.
+#'   \item \code{\link{translate_molecule_to_position}} — translate so the anchor moves to a specified position.
+#'   \item \code{\link{translate_molecule_by_vector}} — translate by a specified vector.
 #' }
 #' Functions that transform coordinates (e.g., \code{transform_molecule()}) also
 #' update the anchor to keep it consistent with the new coordinate frame.
 #'
-#'
-#' @return An S7 object of class \code{"Molecule3D"} with the following slots and properties:
+#' @return An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 #' \itemize{
-#'   \item \strong{name} — character scalar, molecule name.
-#'   \item \strong{atoms} — data frame with atom information
-#'         (\code{eleno}, \code{elena}, \code{element}, \code{x}, \code{y}, \code{z}).
-#'   \item \strong{bonds} — data frame with bond information
-#'         (\code{bond_id}, \code{origin_atom_id}, \code{target_atom_id}, \code{bond_type}).
-#'   \item \strong{misc} — list of arbitrary metadata.
-#'   \item \strong{anchor} — numeric vector \code{c(x, y, z)}: the molecule’s reference point.
-#'   \item \strong{atom_ids} — character vector of atom IDs.
-#'   \item \strong{bond_ids} — numeric vector of bond IDs.
-#'   \item \strong{maximum_atom_id} — numeric scalar giving the highest atom ID present.
-#'   \item \strong{maximum_bond_id} — numeric scalar giving the highest bond ID present.
-#'   \item \strong{atom_positions} — numeric matrix of atom coordinates
-#'         (rows = atoms, columns = x/y/z).
-#'   \item \strong{bond_positions} — data frame of bonds with start (\code{x,y,z}),
-#'         end (\code{xend,yend,zend}), and midpoint (\code{x_middle,y_middle,z_middle})
-#'         coordinates for each bond, derived from the atom positions.
-#'   \item \strong{bond_positions_interleaved} — data.frame of bond positions in interleaved format
-#'         (neighbouring rows = start/end points), useful for 3D plotting.
-#'   \item \strong{center} — named numeric vector (\code{c(x, y, z)}) giving the
-#'         geometric center of all atoms.
+#'   \item \strong{name}, \strong{atoms}, \strong{bonds}, \strong{misc}, \strong{anchor}
+#'   \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
+#'   \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
+#'   \item \strong{center}
+#'   \item \strong{symmetry_axes} — list of [`structures::SymAxis`] objects
+#'   \item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
+#'   \item \strong{contains_symmetry_axes} — logical (read-only)
 #' }
 #'
 #' @examples
 #' # Typical use via parser
 #' # mol <- structures::read_mol2("benzene.mol2")
 #'
-#' # Direct creation + anchor operations
+#' # Direct creation, symmetry axes, and anchor operations
 #' atoms <- data.frame(
 #'   eleno = c(1, 2),
 #'   elena = c("C","O"),
@@ -112,14 +112,17 @@
 #'   origin_atom_id = 1,
 #'   target_atom_id = 2
 #' )
-#' m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
-#' m <- set_anchor_by_atom(m, "1")
-#' m <- translate_molecule_to_origin(m) # moves so atom "1" sits at the origin
-#' m@anchor
+#' ax  <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+#' m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds,
+#'                 symmetry_axes = list(ax), anchor = c(0,0,0))
+#' m@symmetry_axes_orders
+#' m@contains_symmetry_axes
 #'
-#' @seealso [structures::read_mol2()], [structures::valid_bond_types()],
-#'   set_anchor_by_position, set_anchor_by_atom,
-#'   translate_molecule_to_origin, translate_molecule_to_position, translate_molecule_by_vector
+#' @seealso
+#' [structures::read_mol2()],
+#' [structures::SymAxis], [is_symmetry_axis()],
+#' [add_symmetry_axis()], [fetch_all_symmetry_axes_with_order()],
+#' [transform_molecule()], [transform_symmetry_axis()]
 #' @export
 Molecule3D <- S7::new_class(
   name = "Molecule3D",
@@ -215,11 +218,35 @@ Molecule3D <- S7::new_class(
     symmetry_axes = S7::new_property(
       class = S7::class_list,
       validator = function(value){
-        if(length(value) == 0) return(NULL)
-        for (axis in value){
 
+        # An empty list is a perfectly valid value
+        if(length(value) == 0) return(NULL)
+
+        # Check all values are of class SymAxis
+        for (axis in value){
+          if(!is_symmetry_axis(axis))
+            return(sprintf("symmetry_axes must only include elements of class `structures::SymAxis`. Invalid Class: [%s]", toString(class(axis))))
         }
       }
+    ),
+
+    # Fetch unique list of symmetry axis orders
+    symmetry_axes_orders = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self){
+        orders <- vapply(X = self@symmetry_axes, FUN = function(x){x@Cn}, FUN.VALUE = numeric(1))
+        unique_orders <-unique(orders)
+        if(length(unique_orders) == 0) return(NULL)
+        return(unique_orders)
+      },
+      setter = function(self, value){stop("@symmetry_axes_orders is a read only property")}
+    ),
+
+    # Boolean: does the atom have any symmetry axes added
+    contains_symmetry_axes = S7::new_property(
+      class = S7::class_logical,
+      getter = function(self){ length(self@symmetry_axes) > 0 },
+      setter = function(self, value){stop("@contains_symmetry_axes is a read only property")}
     ),
 
     # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
@@ -437,11 +464,25 @@ valid_bond_types <- function(){
 
 # Generics ----------------------------------------------------------------
 # print <- S7::new_generic("print", "x")
-S7::method(print, Molecule3D) <- function(x, ...) { cat(
-  sprintf(
-    "===================\nChemical Molecule3D\n===================\nName: %s\nAtoms: %d\nBonds: %d\n\nSee @atoms paramater for atom positions and @bonds paramater for bonds\n",
-    x@name, nrow(x@atoms), nrow(x@bonds))
-)}
+S7::method(print, Molecule3D) <- function(x, ...) {
+  symmetry_orders_string <- if(is.null(x@symmetry_axes_orders)) "" else sprintf("Symmetry Orders (Cn): %s\n", toString(x@symmetry_axes_orders))
+  cat(sep = "",
+  "===================\n",
+  "Chemical Molecule3D\n",
+  "===================\n",
+  sprintf("Name: %s\n", x@name),
+  sprintf("Atoms: %d\n", nrow(x@atoms)),
+  sprintf("Bonds: %d\n", nrow(x@bonds)),
+  sprintf("Symmetry Axes: %d\n", length(x@symmetry_axes)),
+  symmetry_orders_string,
+  "\n-------------------\n",
+  "See @atoms paramater for atom positions\n",
+  "See @bonds paramater for bond positions\n",
+  "See @symmetry_axes for symmetry axes"
+  )
+
+  return(invisible(x))
+}
 
 # as.data.frame <- S7::new_generic("as.data.frame", "x")
 S7::method(as.data.frame, Molecule3D) <- function(x, ...) {
@@ -459,6 +500,28 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
 
 
 # Non Generic Methods ---------------------------------------------------
+
+#' Check if an object is a Molecule3D
+#'
+#' @description
+#' Tests whether an object inherits from the [`structures::Molecule3D`] class.
+#'
+#' @param x An object to test.
+#'
+#' @return A logical scalar: `TRUE` if `x` is a `Molecule3D`, otherwise `FALSE`.
+#'
+#' @examples
+#' atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x=c(0,1), y=c(0,0), z=c(0,0))
+#' bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+#' mol <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+#' is_molecule(mol)
+#' is_molecule(123)
+#'
+#' @export
+is_molecule <- function(x){
+  inherits(x, "structures::Molecule3D")
+}
+
 
 
 ## Modifying Atoms ---------------------------------------------------------
@@ -518,7 +581,42 @@ filter_atoms <- function(x, eleno){
   return(x)
 }
 
+## Adding Symmetry Axes ---------------------------------------------------------
+#' Append a symmetry axis to a Molecule3D
+#'
+#' @description
+#' Adds a single [`structures::SymAxis`] object to the \code{@symmetry_axes} list
+#' of a [`structures::Molecule3D`]. The axis is appended (order preserved).
+#'
+#' @param molecule A [`structures::Molecule3D`] object.
+#' @param symmetry_axis A [`structures::SymAxis`] object to append.
+#'
+#' @return A \code{Molecule3D} object with \code{symmetry_axis} appended to
+#'   \code{@symmetry_axes}.
+#'
+#' @examples
+#' atoms <- data.frame(
+#'   eleno = c(1, 2),
+#'   elena = c("C","O"),
+#'   x = c(0, 1), y = c(0, 0), z = c(0, 0)
+#' )
+#' bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+#' m  <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+#' ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+#' m  <- add_symmetry_axis(m, ax)
+#' length(m@symmetry_axes)  # 1
+#' m@symmetry_axes_orders   # 2
+#'
+#' @seealso [structures::SymAxis], [is_symmetry_axis()],
+#'   [fetch_all_symmetry_axes_with_order()], [transform_symmetry_axis()]
+#' @export
+add_symmetry_axis <- function(molecule, symmetry_axis){
+  assertions::assert_class(molecule, class = "structures::Molecule3D")
+  assertions::assert_class(symmetry_axis, class = "structures::SymAxis")
 
+  molecule@symmetry_axes <- c(molecule@symmetry_axes, list(symmetry_axis))
+  return(molecule)
+}
 
 ## Fetch -------------------------------------------------------------------
 
@@ -689,7 +787,48 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id){
   unname(unlist(molecule@bonds[molecule@bonds$bond_id %in% bond_id, c("origin_atom_id", "target_atom_id")]))
 }
 
-
+#' Fetch all symmetry axes of a given order (Cn)
+#'
+#' @description
+#' Returns all [`structures::SymAxis`] objects stored in a
+#' [`structures::Molecule3D`] whose order \code{Cn} matches the requested value.
+#'
+#' @param molecule A [`structures::Molecule3D`] object.
+#' @param Cn Integer (or integer-like numeric) fold/order to match (e.g., \code{2}, \code{3}, \code{6}).
+#'
+#' @return
+#' \itemize{
+#'   \item \code{NULL} if the molecule contains no symmetry axes.
+#'   \item Otherwise, a \emph{list} of matching [`structures::SymAxis`] objects.
+#'         The list may be empty if no axes have the requested \code{Cn}.
+#' }
+#'
+#' @examples
+#' atoms <- data.frame(
+#'   eleno = c(1, 2),
+#'   elena = c("C","O"),
+#'   x = c(0, 1), y = c(0, 0), z = c(0, 0)
+#' )
+#' bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+#' m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+#'
+#' # Append a few axes
+#' m <- add_symmetry_axis(m, SymAxis(Cn = 2, posA = c(0,0,0), posB = c(0,0,1)))
+#' m <- add_symmetry_axis(m, SymAxis(Cn = 3, posA = c(1,0,0), posB = c(1,0,1)))
+#'
+#' # Fetch by order
+#' fetch_all_symmetry_axes_with_order(m, 2)   # list of C2 axes
+#' fetch_all_symmetry_axes_with_order(m, 5)   # NULL or empty list if none
+#'
+#' @seealso [structures::SymAxis], [add_symmetry_axis()], [is_symmetry_axis()],
+#'   [Molecule3D]
+#' @export
+fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
+  if(!molecule@contains_symmetry_axes) return(NULL)
+  axes <- molecule@symmetry_axes
+  axes_with_order <- Filter(f = function(axis){axis@Cn == Cn}, x = axes)
+  return(axes_with_order)
+}
 
 ## Transformations ---------------------------------------------------------
 #' Apply arbitratry 3D transformations to molecule3D objects
@@ -735,6 +874,12 @@ transform_molecule <- function(x, transformation, ...){
   # Also apply transformation to anchor position to
   # preserve its relative position to the rest of the molecule
   x@anchor <- transformation(x@anchor, ...)
+
+  # Also apply transformation to all symmetry axes to
+  # preserve their relative position to the rest of the molecule
+  for (axis in x@symmetry_axes){
+   transform_symmetry_axis(axis, transformation = transformation, ... = ...)
+  }
 
   return(x)
 }

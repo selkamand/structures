@@ -133,6 +133,7 @@ S7::method(print, SymAxis) <- function(x, ...) {
     sprintf("PosB: %s\n", toString(x@posB)),
     sep = ""
   )
+  return(invisible(x))
 }
 
 

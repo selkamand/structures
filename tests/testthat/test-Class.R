@@ -970,4 +970,263 @@ test_that("fetch_eleno_connected_by_bond enforces Molecule3D class", {
 })
 
 
+# Test is_molecule --------------------------------------------------------
+
+test_that("is_molecule returns TRUE for Molecule3D objects", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = 1,
+    origin_atom_id = 1,
+    target_atom_id = 2
+  )
+
+  mol <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+  expect_true(is_molecule(mol))
+})
+
+test_that("is_molecule returns FALSE for non-molecule inputs", {
+  expect_false(is_molecule(list()))
+  expect_false(is_molecule("not a molecule"))
+  expect_false(is_molecule(1:3))
+
+  # Also FALSE for other structures classes
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  expect_false(is_molecule(ax))
+})
+
+
+
+# Test Symmetry Axes -----------------------------------------------------------
+test_that("Molecule3D initializes with empty symmetry axes", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list())
+
+  expect_false(m@contains_symmetry_axes)
+  expect_null(m@symmetry_axes_orders)
+  expect_equal(length(m@symmetry_axes), 0L)
+})
+
+test_that("add_symmetry_axis appends a valid SymAxis and updates derived properties", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  ax2 <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax3 <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- add_symmetry_axis(m, ax2)
+  expect_true(m@contains_symmetry_axes)
+  expect_equal(length(m@symmetry_axes), 1L)
+  expect_setequal(m@symmetry_axes_orders, 2)
+
+  m <- add_symmetry_axis(m, ax3)
+  expect_equal(length(m@symmetry_axes), 2L)
+  expect_setequal(m@symmetry_axes_orders, c(2, 3))
+})
+
+test_that("fetch_all_symmetry_axes_with_order returns only matching axes", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  ax2a <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2b <- SymAxis(Cn = 2L, posA = c(0,1,0), posB = c(0,1,1))
+  ax3  <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- add_symmetry_axis(m, ax2a)
+  m <- add_symmetry_axis(m, ax2b)
+  m <- add_symmetry_axis(m, ax3)
+
+  only_C2 <- fetch_all_symmetry_axes_with_order(m, 2L)
+  only_C3 <- fetch_all_symmetry_axes_with_order(m, 3L)
+  only_C5 <- fetch_all_symmetry_axes_with_order(m, 5L)
+
+  expect_equal(length(only_C2), 2L)
+  expect_true(all(vapply(only_C2, function(ax) ax@Cn, integer(1)) == 2L))
+
+  expect_equal(length(only_C3), 1L)
+  expect_equal(only_C3[[1]]@Cn, 3L)
+
+  expect_true(is.null(only_C5) || length(only_C5) == 0L)
+})
+
+test_that("constructor rejects non-SymAxis entries in symmetry_axes", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  # symmetry_axes contains an invalid element (numeric 1)
+  expect_error(
+    Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list(1)),
+    "SymAxis|symmetry_axes", ignore.case = TRUE
+  )
+})
+
+test_that("returns NULL when no symmetry axes are present", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list())
+  out <- fetch_all_symmetry_axes_with_order(m, 2L)
+  expect_null(out)
+})
+
+test_that("returns only axes with matching Cn and preserves multiplicity", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  ax2a <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2b <- SymAxis(Cn = 2L, posA = c(0,1,0), posB = c(0,1,1))
+  ax3  <- SymAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+
+  m <- add_symmetry_axis(m, ax2a)
+  m <- add_symmetry_axis(m, ax2b)
+  m <- add_symmetry_axis(m, ax3)
+
+  only_C2 <- fetch_all_symmetry_axes_with_order(m, 2L)
+  only_C3 <- fetch_all_symmetry_axes_with_order(m, 3L)
+
+  expect_equal(length(only_C2), 2L)
+  expect_true(all(vapply(only_C2, function(ax) ax@Cn, integer(1)) == 2L))
+
+  expect_equal(length(only_C3), 1L)
+  expect_identical(only_C3[[1]]@Cn, 3L)
+})
+
+test_that("numeric vs integer Cn inputs behave equivalently", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  m <- add_symmetry_axis(m, SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1)))
+
+  out_int <- fetch_all_symmetry_axes_with_order(m, 2L)
+  out_num <- fetch_all_symmetry_axes_with_order(m, 2)    # double
+  out_num0 <- fetch_all_symmetry_axes_with_order(m, 2.0) # double
+
+  expect_equal(length(out_int), 1L)
+  expect_equal(length(out_num), 1L)
+  expect_equal(length(out_num0), 1L)
+})
+
+test_that("returns empty list (not NULL) when axes exist but none match Cn", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  m <- add_symmetry_axis(m, SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1)))
+
+  out <- fetch_all_symmetry_axes_with_order(m, 2L)
+  expect_true(is.list(out))
+  expect_identical(length(out), 0L)
+})
+
+
+test_that("add_symmetry_axis rejects wrong classes", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  # wrong: symmetry_axis not a SymAxis
+  expect_error(add_symmetry_axis(m, 123), "SymAxis", ignore.case = TRUE)
+
+  # wrong: molecule not a Molecule3D
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  expect_error(add_symmetry_axis(list(), ax), "Molecule3D", ignore.case = TRUE)
+})
+
+
+# Test Print Generic ------------------------------------------------------
+
+
+test_that("print.Molecule3D runs without error and returns invisible Molecule3D", {
+
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = 1,
+    origin_atom_id = 1,
+    target_atom_id = 2
+  )
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+
+  out <- NULL
+  invisible(capture.output({
+    out <- expect_no_error(print(m))
+  }))
+
+  expect_identical(out, m)
+})
+
+test_that("print.Molecule3D works even with symmetry axes present", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
+  ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list(ax))
+
+  out <- NULL
+  invisible(capture.output({
+    out <- expect_no_error(print(m))
+  }))
+
+  expect_identical(out, m)
+})
+
+
 

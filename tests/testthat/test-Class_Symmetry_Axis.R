@@ -143,3 +143,18 @@ test_that("bad transformation outputs error: unnamed, missing fields, or non-fin
   expect_error(transform_symmetry_axis(ax, nonfinite),
                "finite")
 })
+
+
+# Print Generic ------------------------------------------------------
+
+test_that("print.SymAxis runs without error and returns invisible SymAxis", {
+  ax <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+
+  out <- NULL
+  invisible(capture.output({
+    out <- expect_no_error(print(ax))
+  }))
+
+  expect_identical(out, ax)
+
+})
