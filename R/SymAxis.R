@@ -1,41 +1,42 @@
-#' SymAxis: a simple S7 class for a rotational symmetry axis (C_n)
+#' SymAxis: Rotational Symmetry Axis (C_n)
 #'
-#' @description
-#' Represents a proper rotation axis in molecular or solid-state symmetry.
-#' The axis is defined by two points in 3D space (`posA`, `posB`) and an
-#' integer fold/order `Cn` (e.g., 1, 2, 3, 4, ...).
+#' The SymAxis object represents a proper rotation axis in molecular or solid-state symmetry.
+#' The axis is defined by a point \code{posA}, an orientation \code{direction}
+#' (unit vector). A secondary point on this defined axis (\code{posB}) can also be
+#' derived as \code{posA + direction * L} and is read-only.
 #'
 #' @details
-#' - `Cn` is the **order (fold)** of the axis, i.e. rotation by `360/Cn` degrees.
-#' - `posA` and `posB` are two distinct points (length-3 numeric vectors) that define
-#'   the axis direction in Cartesian coordinates (x, y, z).
-#' - The class stores both endpoints as supplied and does not normalize or store a
-#'   direction vector explicitly.
-#' - A human-readable `label` can be assigned to identify or describe the axis.
-#'   This label is optional but useful when managing multiple symmetry axes within
-#'   a molecule.
+#' - \code{Cn} is the order (fold) of the axis, i.e. rotation by \code{360/Cn} degrees.
+#' - Construction options:
+#'   * Supply \code{posA} and \code{posB}: \code{direction} and \code{L} are inferred.
+#'   * Supply \code{posA} and \code{direction}: \code{direction} is normalized; if
+#'     \code{L} is missing it defaults to \code{1}.
+#' - Setting \code{direction} normalizes it but does not change \code{L}; change \code{L}
+#'   to adjust the span from \code{posA} to \code{posB}.
 #'
-#' @param Cn Numeric (length 1). The axis fold/order (must be \eqn{\ge} 1).
-#' @param posA Numeric (length 3). A point on the axis: `c(x, y, z)`.
-#' @param posB Numeric (length 3). A different point on the axis: `c(x, y, z)`.
-#' @param label Character scalar. An optional user-defined name or description
-#'   for the symmetry axis.
+#' @param Cn Numeric (length 1). Axis fold/order (\eqn{\ge} 1, whole number).
+#' @param posA Numeric (length 3). A point on the axis: \code{c(x,y,z)}.
+#' @param posB Numeric (length 3). A different point on the axis; mutually exclusive
+#'   with \code{direction}. When supplied, \code{direction} and \code{L} are inferred.
+#' @param direction Numeric (length 3). Orientation vector; normalized on set.
+#'   Mutually exclusive with \code{posB}. If used without \code{L}, \code{L} defaults to 1.
+#' @param L Numeric (length 1). Positive length from \code{posA} to \code{posB}.
+#'   Defaults to \code{1} when \code{direction} is supplied and \code{L} is omitted.
+#' @param label Character scalar. Optional user-defined name/description.
 #'
-#' @return An S7 object of class `SymAxis`.
+#' @return An S7 object of class \code{SymAxis}.
+#'
+#' @note \code{posB} is read-only and computed as \code{posA + direction * L}.
 #'
 #' @examples
-#' # Minimal valid axis (C3 about the line through (0,0,0) and (0,0,1))
-#' ax <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
-#' print(ax)
+#' # Define via two points
+#' SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
 #'
-#' # You can also add a label for clarity
-#' SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "principal_z")
+#' # Define via direction; L defaults to 1
+#' SymAxis(Cn = 2L, posA = c(0,0,0), direction = c(0,0,5))
 #'
-#' # C1 is allowed (the trivial/identity axis)
-#' SymAxis(Cn = 1L, posA = c(1, 0, 0), posB = c(1, 0, 2))
-#'
-#' # Coercion to integer for Cn if passed as numeric
-#' SymAxis(Cn = 4, posA = c(0, 1, 0), posB = c(0, 2, 0))
+#' # Direction + explicit L
+#' SymAxis(Cn = 2L, posA = c(1,0,0), direction = c(0,0,1), L = 2)
 #'
 #' @export
 SymAxis <- S7::new_class(
