@@ -55,15 +55,15 @@ test_that("posA / posB length and finiteness validated", {
   expect_error(Symaxis <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0)),
                "posB.*length 3", ignore.case = TRUE)
   expect_error(SymAxis(Cn = 2L, posA = c(NA,0,0), posB = c(0,0,1)),
-               "posA.*non-NA|finite", ignore.case = TRUE)
+               "must have no missing values", ignore.case = TRUE)
   expect_error(SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,Inf,1)),
-               "posB.*non-NA|finite", ignore.case = TRUE)
+               "must have no infinite values", ignore.case = TRUE)
 })
 
 test_that("posA and posB must be distinct", {
   expect_error(
     SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,0)),
-    "distinct points|define an axis", ignore.case = TRUE
+    "must be distinct", ignore.case = TRUE
   )
 })
 

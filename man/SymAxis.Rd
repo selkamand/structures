@@ -4,7 +4,7 @@
 \alias{SymAxis}
 \title{SymAxis: a simple S7 class for a rotational symmetry axis (C_n)}
 \usage{
-SymAxis(Cn, posA, posB, label = "unnamed")
+SymAxis(Cn, posA, posB = NULL, direction = NULL, L = NULL, label = "unnamed")
 }
 \arguments{
 \item{Cn}{Numeric (length 1). The axis fold/order (must be \eqn{\ge} 1).}

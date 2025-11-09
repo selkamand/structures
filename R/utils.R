@@ -174,8 +174,32 @@ normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
 }
 
 
-# Exported ----------------------------------------------------------------
+# Vector Maths ------------------------------------------------------------
+create_vector_from_start_end <- function (start, end, unit = FALSE){
+  if (length(start) != length(end))
+    stop("Start and end positions need to be the same length")
+  vec <- end - start
+  if (unit) {
+    vec <- normalise(vec)
+  }
+  return(vec)
 
+}
+
+normalise <- function(x){
+  x/sqrt(sum(x^2))
+}
+
+magnitude <- function(x){
+ sqrt(sum(x^2))
+}
+
+compute_distance <- function(a, b){
+  c=b-a
+  sqrt(sum(c^2))
+}
+
+# Exported ----------------------------------------------------------------
 
 
 #' Convert a Molecule3D's bonds to an igraph graph

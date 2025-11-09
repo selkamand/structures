@@ -96,45 +96,102 @@ SymAxis <- S7::new_class(
         return(self)
       }
     ),
+
+    # Never set directly
     posB = S7::new_property(
+      class = S7::class_numeric,
+      setter = function(self, value){
+        stop("@posB is read-only; set @direction or @L instead")
+      },
+      getter = function(self){
+        out <- self@posA + self@direction * self@L
+        names(out) <- c("x","y","z")
+        return(out)
+      },
+    ),
+
+
+
+    # A unit direction vector representing the axis (computed as direction from posA to posB)
+    direction = S7::new_property(
       class = S7::class_numeric,
       validator = function(value) {
         if (length(value) != 3L)
           return(
             sprintf(
-              "posB must be a numeric vector of length 3: c(x, y, z). Supplied length [%s]",
+              "direction must be a numeric vector of length 3: c(x, y, z). Supplied length [%s]",
               length(value)
             )
           )
         if (any(!is.finite(value)) || any(is.na(value)))
-          return("posB must contain only finite, non-NA values.")
+          return("direction must contain only finite, non-NA values.")
       },
+      getter = function(self){ names(self@direction) <- c("x", "y", "z"); return(self@direction) },
       setter = function(self, value){
-        names(value) <- c("x", "y", "z")[seq_along(value)]
-        S7::prop(self, "posB") <- value
+        value = normalise(value)
+        self@direction <- value
         return(self)
+      }
+    ),
+
+    # Length between posA and posB
+    L = S7::new_property(
+      class = S7::class_numeric,
+      validator = function(value){
+        if (length(value) != 1L) return("L must be a length-1 numeric")
+        if (!is.finite(value) || is.na(value)) return("L must be finite")
+        if (value <= 0) return("L must be > 0 to define an axis")
       }
     )
   ),
-  constructor = function(Cn, posA, posB, label = "unnamed") {
 
-    # Return the S7 object of the correct class
+  constructor = function(Cn, posA, posB = NULL, direction = NULL, L = NULL, label = "unnamed"){
+    if (is.null(posB) && is.null(direction)) stop("Supply either `posB` or `direction`")
+    if (!is.null(posB) && !is.null(direction)) stop("Supply only one of `posB` or `direction`")
+    assertions::assert_length(posA, length = 3, msg = "posA must be a numeric vector of length 3: c(x, y, z)")
+    assertions::assert_no_missing(posA)
+    assertions::assert(all(is.finite(posA)), msg = "posA must have no infinite values")
+
+    names(posA) <- c("x","y","z")[seq_along(posA)]
+
+    if (!is.null(posB)) {
+      assertions::assert_length(posB, length = 3, msg = "posB must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_no_missing(posB)
+      assertions::assert(all(is.finite(posB)), msg = "posB must have no infinite values")
+
+      names(posB) <- c("x","y","z")[seq_along(posB)]
+      vec <- posB - posA
+      len <- sqrt(sum(vec^2))
+      if (len <= 0) stop("posA and posB must be distinct points")
+      direction <- vec / len
+      L <- len
+    } else {
+      assertions::assert_length(direction, length = 3, msg = "direction must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_no_missing(direction, length = 3)
+      assertions::assert(all(is.finite(direction)), msg = "direction must have no infinite values")
+      # direction provided
+      direction <- normalise(direction)
+      L <- if (is.null(L)) 1 else L
+    }
+    names(direction) <- c("x","y","z")
+
     S7::new_object(
       S7::S7_object(),
       Cn   = Cn,
       posA = posA,
-      posB = posB,
+      direction = direction,
+      L = L,
       label = label
     )
   },
 
   # Validate inter-property relationships
   validator = function(self){
-
-    # Check posA is not equal to posB
-    if (isTRUE(all(self@posA == self@posB))) {
-        return("posA and posB must be distinct points to define an axis.")
-    }
+    # With derivation, this ensures L > 0 and endpoints differ
+    if (identical(self@posA, self@posB))
+      return("posA and posB must be distinct (L must be > 0)")
+      # browser()
+    NULL
   }
 )
 
@@ -265,8 +322,10 @@ transform_symmetry_axis <- function(x, transformation, ...){
 
   posAnew <- if(is.list(posAnew)) unlist(posAnew) else posAnew
   posBnew <- if(is.list(posBnew)) unlist(posBnew) else posBnew
+  direction = create_vector_from_start_end(start = posAnew, end = posBnew, unit = TRUE)
+  L = compute_distance(posAnew, posBnew)
 
-  new_axis <- S7::set_props(x, posA=posAnew, posB = posBnew)
+  new_axis <- S7::set_props(x, posA=posAnew, direction = direction, L=L)
 
   return(new_axis)
 }
