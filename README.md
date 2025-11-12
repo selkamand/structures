@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# structures
+# structures <img src="man/figures/logo.png" align="right" height="124" alt="" />
 
 <!-- badges: start -->
 
@@ -77,9 +77,10 @@ print(axis_C3)
 #> ===================
 #> Symmetry Axis
 #> ===================
-#> Fold Symmetry (Cn): C3
+#> Fold Symmetry / Order (Cn): C3
 #> PosA: 0, 0, 0
 #> PosB: 0, 0, 1
+#> Label: unnamed
 ```
 
 ### Adding symmetry axes to molecules
@@ -119,13 +120,14 @@ You can also retrieve all axes of a given order:
 
 ``` r
 fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
-#> [[1]]
+#> $`1`
 #> ===================
 #> Symmetry Axis
 #> ===================
-#> Fold Symmetry (Cn): C6
+#> Fold Symmetry / Order (Cn): C6
 #> PosA: 0, 0, -1
 #> PosB: 0, 0, 1
+#> Label: unnamed
 ```
 
 ------------------------------------------------------------------------
