@@ -168,7 +168,7 @@ SymAxis <- S7::new_class(
       L <- len
     } else {
       assertions::assert_length(direction, length = 3, msg = "direction must be a numeric vector of length 3: c(x, y, z)")
-      assertions::assert_no_missing(direction, length = 3)
+      assertions::assert_no_missing(direction)
       assertions::assert(all(is.finite(direction)), msg = "direction must have no infinite values")
       # direction provided
       direction <- normalise(direction)
