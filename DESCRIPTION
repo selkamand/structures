@@ -29,6 +29,7 @@ Imports:
     compas,
     dplyr,
     igraph,
+    move (>= 0.0.0.9000),
     readr,
     rlang,
     S7,
@@ -36,3 +37,5 @@ Imports:
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Remotes:  
+    selkamand/move
