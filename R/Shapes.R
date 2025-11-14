@@ -17,7 +17,7 @@
 #'   listing undirected edges by vertex name. May be empty.
 #' @param faces A named list of character vectors, where each vector contains
 #'   vertex names that form a polygonal face. May be empty.
-#' @param symmetry_axes An optional list of [`SymAxis`] objects describing known
+#' @param symmetry_axes An optional list of [`ProperRotationAxis`] objects describing known
 #'   symmetry axes. May be empty.
 #'
 #' @return A `Shape` S7 object.
@@ -97,7 +97,7 @@ Shape <- S7::new_class(
         }
         ok <- vapply(value, is_symmetry_axis, logical(1))
         if (!all(ok)) {
-          return("symmetry_axes must be a list of SymAxis objects")
+          return("symmetry_axes must be a list of ProperRotationAxis objects")
         }
       }
     ),

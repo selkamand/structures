@@ -54,7 +54,7 @@
 #'   \code{\link{set_anchor_by_atom}} or to an arbitrary position via
 #'   \code{\link{set_anchor_by_position}}.
 #'
-#' @param symmetry_axes List of zero or more [`structures::SymAxis`] objects
+#' @param symmetry_axes List of zero or more [`structures::ProperRotationAxis`] objects
 #'   describing proper rotation axes embedded in the molecule. Each element must
 #'   satisfy [is_symmetry_axis()]. An empty list is valid and indicates that no
 #'   symmetry axes have been annotated yet.
@@ -64,7 +64,7 @@
 #' helpers (\code{format_atoms()} and \code{format_bonds()}) to ensure
 #' required columns are present, types are correct, and that all bond endpoints
 #' refer to valid atoms. If \code{symmetry_axes} is supplied, each element is
-#' validated to be a [`structures::SymAxis`]. The class also exposes derived,
+#' validated to be a [`structures::ProperRotationAxis`]. The class also exposes derived,
 #' read-only properties related to symmetry:
 #' \itemize{
 #'   \item \code{@symmetry_axes_orders} — unique set of \code{Cn} values present.
@@ -94,7 +94,7 @@
 #'   \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 #'   \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 #'   \item \strong{center}
-#'   \item \strong{symmetry_axes} — list of [`structures::SymAxis`] objects
+#'   \item \strong{symmetry_axes} — list of [`structures::ProperRotationAxis`] objects
 #'   \item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
 #'   \item \strong{contains_symmetry_axes} — logical (read-only)
 #'   \item \strong{symmetry_axes_dataframe} — data frame (read-only) with one row per
@@ -119,7 +119,7 @@
 #'   origin_atom_id = 1,
 #'   target_atom_id = 2
 #' )
-#' ax  <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+#' ax  <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
 #' m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds,
 #'                 symmetry_axes = list(ax), anchor = c(0,0,0))
 #' m@symmetry_axes_orders
@@ -128,8 +128,8 @@
 #'
 #' @seealso
 #' [structures::read_mol2()],
-#' [structures::SymAxis], [is_symmetry_axis()],
-#' [add_symmetry_axis()], [fetch_all_symmetry_axes_with_order()],
+#' [structures::ProperRotationAxis], [is_symmetry_axis()],
+#' [add_proper_rotation_axis()], [fetch_all_proper_rotation_axes_with_order()],
 #' [transform_molecule()], [transform_symmetry_axis()]
 #' @export
 Molecule3D <- S7::new_class(
@@ -256,10 +256,10 @@ Molecule3D <- S7::new_class(
         # An empty list is a perfectly valid value
         if(length(value) == 0) return(NULL)
 
-        # Check all values are of class SymAxis
+        # Check all values are of class ProperRotationAxis
         for (axis in value){
           if(!is_symmetry_axis(axis))
-            return(sprintf("Symmetry axes must only include elements of class `structures::SymAxis`. Invalid Class: [%s]", toString(class(axis))))
+            return(sprintf("Symmetry axes must only include elements of class `structures::ProperRotationAxis`. Invalid Class: [%s]", toString(class(axis))))
         }
 
         # Check all list entries are named with a unique ID
@@ -296,7 +296,7 @@ Molecule3D <- S7::new_class(
           ))
         }
 
-        dfs <- lapply(axes, as.data.frame)  # one row per SymAxis
+        dfs <- lapply(axes, as.data.frame)  # one row per ProperRotationAxis
         df  <- do.call(rbind, dfs)
         df$id <- names(axes)
 
@@ -676,11 +676,11 @@ filter_atoms <- function(x, eleno){
 #' Append a symmetry axis to a Molecule3D
 #'
 #' @description
-#' Adds a single [`structures::SymAxis`] object to the \code{@symmetry_axes} list
+#' Adds a single [`structures::ProperRotationAxis`] object to the \code{@symmetry_axes} list
 #' of a [`structures::Molecule3D`]. The axis is appended (order preserved) and given a unique ID.
 #'
 #' @param molecule A [`structures::Molecule3D`] object.
-#' @param symmetry_axis A [`structures::SymAxis`] object to append.
+#' @param symmetry_axis A [`structures::ProperRotationAxis`] object to append.
 #'
 #' @return A \code{Molecule3D} object with \code{symmetry_axis} appended to
 #'   \code{@symmetry_axes}.
@@ -693,17 +693,17 @@ filter_atoms <- function(x, eleno){
 #' )
 #' bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 #' m  <- Molecule3D("CO", atoms = atoms, bonds = bonds)
-#' ax <- SymAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-#' m  <- add_symmetry_axis(m, ax)
+#' ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+#' m  <- add_proper_rotation_axis(m, ax)
 #' length(m@symmetry_axes)  # 1
 #' m@symmetry_axes_orders   # 2
 #'
-#' @seealso [structures::SymAxis], [is_symmetry_axis()],
-#'   [fetch_all_symmetry_axes_with_order()], [transform_symmetry_axis()]
+#' @seealso [ProperRotationAxis], [is_symmetry_axis()],
+#'   [fetch_all_proper_rotation_axes_with_order()], [transform_symmetry_axis()]
 #' @export
-add_symmetry_axis <- function(molecule, symmetry_axis){
+add_proper_rotation_axis <- function(molecule, symmetry_axis){
   assertions::assert_class(molecule, "structures::Molecule3D")
-  assertions::assert_class(symmetry_axis, "structures::SymAxis")
+  assertions::assert_class(symmetry_axis, "structures::ProperRotationAxis")
 
   existing_ids <- names(molecule@symmetry_axes) %||% character()
   new_id <- fresh_numeric_ids(1L, existing_ids)
@@ -886,7 +886,7 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id){
 #' Fetch all symmetry axes of a given order (Cn)
 #'
 #' @description
-#' Returns all [`structures::SymAxis`] objects stored in a
+#' Returns all [`structures::ProperRotationAxis`] objects stored in a
 #' [`structures::Molecule3D`] whose order \code{Cn} matches the requested value.
 #'
 #' @param molecule A [`structures::Molecule3D`] object.
@@ -895,7 +895,7 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id){
 #' @return
 #' \itemize{
 #'   \item \code{NULL} if the molecule contains no symmetry axes.
-#'   \item Otherwise, a \emph{list} of matching [`structures::SymAxis`] objects.
+#'   \item Otherwise, a \emph{list} of matching [`structures::ProperRotationAxis`] objects.
 #'         The list may be empty if no axes have the requested \code{Cn}.
 #' }
 #'
@@ -909,17 +909,17 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id){
 #' m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 #'
 #' # Append a few axes
-#' m <- add_symmetry_axis(m, SymAxis(Cn = 2, posA = c(0,0,0), posB = c(0,0,1)))
-#' m <- add_symmetry_axis(m, SymAxis(Cn = 3, posA = c(1,0,0), posB = c(1,0,1)))
+#' m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 2, posA = c(0,0,0), posB = c(0,0,1)))
+#' m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 3, posA = c(1,0,0), posB = c(1,0,1)))
 #'
 #' # Fetch by order
-#' fetch_all_symmetry_axes_with_order(m, 2)   # list of C2 axes
-#' fetch_all_symmetry_axes_with_order(m, 5)   # NULL or empty list if none
+#' fetch_all_proper_rotation_axes_with_order(m, 2)   # list of C2 axes
+#' fetch_all_proper_rotation_axes_with_order(m, 5)   # NULL or empty list if none
 #'
-#' @seealso [structures::SymAxis], [add_symmetry_axis()], [is_symmetry_axis()],
+#' @seealso [structures::ProperRotationAxis], [add_proper_rotation_axis()], [is_symmetry_axis()],
 #'   [Molecule3D]
 #' @export
-fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
+fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn){
   if(!molecule@contains_symmetry_axes) return(NULL)
   axes <- molecule@symmetry_axes
   axes_with_order <- Filter(f = function(axis){axis@Cn == Cn}, x = axes)
@@ -931,7 +931,7 @@ fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
 #' @param molecule A [Molecule3D()] object.
 #' @param id the ID of a symmetry axis. See `@symmetry_axes_dataframe` property for a description of all available asymmetry axes
 #'
-#' @returns A [SymAxis()] object
+#' @returns A [ProperRotationAxis()] object
 #' @export
 #'
 #' @examples
@@ -949,7 +949,7 @@ fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
 #' m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 #'
 #' # Append a symmetry axis (ID is assigned automatically)
-#' m <- add_symmetry_axis(m, SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1)))
+#' m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1)))
 #'
 #' # Inspect available axis IDs
 #' m@symmetry_axes_dataframe$id
@@ -1214,7 +1214,7 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
   )
 }
 
-# Transformations Around SymAxis ------------------------------------------
+# Transformations Around ProperRotationAxis ------------------------------------------
 
 
 

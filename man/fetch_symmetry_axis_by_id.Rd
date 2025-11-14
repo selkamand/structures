@@ -12,7 +12,7 @@ fetch_symmetry_axis_by_id(molecule, id)
 \item{id}{the ID of a symmetry axis. See \verb{@symmetry_axes_dataframe} property for a description of all available asymmetry axes}
 }
 \value{
-A \code{\link[=SymAxis]{SymAxis()}} object
+A \code{\link[=ProperRotationAxis]{ProperRotationAxis()}} object
 }
 \description{
 Fetch a single symmetry axis by ID
@@ -32,7 +32,7 @@ bonds <- data.frame(
 m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 
 # Append a symmetry axis (ID is assigned automatically)
-m <- add_symmetry_axis(m, SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1)))
+m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1)))
 
 # Inspect available axis IDs
 m@symmetry_axes_dataframe$id

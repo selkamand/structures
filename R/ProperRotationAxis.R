@@ -41,8 +41,6 @@
 #' @export
 ProperRotationAxis <- S7::new_class(
   name = "ProperRotationAxis",
-  parent = SymmetryElement,
-
   properties = list(
     label = S7::new_property(
       class = S7::class_character,
@@ -184,8 +182,7 @@ ProperRotationAxis <- S7::new_class(
       posA = posA,
       direction = direction,
       L = L,
-      label = label,
-      type = "ProperRotationAxis"
+      label = label
     )
   },
 

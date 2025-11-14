@@ -47,7 +47,7 @@ if missing, it is added with the value \code{"un"} (unknown).
 }
 All other columns are retained as-is.}
 
-\item{symmetry_axes}{List of zero or more \code{\link{SymAxis}} objects
+\item{symmetry_axes}{List of zero or more \code{\link{ProperRotationAxis}} objects
 describing proper rotation axes embedded in the molecule. Each element must
 satisfy \code{\link[=is_symmetry_axis]{is_symmetry_axis()}}. An empty list is valid and indicates that no
 symmetry axes have been annotated yet.}
@@ -72,7 +72,7 @@ An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 \item \strong{center}
-\item \strong{symmetry_axes} — list of \code{\link{SymAxis}} objects
+\item \strong{symmetry_axes} — list of \code{\link{ProperRotationAxis}} objects
 \item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
 \item \strong{contains_symmetry_axes} — logical (read-only)
 \item \strong{symmetry_axes_dataframe} — data frame (read-only) with one row per
@@ -92,7 +92,7 @@ During creation, \code{atoms} and \code{bonds} are processed using internal
 helpers (\code{format_atoms()} and \code{format_bonds()}) to ensure
 required columns are present, types are correct, and that all bond endpoints
 refer to valid atoms. If \code{symmetry_axes} is supplied, each element is
-validated to be a \code{\link{SymAxis}}. The class also exposes derived,
+validated to be a \code{\link{ProperRotationAxis}}. The class also exposes derived,
 read-only properties related to symmetry:
 \itemize{
 \item \code{@symmetry_axes_orders} — unique set of \code{Cn} values present.
@@ -133,7 +133,7 @@ bonds <- data.frame(
   origin_atom_id = 1,
   target_atom_id = 2
 )
-ax  <- SymAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+ax  <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
 m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds,
                 symmetry_axes = list(ax), anchor = c(0,0,0))
 m@symmetry_axes_orders
@@ -143,7 +143,7 @@ m@symmetry_axes_dataframe
 }
 \seealso{
 \code{\link[=read_mol2]{read_mol2()}},
-\link{SymAxis}, \code{\link[=is_symmetry_axis]{is_symmetry_axis()}},
-\code{\link[=add_symmetry_axis]{add_symmetry_axis()}}, \code{\link[=fetch_all_symmetry_axes_with_order]{fetch_all_symmetry_axes_with_order()}},
+\link{ProperRotationAxis}, \code{\link[=is_symmetry_axis]{is_symmetry_axis()}},
+\code{\link[=add_proper_rotation_axis]{add_proper_rotation_axis()}}, \code{\link[=fetch_all_proper_rotation_axes_with_order]{fetch_all_proper_rotation_axes_with_order()}},
 \code{\link[=transform_molecule]{transform_molecule()}}, \code{\link[=transform_symmetry_axis]{transform_symmetry_axis()}}
 }

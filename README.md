@@ -64,15 +64,16 @@ molecule_centered <- molecule |>
 The `structures` package now supports defining and storing **rotational
 symmetry axes** within a `Molecule3D` object.
 
-### The `SymAxis` class
+### The `ProperRotationAxis` class
 
-A **`SymAxis`** object represents a proper rotation axis (Cₙ) defined
-by: - `Cn`: the fold/order of the axis (e.g., 2, 3, 4, …), - `posA` and
-`posB`: two points in 3D space (`c(x, y, z)`) defining the axis line.
+A **`ProperRotationAxis`** object represents a proper rotation axis (Cₙ)
+defined by: - `Cn`: the fold/order of the axis (e.g., 2, 3, 4, …), -
+`posA` and `posB`: two points in 3D space (`c(x, y, z)`) defining the
+axis line.
 
 ``` r
 # Create a simple C3 symmetry axis through the Z axis
-axis_C3 <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+axis_C3 <- ProperRotationAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 print(axis_C3)
 #> ===================
 #> Symmetry Axis
@@ -86,13 +87,13 @@ print(axis_C3)
 ### Adding symmetry axes to molecules
 
 Symmetry axes can be attached to any `Molecule3D` object using
-\[`add_symmetry_axis()`\]:
+\[`add_proper_rotation_axis()`\]:
 
 ``` r
 # Add a symmetry axis to the benzene molecule
-molecule <- add_symmetry_axis(
+molecule <- add_proper_rotation_axis(
   molecule,
-  SymAxis(Cn = 6L, posA = c(0, 0, -1), posB = c(0, 0, 1))
+  ProperRotationAxis(Cn = 6L, posA = c(0, 0, -1), posB = c(0, 0, 1))
 )
 
 # Inspect updated molecule summary
@@ -119,7 +120,7 @@ and whether any symmetry axes exist (`@contains_symmetry_axes`).
 You can also retrieve all axes of a given order:
 
 ``` r
-fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
+fetch_all_proper_rotation_axes_with_order(molecule, Cn = 6L)
 #> $`1`
 #> ===================
 #> Symmetry Axis
@@ -139,8 +140,8 @@ fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
 - ⚙️ Coordinate manipulation (`translate_molecule_*`,
   `transform_molecule()`)  
 - 🧭 Persistent anchors for positioning molecules  
-- 🔁 **New:** Rotational symmetry support via `SymAxis` and
-  `add_symmetry_axis()`  
+- 🔁 **New:** Rotational symmetry support via `ProperRotationAxis` and
+  `add_proper_rotation_axis()`  
 - 🧩 Connectivity and geometric utilities (`fetch_eleno_*`,
   `compute_distance_between_atoms()`)
 

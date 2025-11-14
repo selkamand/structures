@@ -21,7 +21,7 @@ listing undirected edges by vertex name. May be empty.}
 \item{faces}{A named list of character vectors, where each vector contains
 vertex names that form a polygonal face. May be empty.}
 
-\item{symmetry_axes}{An optional list of \code{\link{SymAxis}} objects describing known
+\item{symmetry_axes}{An optional list of \code{\link{ProperRotationAxis}} objects describing known
 symmetry axes. May be empty.}
 }
 \value{
