@@ -228,7 +228,7 @@ shape_tetrahedron <- function() {
 
 # Helpers ----------------------------------------------------------------
 
-.compute_shape_edges_by_min_distance <- function(vertices_df, tol = 1e-8) {
+compute_shape_edges_by_min_distance <- function(vertices_df, tol = 1e-8) {
   coords <- as.matrix(vertices_df[, c("x", "y", "z")])
   n <- nrow(coords)
   if (n <= 1) {
@@ -314,7 +314,7 @@ shape_octahedron <- function() {
   colnames(verts) <- c("x", "y", "z")
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
-  df_edges <- .compute_shape_edges_by_min_distance(df_vertices)
+  df_edges <- compute_shape_edges_by_min_distance(df_vertices)
   Shape(vertices = df_vertices, edges = df_edges, faces = list())
 }
 
@@ -345,7 +345,7 @@ shape_icosahedron <- function() {
   colnames(verts) <- c("x", "y", "z")
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
-  df_edges <- .compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
+  df_edges <- compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
   Shape(vertices = df_vertices, edges = df_edges, faces = list())
 }
 
@@ -379,7 +379,7 @@ shape_dodecahedron <- function() {
   colnames(verts) <- c("x", "y", "z")
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
-  df_edges <- .compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
+  df_edges <- compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
   Shape(vertices = df_vertices, edges = df_edges, faces = list())
 }
 
