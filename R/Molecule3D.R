@@ -926,12 +926,45 @@ fetch_all_symmetry_axes_with_order <- function(molecule, Cn){
   return(axes_with_order)
 }
 
-# fetch_symmetry_axis_by_id <- function(molecule, id){
-#   if(!molecule@contains_symmetry_axes) return(NULL)
-#   axes <- molecule@symmetry_axes
-#   axis_names <- names(axes)
-#   if(!name %in% axis_names)
-# }
+#' Fetch a single symmetry axis by ID
+#'
+#' @param molecule A [Molecule3D()] object.
+#' @param id the ID of a symmetry axis. See `@symmetry_axes_dataframe` property for a description of all available asymmetry axes
+#'
+#' @returns A [SymAxis()] object
+#' @export
+#'
+#' @examples
+#' # Minimal molecule
+#' atoms <- data.frame(
+#'   eleno = c(1, 2),
+#'   elena = c("C", "O"),
+#'   x = c(0, 1), y = c(0, 0), z = c(0, 0)
+#' )
+#' bonds <- data.frame(
+#'   bond_id = 1,
+#'   origin_atom_id = 1,
+#'   target_atom_id = 2
+#' )
+#' m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+#'
+#' # Append a symmetry axis (ID is assigned automatically)
+#' m <- add_symmetry_axis(m, SymAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1)))
+#'
+#' # Inspect available axis IDs
+#' m@symmetry_axes_dataframe$id
+#'
+#' # Fetch the first axis by its ID
+#' ax_id <- m@symmetry_axes_dataframe$id[1]
+#' ax <- fetch_symmetry_axis_by_id(m, ax_id)
+#' ax
+fetch_symmetry_axis_by_id <- function(molecule, id){
+  if(!molecule@contains_symmetry_axes) return(NULL)
+  axes <- molecule@symmetry_axes
+  axis_names <- names(axes)
+  if(!id %in% axis_names) stop("Could not find axis with id: [",id,"]")
+  axes[[id]]
+}
 
 ## Transformations ---------------------------------------------------------
 #' Apply arbitratry 3D transformations to molecule3D objects
@@ -1140,6 +1173,48 @@ translate_molecule_by_vector <- function(x, vector){
   assertions::assert_class(x, "structures::Molecule3D")
   transform_molecule(x = x, transformation = function(original) { original + vector})
 }
+
+
+#' Rotate a Molecule3D around an arbitrary axis through a point
+#'
+#' Rotates all atom coordinates in a [`structures::Molecule3D`] about a 3D axis
+#' that passes through a specified point, by a given angle (radians). The
+#' rotation is applied via [`transform_molecule()`], using
+#' `move::rotate_vector_around_axis_through_point()` per-row. The molecule's
+#' `@anchor` and any stored symmetry axes are rotated consistently.
+#'
+#' @param molecule A [`structures::Molecule3D`] object.
+#' @param axis Numeric length-3 vector giving the axis direction (need not be unit).
+#' @param position Numeric length-3 vector giving a point on the axis (the pivot line).
+#'   Defaults to \code{c(0, 0, 0)}.
+#' @param angle Numeric scalar in radians (positive = right-hand rule about \code{axis}).
+#'
+#' @return A \code{Molecule3D} object with rotated coordinates, anchor, and symmetry axes.
+#'
+#' @details
+#' This is a convenience wrapper around \code{\link{transform_molecule}()} that
+#' delegates the point-wise rotation to
+#' \code{move::rotate_vector_around_axis_through_point(p, rotation_axis, point_on_axis, angle)}.
+#' The axis direction is interpreted up to scale; only its orientation matters.
+#'
+#' @examples
+#' # Rotate benzene 45° around the global z-axis through the origin
+#' # m <- structures::read_mol2(system.file("benzene.mol2", package = "structures"))
+#' # m_rot <- rotate_molecule_around_vector(m, axis = c(0,0,1), position = c(0,0,0), angle = pi/4)
+#'
+#' @seealso \code{\link{transform_molecule}}, \code{move::rotate_vector_around_axis_through_point}
+#' @export
+rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0), angle){
+  transform_molecule(
+    molecule,
+    transformation = move::rotate_vector_around_axis_through_point,
+    rotation_axis = axis,
+    point_on_axis = position,
+    angle = angle
+  )
+}
+
+# Transformations Around SymAxis ------------------------------------------
 
 
 
