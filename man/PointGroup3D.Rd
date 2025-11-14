@@ -4,7 +4,7 @@
 \alias{PointGroup3D}
 \title{PointGroup3D: A 3D Point Group}
 \usage{
-PointGroup3D(name = character(0), symmetry_elements = list())
+PointGroup3D(name = "", symmetry_elements = list())
 }
 \arguments{
 \item{name}{String (length 1). What is the name of this point group. We do not restrict this since with no lattice restriction there are infinitely many point groups.

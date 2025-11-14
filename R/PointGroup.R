@@ -3,6 +3,9 @@
 # }
 
 
+
+#  PointGroup3D -----------------------------------------------------------
+
 #' PointGroup3D: A 3D Point Group
 #'
 #' In geometry, a point group is a list of Symmetry Elements (see [SymmetryElement()]) about
@@ -15,18 +18,32 @@
 PointGroup3D <- S7::new_class(
   name = "PointGroup",
   properties = list(
-    name = S7::class_character,
+    name = S7::new_property(
+      class = S7::class_character,
+      validator = function(value){
+        if(length(value) != 1) return(sprintf("Point Group @name must be a string (character vector with length 1: Not [%s]", length(value)))
+        if(!value %in% crystallographic_pointgroup_names()) warning(sprintf("Point group name ['%s'] is not a valid Schönflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]", value, toString(crystallographic_pointgroup_names())))
+        return(NULL)
+      }
+    ),
     symmetry_elements = S7::new_property(
       class = S7::class_list,
       validator = function(value){
-        for (element in symmetry_elements){
+        for (element in value){
           if(!inherits(element, "SymmetryElement")) return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))
         }
         return(NULL)
       }
     )
-    # Add computed properties to pull out all of a specific type of symmetry axis (
-  )
+    # Add computed properties to pull out all of a specific type of symmetry axis ()
+  ),
+  constructor = function(name= "", symmetry_elements = list()){
+    S7::new_object(
+      S7::S7_object(),
+      name = name,
+      symmetry_elements = symmetry_elements
+    )
+  }
 )
 
 # Symmetry Elements -------------------------------------------------------
