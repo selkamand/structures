@@ -1122,7 +1122,7 @@ test_that("Molecule3D initializes with empty symmetry axes", {
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
-  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list())
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = list())
 
   expect_false(m@contains_symmetry_axes)
   expect_null(m@symmetry_axes_orders)

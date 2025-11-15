@@ -27,7 +27,7 @@ mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
 ci <- CentreOfInversion(position = c(0,0,0), label = "i")
 
 coll <- SymmetryElementCollection(
-  symmetry_elements = list(mp, ci),
+  elements = list(mp, ci),
   ids = c(1, 2)
 )
 

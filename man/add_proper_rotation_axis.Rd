@@ -4,7 +4,7 @@
 \alias{add_proper_rotation_axis}
 \title{Append a symmetry axis to a Molecule3D}
 \usage{
-add_proper_rotation_axis(molecule, symmetry_axis)
+add_proper_rotation_axis(molecule, proper_rotation_axis)
 }
 \arguments{
 \item{molecule}{A \code{\link{Molecule3D}} object.}
@@ -32,8 +32,4 @@ m  <- add_proper_rotation_axis(m, ax)
 length(m@symmetry_axes)  # 1
 m@symmetry_axes_orders   # 2
 
-}
-\seealso{
-\link{ProperRotationAxis}, \code{\link[=is_symmetry_axis]{is_symmetry_axis()}},
-\code{\link[=fetch_all_proper_rotation_axes_with_order]{fetch_all_proper_rotation_axes_with_order()}}, \code{\link[=transform_symmetry_axis]{transform_symmetry_axis()}}
 }

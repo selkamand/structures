@@ -27,8 +27,8 @@ remain unique.
 mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
 ci <- CentreOfInversion(position = c(0,0,0), label = "i")
 
-coll1 <- SymmetryElementCollection(symmetry_elements = list(mp), ids = 1)
-coll2 <- SymmetryElementCollection(symmetry_elements = list(ci), ids = 1)
+coll1 <- SymmetryElementCollection(elements = list(mp), ids = 1)
+coll2 <- SymmetryElementCollection(elements = list(ci), ids = 1)
 
 coll12 <- combine_symmetry_element_collections(coll1, coll2)
 coll12@ids   # e.g. c(1, 2)

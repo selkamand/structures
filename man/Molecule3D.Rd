@@ -8,8 +8,7 @@ Molecule3D(
   name = "MyChemical",
   atoms = minimal_atoms(),
   bonds = minimal_bonds(),
-  symmetry_elements = SymmetryElements(),
-  symmetry_axes = list(),
+  symmetry_elements = SymmetryElementCollection(),
   misc = list(),
   anchor = NULL
 )
@@ -48,11 +47,6 @@ if missing, it is added with the value \code{"un"} (unknown).
 }
 All other columns are retained as-is.}
 
-\item{symmetry_axes}{List of zero or more \code{\link{ProperRotationAxis}} objects
-describing proper rotation axes embedded in the molecule. Each element must
-satisfy \code{\link[=is_symmetry_axis]{is_symmetry_axis()}}. An empty list is valid and indicates that no
-symmetry axes have been annotated yet.}
-
 \item{misc}{A list containing any additional metadata (e.g., provenance,
 notes, or debug information). Stored without modification.}
 
@@ -65,6 +59,11 @@ c(0, 0, 0). Used by translation helpers
 to this point. Typically set to an atom’s coordinates via
 \code{\link{set_anchor_by_atom}} or to an arbitrary position via
 \code{\link{set_anchor_by_position}}.}
+
+\item{symmetry_axes}{List of zero or more \code{\link{ProperRotationAxis}} objects
+describing proper rotation axes embedded in the molecule. Each element must
+satisfy \code{\link[=is_symmetry_axis]{is_symmetry_axis()}}. An empty list is valid and indicates that no
+symmetry axes have been annotated yet.}
 }
 \value{
 An S7 object of class \code{"Molecule3D"} with (among others) the properties:
@@ -145,6 +144,6 @@ m@symmetry_axes_dataframe
 \seealso{
 \code{\link[=read_mol2]{read_mol2()}},
 \link{ProperRotationAxis}, \code{\link[=is_symmetry_axis]{is_symmetry_axis()}},
-\code{\link[=add_proper_rotation_axis]{add_proper_rotation_axis()}}, \code{\link[=fetch_all_proper_rotation_axes_with_order]{fetch_all_proper_rotation_axes_with_order()}},
+\code{\link[=add_proper_rotation_axis]{add_proper_rotation_axis()}},
 \code{\link[=transform_molecule]{transform_molecule()}}, \code{\link[=transform_symmetry_axis]{transform_symmetry_axis()}}
 }

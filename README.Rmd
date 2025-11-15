@@ -61,6 +61,7 @@ molecule_centered <- molecule |>
 ## Symmetry Elements
 
 The `structures` package now supports all standard symmetry elements. Providing Classes for:
+
 1. Proper Rotation Axes (`ProperRotationAxis()`)
 2. Improper Rotation Axes (`ImproperRotationAxis()`)
 3. Mirror Planes (`MirrorPlane()`)
@@ -68,29 +69,16 @@ The `structures` package now supports all standard symmetry elements. Providing 
 
 Any `Molecule3D` object can be annotated with these symmetry elements.
 
-
-### The `ProperRotationAxis` class
-
-A **`ProperRotationAxis`** object represents a proper rotation axis (Cₙ) defined by:
-- `Cn`: the fold/order of the axis (e.g., 2, 3, 4, ...),
-- `posA` and `posB`: two points in 3D space (`c(x, y, z)`) defining the axis line.
-
-```{r}
-# Create a simple C3 symmetry axis through the Z axis
-axis_C3 <- ProperRotationAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
-print(axis_C3)
-```
-
 ### Adding Symmetry Elements
 
 Symmetry elemnets can be attached to any `Molecule3D` object using helper functions:
-[`add_proper_rotation_axis()`]:
+e.g. [`add_proper_rotation_axis()`]:
 
 ```{r}
-# Add a symmetry axis to the benzene molecule
+# Add a C6 symmetry axis to the benzene molecule
 molecule <- add_proper_rotation_axis(
   molecule,
-  ProperRotationAxis(Cn = 6L, posA = c(0, 0, -1), posB = c(0, 0, 1))
+  ProperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0, 1))
 )
 
 # Inspect updated molecule summary
@@ -98,8 +86,8 @@ print(molecule)
 ```
 
 The molecule keeps track of:
-- all attached symmetry axes (`@symmetry_axes`),
-- unique orders present (`@symmetry_axes_orders`),
+- all attached symmetry elements (`@symmetry_elements`),
+- unique symmetry orders present (`@symmetry_axes_orders`),
 - and whether any symmetry axes exist (`@contains_symmetry_axes`).
 
 You can also retrieve all axes of a given order:

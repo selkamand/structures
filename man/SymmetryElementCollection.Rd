@@ -4,13 +4,13 @@
 \alias{SymmetryElementCollection}
 \title{SymmetryElementCollection: a container for symmetry elements}
 \usage{
-SymmetryElementCollection(symmetry_elements = list(), ids = NULL)
+SymmetryElementCollection(elements = list(), ids = NULL)
 }
 \arguments{
-\item{symmetry_elements}{A list of objects inheriting from
+\item{elements}{A list of objects inheriting from
 \code{\link{SymmetryElement}}.}
 
-\item{ids}{Numeric vector of the same length as \code{symmetry_elements},
+\item{ids}{Numeric vector of the same length as \code{elements},
 giving a unique identifier for each element.}
 
 \item{n_elements}{Integer: Read-only, How many elements are in this collection.}
@@ -28,7 +28,7 @@ mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
 ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 
 coll <- SymmetryElementCollection(
-  symmetry_elements = list(mp, ci),
+  elements = list(mp, ci),
   ids = c(1, 2)
 )
 

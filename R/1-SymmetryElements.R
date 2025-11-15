@@ -67,9 +67,9 @@ SymmetryElement <- S7::new_class(
 #' together with numeric IDs. This is useful for storing the symmetry content
 #' of a molecule or point group and for coercing the collection to a data frame.
 #'
-#' @param symmetry_elements A list of objects inheriting from
+#' @param elements A list of objects inheriting from
 #'   [`structures::SymmetryElement`].
-#' @param ids Numeric vector of the same length as `symmetry_elements`,
+#' @param ids Numeric vector of the same length as `elements`,
 #'   giving a unique identifier for each element.
 #' @param n_elements Integer: Read-only, How many elements are in this collection.
 #'
@@ -80,7 +80,7 @@ SymmetryElement <- S7::new_class(
 #' ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 #'
 #' coll <- SymmetryElementCollection(
-#'   symmetry_elements = list(mp, ci),
+#'   elements = list(mp, ci),
 #'   ids = c(1, 2)
 #' )
 #'
@@ -91,50 +91,62 @@ SymmetryElement <- S7::new_class(
 SymmetryElementCollection <- S7::new_class(
   name = "SymmetryElementCollection",
   properties = list(
-    symmetry_elements = S7::class_list,
+
+    elements = S7::class_list,
     ids = S7::class_numeric,
     n_elements = S7::new_property(
       class = S7::class_integer,
       setter = function(self, value) { stop("@n_elements is a read only property") },
       getter = function(self) {
-        length(self@symmetry_elements)
+        length(self@elements)
       }
     ),
     mirror_planes = S7::new_property(
       class =  S7::S7_object,
       setter = function(self, value) { stop("@mirror_planes is a read only property") },
       getter = function(self) {
-        filter_symmetry_element_collection_by_type(self, type = "Mirror Plane")
+        filter_symmetry_element_collection_by_type(self, types = "Mirror Plane")
       }
     ),
     proper_rotation_axes = S7::new_property(
       class =  S7::S7_object,
       setter = function(self, value) { stop("@proper_rotation_axes is a read only property") },
       getter = function(self) {
-        filter_symmetry_element_collection_by_type(self, type = "Proper Rotation Axis")
+        filter_symmetry_element_collection_by_type(self, types = "Proper Rotation Axis")
       }
     ),
     improper_rotation_axes = S7::new_property(
       class =  S7::class_list,
       setter = function(self, value) { stop("@improper_rotation_axes is a read only property") },
       getter = function(self) {
-        filter_symmetry_element_collection_by_type(self, type = "Improper Rotation Axis")
+        filter_symmetry_element_collection_by_type(self, types = "Improper Rotation Axis")
       }
     ),
     centres_of_inversion = S7::new_property(
       class =  S7::class_list,
       setter = function(self, value) { stop("@centres_of_inversion is a read only property") },
       getter = function(self) {
-        filter_symmetry_element_collection_by_type(self, type = "Centre of Inversion")
+        filter_symmetry_element_collection_by_type(self, types = "Centre of Inversion")
+      }
+    ),
+    unique_proper_axis_orders = S7::new_property(
+      class = S7::class_integer,
+      setter = function(self, value) { stop("@symmetry_axis_orders is a read only property")},
+      getter = function(self) {
+        browser()
+        orders <- vapply(self@proper_rotation_axes@elements, function(el){ el@n}, FUN.VALUE = numeric(1))
+        orders <- unique(orders)
+        orders <- sort(orders, decreasing = FALSE)
+        return(orders)
       }
     )
   ),
   validator = function(self){
     ids=self@ids
-    elements=self@symmetry_elements
+    elements=self@elements
 
     if(length(ids) != length(elements))
-      return(sprintf("@ids must have one entry for each of the @symmetry_elements. Found [%s] IDs and [%s] symmetry_elements", length(ids),length(elements)))
+      return(sprintf("@ids must have one entry for each of the @elements. Found [%s] IDs and [%s] elements", length(ids),length(elements)))
 
     if(any(duplicated(ids)))
       return(sprintf("Duplicate @ids are not allowed. Found [%s] duplicates", sum(duplicated(ids))))
@@ -143,16 +155,16 @@ SymmetryElementCollection <- S7::new_class(
       return(sprintf("Missing (NA) @ids are not allowed. Found [%s].", sum(is.na(ids))))
 
     for (element in elements){
-      if(!inherits(element, "structures::SymmetryElement")) {return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))}
+      if(!inherits(element, "structures::SymmetryElement")) {return(sprintf("All @elements must inherit from: structures::SymmetryElement"))}
     }
 
     return(NULL)
   },
-  constructor = function(symmetry_elements = list(), ids = NULL){
-    if(is.null(ids)) { ids <- seq_along(symmetry_elements)}
+  constructor = function(elements = list(), ids = NULL){
+    if(is.null(ids)) { ids <- seq_along(elements)}
     S7::new_object(
       S7::S7_object(),
-      symmetry_elements = symmetry_elements,
+      elements = elements,
       ids = ids
     )
   }
@@ -161,7 +173,7 @@ SymmetryElementCollection <- S7::new_class(
 
 ## Generics ----------------------------------------------------------------
 S7::method(print, SymmetryElementCollection) <- function(x, ...) {
-  elements = x@symmetry_elements
+  elements = x@elements
   cat(sep = "",
       "===================\n",
       "Symmetry Element Collection\n",
@@ -176,7 +188,7 @@ S7::method(print, SymmetryElementCollection) <- function(x, ...) {
       # sprintf("Symmetry Axes: %d\n", length(x@symmetry_axes)),
       # symmetry_orders_string,
       "\n-------------------\n",
-      "See @symmetry_elements paramater for all symmetry elements\n"
+      "See @elements paramater for all symmetry elements\n"
   )
 
   return(invisible(x))
@@ -184,7 +196,7 @@ S7::method(print, SymmetryElementCollection) <- function(x, ...) {
 
 #' @export
 S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
-  ls_info <- lapply(x@symmetry_elements, function(el){
+  ls_info <- lapply(x@elements, function(el){
     data.frame(
       type = el@type %||% character(0),
       label = el@label %||% character(0)
@@ -217,7 +229,7 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
 #' ci <- CentreOfInversion(position = c(0,0,0), label = "i")
 #'
 #' coll <- SymmetryElementCollection(
-#'   symmetry_elements = list(mp, ci),
+#'   elements = list(mp, ci),
 #'   ids = c(1, 2)
 #' )
 #'
@@ -230,14 +242,14 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
     stop(sprintf("Tried to filter symmetry collection by an invalid type. Types must only include the values [%s]. Unexpected values: [%s]", toString(valid_symmetry_element_types()), toString(setdiff(types, valid_symmetry_element_types()))))
 
   keep = vapply(
-    X = collection@symmetry_elements,
+    X = collection@elements,
     function(element) {
       element@type %in% types
     },
     FUN.VALUE = logical(1)
   )
 
-  S7::set_props(collection, symmetry_elements = collection@symmetry_elements[keep], ids = collection@ids[keep])
+  S7::set_props(collection, elements = collection@elements[keep], ids = collection@ids[keep])
 }
 
 
@@ -270,7 +282,7 @@ add_symmetry_element_to_collection <- function(collection, new){
 
   S7::set_props(
     collection,
-    symmetry_elements = c(collection@symmetry_elements, new),
+    elements = c(collection@elements, new),
     ids = c(collection@ids, new_id)
   )
 }
@@ -294,8 +306,8 @@ add_symmetry_element_to_collection <- function(collection, new){
 #' mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
 #' ci <- CentreOfInversion(position = c(0,0,0), label = "i")
 #'
-#' coll1 <- SymmetryElementCollection(symmetry_elements = list(mp), ids = 1)
-#' coll2 <- SymmetryElementCollection(symmetry_elements = list(ci), ids = 1)
+#' coll1 <- SymmetryElementCollection(elements = list(mp), ids = 1)
+#' coll2 <- SymmetryElementCollection(elements = list(ci), ids = 1)
 #'
 #' coll12 <- combine_symmetry_element_collections(coll1, coll2)
 #' coll12@ids   # e.g. c(1, 2)
@@ -312,8 +324,8 @@ combine_symmetry_element_collections <- function(collection1, collection2){
   ids_2 <- collection2@ids
 
   # Elements
-  elements1 <- collection1@symmetry_elements
-  elements2 <- collection2@symmetry_elements
+  elements1 <- collection1@elements
+  elements2 <- collection2@elements
 
   # New ids for collection 2
   max_id <- max(ids_1, 0)
@@ -322,7 +334,7 @@ combine_symmetry_element_collections <- function(collection1, collection2){
   # New ids for collection 2
   S7::set_props(
    collection1,
-   symmetry_elements = c(elements1, elements2),
+   elements = c(elements1, elements2),
    ids = c(ids_1, ids_2_new)
   )
 }
@@ -538,6 +550,7 @@ S7::method(print, ProperRotationAxis) <- function(x, ...) {
     "===================\n",
     sprintf("Fold Symmetry / Order (Cn): C%g\n", x@n),
     sprintf("PosA: %s\n", toString(x@posA)),
+    sprintf("Direction: %s\n", toString(x@direction)),
     sprintf("PosB: %s\n", toString(x@posB)),
     sprintf("Label: %s\n", toString(x@label)),
     sep = ""
