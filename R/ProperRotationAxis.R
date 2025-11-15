@@ -250,24 +250,6 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5){
 
 # Non-Generic Methods -----------------------------------------------------
 
-#' Check if an object is a ProperRotationAxis
-#'
-#' Tests whether an object inherits from the [`structures::ProperRotationAxis`] class.
-#'
-#' @param x An object to test.
-#'
-#' @return A logical scalar: `TRUE` if `x` is a `ProperRotationAxis`, otherwise `FALSE`.
-#'
-#' @examples
-#' ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-#' is_symmetry_axis(ax)
-#' is_symmetry_axis("not_an_axis")
-#'
-#' @export
-is_symmetry_axis <- function(x){
-  inherits(x, "structures::ProperRotationAxis")
-}
-
 #' Apply a 3D transformation to a ProperRotationAxis
 #'
 #' @description
@@ -317,7 +299,6 @@ is_symmetry_axis <- function(x){
 #'@export
 transform_symmetry_axis <- function(x, transformation, ...){
   assertions::assert_class(x, c("structures::ProperRotationAxis", "structures::ImproperRotationAxis"))
-  #assertions::assert_class(x, "structures::ProperRotationAxis")
   assertions::assert_function(transformation)
 
   posA <- x@posA
