@@ -25,8 +25,8 @@ and \code{\link[=ImproperRotationAxis]{ImproperRotationAxis()}}. All symmetry el
 }
 \examples{
 # Typically you construct concrete subclasses, not SymmetryElement directly:
-mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
 mp@label
-mp@type   # "Mirror Plane"
+mp@type # "Mirror Plane"
 
 }

@@ -23,8 +23,8 @@ Returns a new \code{\link{SymmetryElementCollection}} containing only those
 symmetry elements whose \verb{@type} matches one of the requested types.
 }
 \examples{
-mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
-ci <- CentreOfInversion(position = c(0,0,0), label = "i")
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
+ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 
 coll <- SymmetryElementCollection(
   elements = list(mp, ci),

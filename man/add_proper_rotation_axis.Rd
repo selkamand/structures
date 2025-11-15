@@ -22,14 +22,14 @@ of a \code{\link{Molecule3D}}. The axis is appended (order preserved) and given 
 \examples{
 atoms <- data.frame(
   eleno = c(1, 2),
-  elena = c("C","O"),
+  elena = c("C", "O"),
   x = c(0, 1), y = c(0, 0), z = c(0, 0)
 )
 bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
-m  <- Molecule3D("CO", atoms = atoms, bonds = bonds)
-ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-m  <- add_proper_rotation_axis(m, ax)
-length(m@symmetry_axes)  # 1
-m@symmetry_axes_orders   # 2
+m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
+ax <- ProperRotationAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+m <- add_proper_rotation_axis(m, ax)
+length(m@symmetry_axes) # 1
+m@symmetry_axes_orders # 2
 
 }

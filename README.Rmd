@@ -44,10 +44,11 @@ remotes::install_github("selkamand/structures")
 library(structures)
 
 # Read a mol2 file into a Molecule3D object
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 
 print(molecule)
+print(molecule@symmetry_elements)
 
 # Set anchor to the first element and translate the molecule so that
 # the anchor atom is at the origin (0, 0, 0)
@@ -68,6 +69,11 @@ The `structures` package now supports all standard symmetry elements. Providing 
 4. Centre of Inversion (`CentreOfInversion()`)
 
 Any `Molecule3D` object can be annotated with these symmetry elements.
+
+```{r}
+ProperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0, 1))
+```
+
 
 ### Adding Symmetry Elements
 

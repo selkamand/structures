@@ -17,8 +17,8 @@ Logical. \code{TRUE} if \code{x} inherits from \code{\link{ProperRotationAxis}}
 Check if an object is a ProperRotationAxis
 }
 \examples{
-ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1))
-is_proper_rotation_axis(ax)        # TRUE
-is_proper_rotation_axis("nope")    # FALSE
+ax <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+is_proper_rotation_axis(ax) # TRUE
+is_proper_rotation_axis("nope") # FALSE
 
 }

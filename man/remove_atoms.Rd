@@ -19,7 +19,7 @@ Removes atoms from molecule by atom_id (eleno).
 Will also drop bonds that involve deleted atoms.
 }
 \examples{
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
-remove_atoms(molecule, c(1,2,3))
+remove_atoms(molecule, c(1, 2, 3))
 }

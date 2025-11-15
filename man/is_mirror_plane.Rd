@@ -16,8 +16,8 @@ Logical. \code{TRUE} if \code{x} inherits from \code{\link{MirrorPlane}}, otherw
 Check if an object is a MirrorPlane
 }
 \examples{
-mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0))
-is_mirror_plane(mp)        # TRUE
-is_mirror_plane("nope")    # FALSE
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0))
+is_mirror_plane(mp) # TRUE
+is_mirror_plane("nope") # FALSE
 
 }

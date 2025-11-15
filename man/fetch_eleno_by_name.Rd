@@ -18,7 +18,7 @@ a numeric vector of atom identifiers (eleno) corresponding to element names (ele
 Fetch atom identifiers by name
 }
 \examples{
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 fetch_eleno_by_name(molecule, "C")
 

@@ -17,7 +17,7 @@ Locate geometrical center of all atoms in Molecule3D object. Can also just use c
 Included as separate function to allow for tidy pipelines.
 }
 \examples{
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 locate_molecule_center(molecule)
 }

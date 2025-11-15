@@ -36,21 +36,23 @@ transformation preserves distinct endpoints and yields finite numeric results.
 }
 \examples{
 # Define an axis along +Z through the origin
-ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1))
+ax <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
 # 1) Translate by (+1, +2, +3)
-translate <- function(p, dx=0, dy=0, dz=0) {
+translate <- function(p, dx = 0, dy = 0, dz = 0) {
   c(x = p["x"] + dx, y = p["y"] + dy, z = p["z"] + dz)
 }
 ax_t <- transform_symmetry_axis(ax, translate, dx = 1, dy = 2, dz = 3)
 
 # 2) Rotate around Z by 90 degrees about the origin
 rotate_z <- function(p, theta) {
-  c(x =  cos(theta)*p["x"] - sin(theta)*p["y"],
-    y =  sin(theta)*p["x"] + cos(theta)*p["y"],
-    z =  p["z"])
+  c(
+    x = cos(theta) * p["x"] - sin(theta) * p["y"],
+    y = sin(theta) * p["x"] + cos(theta) * p["y"],
+    z = p["z"]
+  )
 }
-ax_r <- transform_symmetry_axis(ax, rotate_z, theta = pi/2)
+ax_r <- transform_symmetry_axis(ax, rotate_z, theta = pi / 2)
 
 # 3) A transform that returns a list is also accepted
 as_list <- function(p) list(x = p["x"] + 1, y = p["y"], z = p["z"])

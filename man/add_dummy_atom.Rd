@@ -22,16 +22,16 @@ add_dummy_atom(
 \item{atom_id_a, atom_id_b, atom_id_c}{Numeric atom IDs (matching \code{atoms$eleno})
 that define the reference frame for the new atom D. The new atom is placed at
 a distance \code{bond_length} from \code{atom_id_c}, with bond angle
-\code{B–C–D = bond_angle} and torsion \code{A–B–C–D = torsion_angle}.}
+\code{B<U+2013>C<U+2013>D = bond_angle} and torsion \code{A<U+2013>B<U+2013>C<U+2013>D = torsion_angle}.}
 
-\item{bond_length}{Numeric scalar; distance (Å) from atom C to the new atom D.}
+\item{bond_length}{Numeric scalar; distance (<U+00C5>) from atom C to the new atom D.}
 
-\item{torsion_angle}{Numeric scalar; dihedral angle \code{A–B–C–D} in degrees.}
+\item{torsion_angle}{Numeric scalar; dihedral angle \code{A<U+2013>B<U+2013>C<U+2013>D} in degrees.}
 
-\item{bond_angle}{Numeric scalar; bond angle \code{B–C–D} in degrees.}
+\item{bond_angle}{Numeric scalar; bond angle \code{B<U+2013>C<U+2013>D} in degrees.}
 
 \item{bond_type}{Character scalar specifying the SYBYL/Tripos bond code for the
-new C–D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"1"}.}
+new C<U+2013>D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"1"}.}
 
 \item{elena}{Character scalar atom label for the dummy atom (default \code{"Du"}).}
 }
@@ -39,9 +39,9 @@ new C–D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Default
 A \code{Molecule3D} object containing the appended dummy atom and its bond to C.
 }
 \description{
-Inserts a “dummy” atom (default element label \code{"Du"}) into a
+Inserts a <U+201C>dummy<U+201D> atom (default element label \code{"Du"}) into a
 \code{Molecule3D} using three reference atoms and internal coordinates:
-bond length to atom C, bond angle at B–C–D, and torsion A–B–C–D. The new
+bond length to atom C, bond angle at B<U+2013>C<U+2013>D, and torsion A<U+2013>B<U+2013>C<U+2013>D. The new
 atom is appended to the \code{@atoms} table and connected by a single bond
 to atom C (via \code{\link{add_bonds}}). Identifiers are assigned using
 \code{molecule@maximum_atom_id + 1}.
@@ -65,7 +65,7 @@ the input molecule via \code{\link{combine_molecules}} (with
 \code{\link{add_bonds}} with the supplied \code{bond_type}.
 }
 
-The molecule’s \code{@anchor} and other properties are preserved.
+The molecule<U+2019>s \code{@anchor} and other properties are preserved.
 }
 \examples{
 m <- read_mol2(system.file("benzene.mol2", package = "structures"))

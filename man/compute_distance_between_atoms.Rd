@@ -18,7 +18,7 @@ numeric euclidean distance between two points
 Compute distance between two points
 }
 \examples{
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 compute_distance_between_atoms(molecule, 1, 2)
 }

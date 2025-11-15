@@ -16,7 +16,7 @@ A logical scalar: \code{TRUE} if \code{x} is a \code{Molecule3D}, otherwise \cod
 Tests whether an object inherits from the \code{\link{Molecule3D}} class.
 }
 \examples{
-atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x=c(0,1), y=c(0,0), z=c(0,0))
+atoms <- data.frame(eleno = c(1, 2), elena = c("C", "O"), x = c(0, 1), y = c(0, 0), z = c(0, 0))
 bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 mol <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 is_molecule(mol)

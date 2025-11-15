@@ -2,7 +2,7 @@
 % Please edit documentation in R/1-SymmetryElements.R
 \name{MirrorPlane}
 \alias{MirrorPlane}
-\title{MirrorPlane: reflection symmetry element (σ)}
+\title{MirrorPlane: reflection symmetry element (<U+03C3>)}
 \usage{
 MirrorPlane(normal, position, label = "unnamed")
 }
@@ -22,16 +22,16 @@ An S7 object of class \code{MirrorPlane}.
 \description{
 Represents a mirror plane in 3D space, defined by a unit normal vector and
 a point lying on the plane. The plane contains all points \code{p} such that
-\verb{(p - position) · normal = 0}.
+\verb{(p - position) <U+00B7> normal = 0}.
 }
 \examples{
 # Mirror plane xy: normal along +Z, passing through the origin
 mp <- MirrorPlane(
   normal   = c(0, 0, 1),
   position = c(0, 0, 0),
-  label = "σ_xy"
+  label = "<U+03C3>_xy"
 )
 
-mp@type    # "Mirror Plane"
+mp@type # "Mirror Plane"
 
 }

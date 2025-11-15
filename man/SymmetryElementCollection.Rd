@@ -24,7 +24,7 @@ together with numeric IDs. This is useful for storing the symmetry content
 of a molecule or point group and for coercing the collection to a data frame.
 }
 \examples{
-mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
 ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 
 coll <- SymmetryElementCollection(

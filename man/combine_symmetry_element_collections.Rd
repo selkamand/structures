@@ -24,13 +24,13 @@ from \code{collection2} are offset so that all IDs in the combined collection
 remain unique.
 }
 \examples{
-mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
-ci <- CentreOfInversion(position = c(0,0,0), label = "i")
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
+ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 
 coll1 <- SymmetryElementCollection(elements = list(mp), ids = 1)
 coll2 <- SymmetryElementCollection(elements = list(ci), ids = 1)
 
 coll12 <- combine_symmetry_element_collections(coll1, coll2)
-coll12@ids   # e.g. c(1, 2)
+coll12@ids # e.g. c(1, 2)
 
 }

@@ -20,9 +20,9 @@ Appends a single \code{\link{SymmetryElement}} to an existing
 \code{\link{SymmetryElementCollection}}, assigning it the next available numeric ID.
 }
 \examples{
-mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
 coll <- SymmetryElementCollection()
 coll2 <- add_symmetry_element_to_collection(coll, mp)
-coll2@ids      # contains 1
+coll2@ids # contains 1
 
 }

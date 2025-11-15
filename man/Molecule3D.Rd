@@ -26,7 +26,7 @@ Molecule3D(
 \strong{Optional columns} (automatically added if not supplied):
 \itemize{
 \item \code{element} (character) element symbol; if missing, it is derived from
-\code{elena} by removing digits (e.g., \code{"C3"} → \code{"C"}).
+\code{elena} by removing digits (e.g., \code{"C3"} <U+2192> \code{"C"}).
 }
 Data types are enforced so that \code{eleno}, \code{elena}, and \code{element}
 are character, and \code{x}, \code{y}, \code{z} are numeric.
@@ -50,13 +50,13 @@ All other columns are retained as-is.}
 \item{misc}{A list containing any additional metadata (e.g., provenance,
 notes, or debug information). Stored without modification.}
 
-\item{anchor}{Numeric length-3 vector c(x, y, z) specifying the molecule’s
+\item{anchor}{Numeric length-3 vector c(x, y, z) specifying the molecule<U+2019>s
 reference point. If NULL (default), it is set to the geometric center of
 all atoms at construction time; if no atoms are present it falls back to
 c(0, 0, 0). Used by translation helpers
 (e.g., \code{\link{translate_molecule_to_origin}}, \code{\link{translate_molecule_to_position}},
 \code{\link{translate_molecule_by_vector}}) to reposition the molecule relative
-to this point. Typically set to an atom’s coordinates via
+to this point. Typically set to an atom<U+2019>s coordinates via
 \code{\link{set_anchor_by_atom}} or to an arbitrary position via
 \code{\link{set_anchor_by_position}}.}
 
@@ -72,10 +72,10 @@ An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 \item \strong{center}
-\item \strong{symmetry_axes} — list of \code{\link{ProperRotationAxis}} objects
-\item \strong{symmetry_axes_orders} — numeric vector of unique \code{Cn} values (read-only)
-\item \strong{contains_symmetry_axes} — logical (read-only)
-\item \strong{symmetry_axes_dataframe} — data frame (read-only) with one row per
+\item \strong{symmetry_axes} <U+2014> list of \code{\link{ProperRotationAxis}} objects
+\item \strong{symmetry_axes_orders} <U+2014> numeric vector of unique \code{Cn} values (read-only)
+\item \strong{contains_symmetry_axes} <U+2014> logical (read-only)
+\item \strong{symmetry_axes_dataframe} <U+2014> data frame (read-only) with one row per
 symmetry axis. Columns: \code{id} (character; the axis ID = list name),
 \code{label} (character), \code{Cn} (integer-like), \code{x,y,z} (numeric; start
 point), \code{xend,yend,zend} (numeric; end point). Returns a zero-row data frame
@@ -84,7 +84,7 @@ with the same columns when no axes are present.
 }
 \description{
 Constructs an S7 object representing a single molecule with 3D coordinates.
-In most workflows, you will not call this constructor directly — molecule
+In most workflows, you will not call this constructor directly <U+2014> molecule
 objects are usually created by parsers such as \code{\link[=read_mol2]{read_mol2()}}.
 }
 \details{
@@ -95,8 +95,8 @@ refer to valid atoms. If \code{symmetry_axes} is supplied, each element is
 validated to be a \code{\link{ProperRotationAxis}}. The class also exposes derived,
 read-only properties related to symmetry:
 \itemize{
-\item \code{@symmetry_axes_orders} — unique set of \code{Cn} values present.
-\item \code{@contains_symmetry_axes} — logical flag indicating whether any axes exist.
+\item \code{@symmetry_axes_orders} <U+2014> unique set of \code{Cn} values present.
+\item \code{@contains_symmetry_axes} <U+2014> logical flag indicating whether any axes exist.
 }
 Coordinate transforms applied via \code{\link{transform_molecule}} will also
 transform the endpoints of each stored symmetry axis so they remain consistent
@@ -108,11 +108,11 @@ The \emph{anchor} is a persistent reference position stored as a length-3 numeri
 vector (\code{c(x, y, z)}). It does not constrain geometry by itself; instead it
 supports convenient re-positioning:
 \itemize{
-\item \code{\link{set_anchor_by_position}} — set the anchor to an arbitrary position.
-\item \code{\link{set_anchor_by_atom}} — set the anchor to the coordinates of a given atom (\code{eleno}).
-\item \code{\link{translate_molecule_to_origin}} — translate so the anchor moves to \code{c(0,0,0)}.
-\item \code{\link{translate_molecule_to_position}} — translate so the anchor moves to a specified position.
-\item \code{\link{translate_molecule_by_vector}} — translate by a specified vector.
+\item \code{\link{set_anchor_by_position}} <U+2014> set the anchor to an arbitrary position.
+\item \code{\link{set_anchor_by_atom}} <U+2014> set the anchor to the coordinates of a given atom (\code{eleno}).
+\item \code{\link{translate_molecule_to_origin}} <U+2014> translate so the anchor moves to \code{c(0,0,0)}.
+\item \code{\link{translate_molecule_to_position}} <U+2014> translate so the anchor moves to a specified position.
+\item \code{\link{translate_molecule_by_vector}} <U+2014> translate by a specified vector.
 }
 Functions that transform coordinates (e.g., \code{transform_molecule()}) also
 update the anchor to keep it consistent with the new coordinate frame.
@@ -125,7 +125,7 @@ update the anchor to keep it consistent with the new coordinate frame.
 # Direct creation, symmetry axes, and anchor operations
 atoms <- data.frame(
   eleno = c(1, 2),
-  elena = c("C","O"),
+  elena = c("C", "O"),
   x = c(0, 1.2), y = c(0, 0.1), z = c(0, -0.2)
 )
 bonds <- data.frame(
@@ -133,9 +133,11 @@ bonds <- data.frame(
   origin_atom_id = 1,
   target_atom_id = 2
 )
-ax  <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
-m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds,
-                symmetry_axes = list(ax), anchor = c(0,0,0))
+ax <- ProperRotationAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+m <- Molecule3D(
+  name = "CO", atoms = atoms, bonds = bonds,
+  symmetry_axes = list(ax), anchor = c(0, 0, 0)
+)
 m@symmetry_axes_orders
 m@contains_symmetry_axes
 m@symmetry_axes_dataframe

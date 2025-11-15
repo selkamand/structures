@@ -54,7 +54,7 @@ if not given).
 \examples{
 # Define via two points (C3 axis along +Z through the origin)
 ax1 <- ProperRotationAxis(
-  n   = 3L,
+  n = 3L,
   posA = c(0, 0, 0),
   posB = c(0, 0, 1),
   label = "C3(z)"
@@ -68,6 +68,6 @@ ax2 <- ProperRotationAxis(
   label = "C2(z)"
 )
 
-ax1@type   # "Proper Rotation Axis"
+ax1@type # "Proper Rotation Axis"
 
 }

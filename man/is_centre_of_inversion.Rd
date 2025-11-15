@@ -16,8 +16,8 @@ Logical. \code{TRUE} if \code{x} inherits from \code{\link{CentreOfInversion}}, 
 Check if an object is a CentreOfInversion
 }
 \examples{
-ci <- CentreOfInversion(position = c(0,0,0))
-is_centre_of_inversion(ci)     # TRUE
-is_centre_of_inversion(123)    # FALSE
+ci <- CentreOfInversion(position = c(0, 0, 0))
+is_centre_of_inversion(ci) # TRUE
+is_centre_of_inversion(123) # FALSE
 
 }

@@ -18,7 +18,7 @@ Check if an object is an ImproperRotationAxis
 \examples{
 # Assuming ImproperRotationAxis() will have a constructor similar to other elements:
 iax <- ImproperRotationAxis()
-is_improper_rotation_axis(iax)   # TRUE
-is_improper_rotation_axis(NULL)  # FALSE
+is_improper_rotation_axis(iax) # TRUE
+is_improper_rotation_axis(NULL) # FALSE
 
 }

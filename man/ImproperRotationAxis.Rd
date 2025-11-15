@@ -49,7 +49,7 @@ additional point \code{plane_point} that fixes the location of the mirror plane.
 }
 \details{
 The mirror plane is defined as the set of points \code{x} satisfying
-\verb{(x - plane_point) · direction = 0}, i.e. a plane with normal equal to
+\verb{(x - plane_point) <U+00B7> direction = 0}, i.e. a plane with normal equal to
 the axis direction, passing through \code{plane_point}. In typical molecular
 symmetry, \code{plane_point} will also lie on the axis (e.g. at \code{posA}).
 }
@@ -57,23 +57,23 @@ symmetry, \code{plane_point} will also lie on the axis (e.g. at \code{posA}).
 # S4 axis along +Z through the origin; mirror plane perpendicular to the axis
 # and cutting it at the origin (plane_point = posA).
 iax1 <- ImproperRotationAxis(
-  n          = 4L,
-  posA        = c(0, 0, 0),
-  posB        = c(0, 0, 1),
+  n = 4L,
+  posA = c(0, 0, 0),
+  posB = c(0, 0, 1),
   plane_point = c(0, 0, 0),
-  label       = "S4(z)"
+  label = "S4(z)"
 )
 
-iax1@type   # "Improper Rotation Axis"
+iax1@type # "Improper Rotation Axis"
 
 # S6 axis along +Z, with the mirror plane shifted along the axis
 iax2 <- ImproperRotationAxis(
-  n          = 6L,
-  posA        = c(0, 0, 0),
-  direction   = c(0, 0, 1),
-  L           = 2,
+  n = 6L,
+  posA = c(0, 0, 0),
+  direction = c(0, 0, 1),
+  L = 2,
   plane_point = c(0, 0, 0.5),
-  label       = "S6(z)"
+  label = "S6(z)"
 )
 
 }
