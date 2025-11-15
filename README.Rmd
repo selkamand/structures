@@ -58,10 +58,16 @@ molecule_centered <- molecule |>
 
 ---
 
-## Symmetry Axes
+## Symmetry Elements
 
-The `structures` package now supports defining and storing **rotational symmetry axes** 
-within a `Molecule3D` object.
+The `structures` package now supports all standard symmetry elements. Providing Classes for:
+1. Proper Rotation Axes (`ProperRotationAxis()`)
+2. Improper Rotation Axes (`ImproperRotationAxis()`)
+3. Mirror Planes (`MirrorPlane()`)
+4. Centre of Inversion (`CentreOfInversion()`)
+
+Any `Molecule3D` object can be annotated with these symmetry elements.
+
 
 ### The `ProperRotationAxis` class
 
@@ -77,7 +83,7 @@ print(axis_C3)
 
 ### Adding Symmetry Elements
 
-Symmetry elemnts can be attached to any `Molecule3D` object using helper functions:
+Symmetry elemnets can be attached to any `Molecule3D` object using helper functions:
 [`add_proper_rotation_axis()`]:
 
 ```{r}

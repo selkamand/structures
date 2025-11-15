@@ -1,9 +1,3 @@
-# pointgroups_bondy <- function(){
-#   utils::read.csv(system.file("bondy_pointgroups.csv", path = "structures"), header = TRUE, sep = ",", row.names = FALSE)
-# }
-
-
-
 #  PointGroup3D -----------------------------------------------------------
 
 #' PointGroup3D: A 3D Point Group
@@ -46,63 +40,9 @@ PointGroup3D <- S7::new_class(
   }
 )
 
-# Symmetry Elements -------------------------------------------------------
-SymmetryElement <- S7::new_class(
-  name = "SymmetryElement"
-  # No properties. Just useful as parent to al
-)
 
-# Create an Class for each symmetry element that inherits from 'SymmetryElement'
+# Helpers -----------------------------------------------------------------
 
-
-# MirrorPlane -------------------------------------------------------------
-MirrorPlane  <-  S7::new_class(
-  parent = SymmetryElement,
-  name = "MirrorPlane",
-  properties = list(
-    normal = S7::new_property(
-      class = S7::class_numeric,
-      validator = function(value){
-        tol=1e-18
-        if(magnitude(value) <= tol) return(sprintf("Mirror plane @normal must be a vector with magnitude > 0, not [%d]", magnitude(value)))
-        if(length(value) != 3) return(sprintf("Mirror plane @normal must be a numeric vector with length 3: Not [%s]", length(value)))
-        if(length(value) != 3) return(sprintf("Mirror plane @normal must be a numeric vector with length 3: Not [%s]", length(value)))
-        return(NULL)
-      }
-    ),
-    position = S7::new_property(
-      class = S7::class_numeric,
-      validator = function(value){
-        if(length(value) != 3) return(sprintf("Mirror plane @position must be a numeric vector with length 3: Not [%s]", length(value)))
-        return(NULL)
-      }
-    )
-  )
-)
-
-
-# CentreOfInversion -------------------------------------------------------
-CentreOfInversion <- S7::new_class(
-  parent = SymmetryElement,
-  name = "CentreOfInversion",
-  properties = list(
-    position = S7::new_property(
-      class = S7::class_numeric,
-      validator = function(value){
-        if(length(value) != 3) return(sprintf("Center of Inversion @position must be a numeric vector with length 3: Not [%s]", length(value)))
-        return(NULL)
-      }
-    )
-  )
-)
-
-
-# ImproperRotationAxis ----------------------------------------------------
-ImproperRotationAxis <- S7::new_class(
-  parent = SymmetryElement,
-  name = "ImproperRotationAxis",
-  ## Flesh out: should closely resemble the properties of the Proper Rotation Axes
-)
 
 
 #' Schönflies notation of the 32 crystallographic point groups
@@ -175,17 +115,3 @@ crystallographic_pointgroup_names <- function(as_list=FALSE){
   }
   return(point_groups_3d)
 }
-
-
-# valid_symmetry_elements <- function(){
-#   c(
-#     "Cn" =  "Proper Rotation Axes",
-#     "Sn" =  "Improper Rotation Axes",
-#     "sigma" = "Mirror Plane",
-#     "i" =  "Centre of Inversion",
-#   )
-# }
-
-
-
-

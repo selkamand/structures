@@ -8,6 +8,7 @@ Molecule3D(
   name = "MyChemical",
   atoms = minimal_atoms(),
   bonds = minimal_bonds(),
+  symmetry_elements = SymmetryElements(),
   symmetry_axes = list(),
   misc = list(),
   anchor = NULL
