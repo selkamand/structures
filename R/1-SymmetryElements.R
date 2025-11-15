@@ -1,4 +1,5 @@
 # Symmetry Element (Abstract Base Class) -------------------------------------------------------
+
 #' SymmetryElement
 #'
 #' Abstract parent class for all symmetry elements used in point groups and
@@ -10,9 +11,7 @@
 #' @param label Character scalar. Optional user-defined name or description
 #'   for the symmetry element.
 #' @param type Character scalar (read-only). A derived string describing the
-#'   element type. Must be one of
-#'   `"Mirror Plane"`, `"Centre of Inversion"`,
-#'   `"Improper Rotation Axis"`, `"Proper Rotation Axis"`.
+#'   element type. See See [valid_symmetry_element_types()] for valid values.
 #'
 #' @return An S7 object of class `SymmetryElement` (or a subclass).
 #'
@@ -43,7 +42,7 @@ SymmetryElement <- S7::new_class(
         if(length(value) != 1)
           return(sprintf("Symmetry element @type must be a string, not a character vector of length [%s]. If you're seeing this message there is probably an error in the identify_symmetry_type function. Please alert package authors", length(value)))
 
-        valid_symmetry_element_types <- c("Mirror Plane", "Centre of Inversion", "Improper Rotation Axis", "Proper Rotation Axis")
+        valid_symmetry_element_types <- valid_symmetry_element_types()
         if(!value %in% valid_symmetry_element_types){
           return(sprintf(
             "Symmetry element @type must be one of [%s], not [%s]. If you're seeing this message there is probably an error in the identify_symmetry_type function. Please alert package authors",
@@ -61,32 +60,79 @@ SymmetryElement <- S7::new_class(
 
 # Symmetry Element Collection -------------------------------------------------------
 #
-# adn allowing jus to dispatch generics like as.data.frame to the Symmetry Element List
 
-#' SymmetryElementCollection
+#' SymmetryElementCollection: a container for symmetry elements
 #'
-#'A list of symmetry elements. Important for managing IDs of each element (ensuring they're unique)
-#' Forces all symmetry elements to have label and type properties (see Arguments section).
+#' A lightweight container that groups multiple [`SymmetryElement`] objects
+#' together with numeric IDs. This is useful for storing the symmetry content
+#' of a molecule or point group and for coercing the collection to a data frame.
 #'
-#' @param label Character scalar. Optional user-defined name/description.
-#' @param type Character scalar. Read only. A string describing the element type. Must be one of  "Mirror Plane", "Centre of Inversion", "Improper Rotation Axis", "Proper Rotation Axis"
+#' @param symmetry_elements A list of objects inheriting from
+#'   [`structures::SymmetryElement`].
+#' @param ids Numeric vector of the same length as `symmetry_elements`,
+#'   giving a unique identifier for each element.
+#' @param counts Read-only data frame summarising element counts by type.
+#'   Currently not implemented and will emit a warning when accessed.
 #'
+#' @return An S7 object of class `SymmetryElementCollection`.
+#'
+#' @examples
+#' mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+#' ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
+#'
+#' coll <- SymmetryElementCollection(
+#'   symmetry_elements = list(mp, ci),
+#'   ids = c(1, 2)
+#' )
+#'
+#' # Summarise elements as a data frame
+#' as.data.frame(coll)
+#'
+#' @export
 SymmetryElementCollection <- S7::new_class(
   name = "SymmetryElementCollection",
   properties = list(
     symmetry_elements = S7::class_list,
     ids = S7::class_numeric,
-    counts = S7::new_property(
-      class = S7::class_data.frame,
-      setter = function(self, value) { stop("@counts is a read only property") },
+    n = S7::new_property(
+      class = S7::class_integer,
+      setter = function(self, value) { stop("@n is a read only property") },
       getter = function(self) {
-        warning("@counts paramater is not yet implemented.")
+        length(self@symmetry_elements)
+      }
+    ),
+    mirror_planes = S7::new_property(
+      class =  S7::S7_object,
+      setter = function(self, value) { stop("@mirror_planes is a read only property") },
+      getter = function(self) {
+        filter_symmetry_element_collection_by_type(self, type = "Mirror Plane")
+      }
+    ),
+    proper_rotation_axes = S7::new_property(
+      class =  S7::S7_object,
+      setter = function(self, value) { stop("@proper_rotation_axes is a read only property") },
+      getter = function(self) {
+        filter_symmetry_element_collection_by_type(self, type = "Proper Rotation Axis")
+      }
+    ),
+    improper_rotation_axes = S7::new_property(
+      class =  S7::class_list,
+      setter = function(self, value) { stop("@improper_rotation_axes is a read only property") },
+      getter = function(self) {
+        filter_symmetry_element_collection_by_type(self, type = "Improper Rotation Axis")
+      }
+    ),
+    centres_of_inversion = S7::new_property(
+      class =  S7::class_list,
+      setter = function(self, value) { stop("@centres_of_inversion is a read only property") },
+      getter = function(self) {
+        filter_symmetry_element_collection_by_type(self, type = "Centre of Inversion")
       }
     )
   ),
   validator = function(self){
     ids=self@ids
-    elements=self@elements
+    elements=self@symmetry_elements
 
     if(length(ids) != length(elements))
       return(sprintf("@ids must have one entry for each of the @symmetry_elements. Found [%s] IDs and [%s] symmetry_elements", length(ids),length(elements)))
@@ -98,43 +144,51 @@ SymmetryElementCollection <- S7::new_class(
       return(sprintf("Missing (NA) @ids are not allowed. Found [%s].", sum(is.na(ids))))
 
     for (element in elements){
-      if(!inherits(element, "SymmetryElement")) return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))
+      if(!inherits(element, "structures::SymmetryElement")) {return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))}
     }
 
     return(NULL)
+  },
+  constructor = function(symmetry_elements = list(), ids = NULL){
+    if(is.null(ids)) { ids <- seq_along(symmetry_elements)}
+    S7::new_object(
+      S7::S7_object(),
+      symmetry_elements = symmetry_elements,
+      ids = ids
+    )
   }
 )
 
 
 ## Generics ----------------------------------------------------------------
-# S7::method(print, SymmetryElements) <- function(x, ...) {
-#   symmetry_orders_string <- if(is.null(x@symmetry_axes_orders)) "" else sprintf("Symmetry Orders (Cn): %s\n", toString(x@symmetry_axes_orders))
-#   cat(sep = "",
-#       "===================\n",
-#       "Chemical Molecule3D\n",
-#       "===================\n",
-#       sprintf("Name: %s\n", x@name),
-#       sprintf("Atoms: %d\n", nrow(x@atoms)),
-#       sprintf("Bonds: %d\n", nrow(x@bonds)),
-#       sprintf("Symmetry Axes: %d\n", length(x@symmetry_axes)),
-#       symmetry_orders_string,
-#       "\n-------------------\n",
-#       "See @atoms paramater for atom positions\n",
-#       "See @bonds paramater for bond positions\n",
-#       "See @symmetry_axes for symmetry axes"
-#   )
-#
-#   return(invisible(x))
-# }
+S7::method(print, SymmetryElementCollection) <- function(x, ...) {
+  elements = x@symmetry_elements
+  cat(sep = "",
+      "===================\n",
+      "Symmetry Element Collection\n",
+      "===================\n",
+      sprintf("Number of Elements: %s\n", x@n),
+      sprintf("Proper Rotation Axes: %s\n", length(x@proper_rotation_axes)),
+      sprintf("Improper Rotation Axes: %s\n", length(x@improper_rotation_axes)),
+      sprintf("Mirror Planes: %s\n", length(x@mirror_planes)),
+      sprintf("Centres of Inversion: %s\n", length(x@centres_of_inversion)),
+      # sprintf("Atoms: %d\n", nrow(x@atoms)),
+      # sprintf("Bonds: %d\n", nrow(x@bonds)),
+      # sprintf("Symmetry Axes: %d\n", length(x@symmetry_axes)),
+      # symmetry_orders_string,
+      "\n-------------------\n",
+      "See @symmetry_elements paramater for all symmetry elements\n"
+  )
 
-# as.data.frame <- S7::new_generic("as.data.frame", "x")
+  return(invisible(x))
+}
 
 #' @export
 S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
-  ls_info <- lapply(x, function(x){
+  ls_info <- lapply(x@symmetry_elements, function(el){
     data.frame(
-      type = x@type,
-      label = x@label,
+      type = el@type %||% character(0),
+      label = el@label %||% character(0)
     )
   })
 
@@ -145,19 +199,54 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
   return(df_data)
 }
 
-# # as.matrix <- S7::new_generic("as.matrix", "x")
-# S7::method(as.matrix, Molecule3D) <- function(x, ...) {
-#   mx <- as.matrix(x@atoms[c("x", "y", "z")])
-#   rownames(mx) <- x@atoms[["eleno"]]
-#   return(mx)
-# }
+
+## Non-Generic Methods -----------------------------------------------------
+
+#' Filter a SymmetryElementCollection by symmetry element type
+#'
+#' Returns a new [`SymmetryElementCollection`] containing only those
+#' symmetry elements whose `@type` matches one of the requested types.
+#'
+#' @param collection A [`structures::SymmetryElementCollection`] object.
+#' @param types Character vector of symmetry element types to keep. See [valid_symmetry_element_types()] for valid values.
+#'
+#' @return A [`structures::SymmetryElementCollection`] containing the filtered
+#'   subset of elements (with `ids` preserved for the retained elements).
+#'
+#' @examples
+#' mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
+#' ci <- CentreOfInversion(position = c(0,0,0), label = "i")
+#'
+#' coll <- SymmetryElementCollection(
+#'   symmetry_elements = list(mp, ci),
+#'   ids = c(1, 2)
+#' )
+#'
+#' # Keep only mirror planes
+#' filter_symmetry_element_collection_by_type(coll, "Mirror Plane")
+#'
+#' @export
+filter_symmetry_element_collection_by_type <- function(collection, types = valid_symmetry_element_types()){
+  if(!all(types %in% valid_symmetry_element_types()))
+    stop(sprintf("Tried to filter symmetry collection by an invalid type. Types must only include the values [%s]. Unexpected values: [%s]", toString(valid_symmetry_element_types()), toString(setdiff(types, valid_symmetry_element_types()))))
+
+  keep = vapply(
+    X = collection@symmetry_elements,
+    function(element) {
+      element@type %in% types
+    },
+    FUN.VALUE = logical(1)
+  )
+
+  S7::set_props(collection, symmetry_elements = collection@symmetry_elements[keep], ids = collection@ids[keep])
+}
 
 
 
 # Create an Class for each symmetry element that inherits from 'SymmetryElement'
 
 
-# ProperRotationAxis  -------------------------------------
+# [Symmetry Element] ProperRotationAxis  -------------------------------------
 
 ## Class  -------------------------------------
 #' ProperRotationAxis: rotational symmetry axis (C_n)
@@ -472,7 +561,7 @@ transform_symmetry_axis <- function(x, transformation, ...){
   return(new_axis)
 }
 
-# ImproperRotationAxis ----------------------------------------------------
+# [Symmetry Element] ImproperRotationAxis ----------------------------------------------------
 
 ## Class -------------------------------------------------------------
 
@@ -623,7 +712,7 @@ ImproperRotationAxis <- S7::new_class(
 )
 
 
-# MirrorPlane -------------------------------------------------------------
+# [Symmetry Element] MirrorPlane -------------------------------------------------------------
 
 ## Class -------------------------------------------------------------
 
@@ -685,7 +774,7 @@ MirrorPlane  <-  S7::new_class(
 )
 
 
-# CentreOfInversion -------------------------------------------------------
+# [Symmetry Element] CentreOfInversion -------------------------------------------------------
 
 ## Class -------------------------------------------------------------
 
@@ -735,8 +824,8 @@ CentreOfInversion <- S7::new_class(
 
 
 
-
-# Class Checkers ----------------------------------------------------------
+# Helpers -----------------------------------------------------------------
+## Class Checkers ----------------------------------------------------------
 
 #' Check if an object is a MirrorPlane
 #'
@@ -847,7 +936,7 @@ identify_symmetry_type <- function(x, strict = TRUE){
   return("Unknown")
 }
 
-# Helpers -----------------------------------------------------------------
+## Miscellaneous Helpers -----------------------------------------------------------------
 symmetry_element_abbreviations <- function(){
 c(
     "Cn" =  "Proper Rotation Axes",
@@ -858,6 +947,20 @@ c(
 
 }
 
+#' Valid symmetry element types
+#'
+#' Returns the set of recognised symmetry element type strings used by
+#' [`SymmetryElement`] and its subclasses.
+#'
+#' @return A character vector of valid symmetry element types.
+#'
+#' @examples
+#' valid_symmetry_element_types()
+#'
+#' @export
+valid_symmetry_element_types <- function(){
+  c("Mirror Plane", "Centre of Inversion", "Improper Rotation Axis", "Proper Rotation Axis")
+}
 
 
 

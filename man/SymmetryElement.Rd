@@ -11,9 +11,7 @@ SymmetryElement(label = character(0), type = character(0))
 for the symmetry element.}
 
 \item{type}{Character scalar (read-only). A derived string describing the
-element type. Must be one of
-\code{"Mirror Plane"}, \code{"Centre of Inversion"},
-\code{"Improper Rotation Axis"}, \code{"Proper Rotation Axis"}.}
+element type. See See \code{\link[=valid_symmetry_element_types]{valid_symmetry_element_types()}} for valid values.}
 }
 \value{
 An S7 object of class \code{SymmetryElement} (or a subclass).

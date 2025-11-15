@@ -299,3 +299,12 @@ pmean <- function(..., na.rm = FALSE) {
   args <- lapply(args, rep_len, length.out = n)
   rowMeans(do.call(cbind, args), na.rm = na.rm)
 }
+
+
+
+# Operators ---------------------------------------------------------------
+
+`%||%` <- function(LHS, RHS){
+    if(is.null(LHS)) return(RHS)
+    else return(LHS)
+}

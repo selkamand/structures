@@ -2,33 +2,38 @@
 % Please edit documentation in R/1-SymmetryElements.R
 \name{SymmetryElementCollection}
 \alias{SymmetryElementCollection}
-\title{SymmetryElementCollection}
+\title{SymmetryElementCollection: a container for symmetry elements}
 \usage{
-SymmetryElementCollection(
-  symmetry_elements = list(),
-  ids = integer(0),
-  counts = (function (.data = list(), row.names = NULL) 
- {
-     if (is.null(row.names))
-    {
-         list2DF(.data)
-     }
-     else {
-         out <- list2DF(.data,
-    length(row.names))
-         attr(out, "row.names") <- row.names
-         out
-     }
-
-    })()
-)
+SymmetryElementCollection(symmetry_elements = list(), ids = NULL)
 }
 \arguments{
-\item{label}{Character scalar. Optional user-defined name/description.}
+\item{symmetry_elements}{A list of objects inheriting from
+\code{\link{SymmetryElement}}.}
 
-\item{type}{Character scalar. Read only. A string describing the element type. Must be one of  "Mirror Plane", "Centre of Inversion", "Improper Rotation Axis", "Proper Rotation Axis"}
+\item{ids}{Numeric vector of the same length as \code{symmetry_elements},
+giving a unique identifier for each element.}
+
+\item{counts}{Read-only data frame summarising element counts by type.
+Currently not implemented and will emit a warning when accessed.}
+}
+\value{
+An S7 object of class \code{SymmetryElementCollection}.
 }
 \description{
-A list of symmetry elements. Important for managing IDs of each element (ensuring they're unique)
-Forces all symmetry elements to have label and type properties (see Arguments section).
+A lightweight container that groups multiple \code{\link{SymmetryElement}} objects
+together with numeric IDs. This is useful for storing the symmetry content
+of a molecule or point group and for coercing the collection to a data frame.
+}
+\examples{
+mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
+
+coll <- SymmetryElementCollection(
+  symmetry_elements = list(mp, ci),
+  ids = c(1, 2)
+)
+
+# Summarise elements as a data frame
+as.data.frame(coll)
+
 }
