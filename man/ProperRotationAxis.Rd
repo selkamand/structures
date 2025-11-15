@@ -5,7 +5,7 @@
 \title{ProperRotationAxis: rotational symmetry axis (C_n)}
 \usage{
 ProperRotationAxis(
-  Cn,
+  n,
   posA,
   posB = NULL,
   direction = NULL,
@@ -14,7 +14,7 @@ ProperRotationAxis(
 )
 }
 \arguments{
-\item{Cn}{Numeric scalar. Axis fold/order (whole number >= 1).}
+\item{n}{Numeric scalar. Axis fold/order (whole number >= 1).}
 
 \item{posA}{Numeric length-3 vector giving a point on the axis (\code{c(x, y, z)}).}
 
@@ -41,7 +41,7 @@ point \code{posA} and an orientation \code{direction} (unit vector). A second po
 }
 \details{
 \itemize{
-\item \code{Cn} is the order (fold) of the axis, i.e. rotation by \code{360 / Cn} degrees.
+\item \code{n} is the order (fold) of the axis, i.e. rotation by \code{360 / n} degrees.
 \item You can construct an axis either by:
 \itemize{
 \item supplying \code{posA} and \code{posB} (direction and \code{L} are inferred), or
@@ -54,7 +54,7 @@ if not given).
 \examples{
 # Define via two points (C3 axis along +Z through the origin)
 ax1 <- ProperRotationAxis(
-  Cn   = 3L,
+  n   = 3L,
   posA = c(0, 0, 0),
   posB = c(0, 0, 1),
   label = "C3(z)"
@@ -62,10 +62,10 @@ ax1 <- ProperRotationAxis(
 
 # Define via direction (C2 axis along +Z; L defaults to 1)
 ax2 <- ProperRotationAxis(
-  Cn        = 2L,
-  posA      = c(0, 0, 0),
+  n = 2L,
+  posA = c(0, 0, 0),
   direction = c(0, 0, 5),
-  label     = "C2(z)"
+  label = "C2(z)"
 )
 
 ax1@type   # "Proper Rotation Axis"

@@ -13,8 +13,7 @@ SymmetryElementCollection(symmetry_elements = list(), ids = NULL)
 \item{ids}{Numeric vector of the same length as \code{symmetry_elements},
 giving a unique identifier for each element.}
 
-\item{counts}{Read-only data frame summarising element counts by type.
-Currently not implemented and will emit a warning when accessed.}
+\item{n_elements}{Integer: Read-only, How many elements are in this collection.}
 }
 \value{
 An S7 object of class \code{SymmetryElementCollection}.

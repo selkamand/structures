@@ -26,7 +26,7 @@ The same \code{ProperRotationAxis} object \code{x} with updated \code{posA} and 
 Applies a user-supplied transformation function to the two endpoints (\code{posA}, \code{posB})
 that define a \code{\link{ProperRotationAxis}} line in 3D. This is useful for translating, rotating, or
 otherwise mapping the axis to a new position/orientation in space. The symmetry order
-\code{Cn} is left unchanged.
+\code{n} is left unchanged.
 }
 \details{
 The transformation is applied independently to \code{posA} and \code{posB}. No attempt is made
@@ -36,7 +36,7 @@ transformation preserves distinct endpoints and yields finite numeric results.
 }
 \examples{
 # Define an axis along +Z through the origin
-ax <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1))
 
 # 1) Translate by (+1, +2, +3)
 translate <- function(p, dx=0, dy=0, dz=0) {

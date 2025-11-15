@@ -59,7 +59,7 @@ SymmetryElement <- S7::new_class(
 )
 
 # Symmetry Element Collection -------------------------------------------------------
-#
+
 
 #' SymmetryElementCollection: a container for symmetry elements
 #'
@@ -71,8 +71,7 @@ SymmetryElement <- S7::new_class(
 #'   [`structures::SymmetryElement`].
 #' @param ids Numeric vector of the same length as `symmetry_elements`,
 #'   giving a unique identifier for each element.
-#' @param counts Read-only data frame summarising element counts by type.
-#'   Currently not implemented and will emit a warning when accessed.
+#' @param n_elements Integer: Read-only, How many elements are in this collection.
 #'
 #' @return An S7 object of class `SymmetryElementCollection`.
 #'
@@ -94,9 +93,9 @@ SymmetryElementCollection <- S7::new_class(
   properties = list(
     symmetry_elements = S7::class_list,
     ids = S7::class_numeric,
-    n = S7::new_property(
+    n_elements = S7::new_property(
       class = S7::class_integer,
-      setter = function(self, value) { stop("@n is a read only property") },
+      setter = function(self, value) { stop("@n_elements is a read only property") },
       getter = function(self) {
         length(self@symmetry_elements)
       }
@@ -242,6 +241,91 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
 }
 
 
+#' Add a symmetry element to a collection
+#'
+#' Appends a single [`SymmetryElement`] to an existing
+#' [`SymmetryElementCollection`], assigning it the next available numeric ID.
+#'
+#' @param collection A [`structures::SymmetryElementCollection`] object.
+#' @param new A [`structures::SymmetryElement`] to append to `collection`.
+#'
+#' @return A [`structures::SymmetryElementCollection`] with `new` appended and
+#'   `ids` updated to include the newly assigned ID.
+#'
+#' @examples
+#' mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+#' coll <- SymmetryElementCollection()
+#' coll2 <- add_symmetry_element_to_collection(coll, mp)
+#' coll2@ids      # contains 1
+#'
+#' @export
+add_symmetry_element_to_collection <- function(collection, new){
+
+  # Check input types are appropriate
+  assertions::assert_class(collection, class = "structures::SymmetryElementCollection")
+  assertions::assert_class(new, class = "structures::SymmetryElement")
+
+  # Figure out what the new ID should be
+  new_id = max(collection@ids, 0) + 1
+
+  S7::set_props(
+    collection,
+    symmetry_elements = c(collection@symmetry_elements, new),
+    ids = c(collection@ids, new_id)
+  )
+}
+
+#' Combine two SymmetryElementCollections
+#'
+#' Merges the symmetry elements and IDs from two
+#' [`SymmetryElementCollection`] objects into a single collection. The IDs
+#' from `collection2` are offset so that all IDs in the combined collection
+#' remain unique.
+#'
+#' @param collection1 A [`structures::SymmetryElementCollection`] object
+#'   providing the base collection.
+#' @param collection2 A [`structures::SymmetryElementCollection`] object whose
+#'   elements will be appended to `collection1`.
+#'
+#' @return A [`structures::SymmetryElementCollection`] containing all elements
+#'   from both inputs, with updated `ids`.
+#'
+#' @examples
+#' mp <- MirrorPlane(normal = c(0,0,1), position = c(0,0,0), label = "σ_xy")
+#' ci <- CentreOfInversion(position = c(0,0,0), label = "i")
+#'
+#' coll1 <- SymmetryElementCollection(symmetry_elements = list(mp), ids = 1)
+#' coll2 <- SymmetryElementCollection(symmetry_elements = list(ci), ids = 1)
+#'
+#' coll12 <- combine_symmetry_element_collections(coll1, coll2)
+#' coll12@ids   # e.g. c(1, 2)
+#'
+#' @export
+combine_symmetry_element_collections <- function(collection1, collection2){
+
+  # Assertions
+  assertions::assert_class(collection1, class = "SymmetryElementCollection")
+  assertions::assert_class(collection2, class = "SymmetryElementCollection")
+
+  # Ids
+  ids_1 <- collection1@ids
+  ids_2 <- collection2@ids
+
+  # Elements
+  elements1 <- collection1@symmetry_elements
+  elements2 <- collection2@symmetry_elements
+
+  # New ids for collection 2
+  max_id <- max(ids_1, 0)
+  ids_2_new <- ids_2 + max_id
+
+  # New ids for collection 2
+  S7::set_props(
+   collection1,
+   symmetry_elements = c(elements1, elements2),
+   ids = c(ids_1, ids_2_new)
+  )
+}
 
 # Create an Class for each symmetry element that inherits from 'SymmetryElement'
 
@@ -257,14 +341,14 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
 #' `posA + direction * L`.
 #'
 #' @details
-#' * `Cn` is the order (fold) of the axis, i.e. rotation by `360 / Cn` degrees.
+#' * `n` is the order (fold) of the axis, i.e. rotation by `360 / n` degrees.
 #' * You can construct an axis either by:
 #'   - supplying `posA` and `posB` (direction and `L` are inferred), or
 #'   - supplying `posA` and `direction` (direction is normalised; `L` defaults to 1
 #'     if not given).
 #' * `posB` is read-only and always computed from `posA`, `direction`, and `L`.
 #'
-#' @param Cn Numeric scalar. Axis fold/order (whole number >= 1).
+#' @param n Numeric scalar. Axis fold/order (whole number >= 1).
 #' @param posA Numeric length-3 vector giving a point on the axis (`c(x, y, z)`).
 #' @param posB Optional numeric length-3 vector giving a second point on the axis.
 #'   Mutually exclusive with `direction`.
@@ -279,7 +363,7 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
 #' @examples
 #' # Define via two points (C3 axis along +Z through the origin)
 #' ax1 <- ProperRotationAxis(
-#'   Cn   = 3L,
+#'   n   = 3L,
 #'   posA = c(0, 0, 0),
 #'   posB = c(0, 0, 1),
 #'   label = "C3(z)"
@@ -287,10 +371,10 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
 #'
 #' # Define via direction (C2 axis along +Z; L defaults to 1)
 #' ax2 <- ProperRotationAxis(
-#'   Cn        = 2L,
-#'   posA      = c(0, 0, 0),
+#'   n = 2L,
+#'   posA = c(0, 0, 0),
 #'   direction = c(0, 0, 5),
-#'   label     = "C2(z)"
+#'   label = "C2(z)"
 #' )
 #'
 #' ax1@type   # "Proper Rotation Axis"
@@ -300,31 +384,31 @@ ProperRotationAxis <- S7::new_class(
   name = "ProperRotationAxis",
   parent = SymmetryElement,
   properties = list(
-    Cn = S7::new_property(
+    n = S7::new_property(
       class = S7::class_numeric,
       setter = function(self, value){
         if(is_integerlike(value)) {
           value = as.integer(value)
         }
-        S7::prop(self, "Cn") <- value
+        S7::prop(self, "n") <- value
         return(self)
       },
       validator = function(value) {
         if (length(value) != 1L)
           return(
             sprintf(
-              "ProperRotationAxis fold symmetry (Cn) must be a single number (length 1 integer), not a vector of length [%s]",
+              "ProperRotationAxis fold symmetry (@n) must be a single number (length 1 integer), not a vector of length [%s]",
               length(value)
             )
           )
         if (is.na(value) || value < 1L)
-          return(sprintf("ProperRotationAxis fold symmetry (Cn) must be >= 1. Not [%s]", value))
+          return(sprintf("ProperRotationAxis fold symmetry (@n) must be >= 1. Not [%s]", value))
 
         if (is.infinite(value))
-          return(sprintf("ProperRotationAxis fold symmetry (Cn) can not be an infinite value"))
+          return(sprintf("ProperRotationAxis fold symmetry (@n) can not be an infinite value"))
 
         if (!is_integerlike(value))
-          return(sprintf("ProperRotationAxis fold symmetry (Cn) must be a whole number, not [%g]", value))
+          return(sprintf("ProperRotationAxis fold symmetry (@n) must be a whole number, not [%g]", value))
       },
     ),
     posA = S7::new_property(
@@ -403,7 +487,7 @@ ProperRotationAxis <- S7::new_class(
     # browser()
     NULL
   },
-  constructor = function(Cn, posA, posB = NULL, direction = NULL, L = NULL, label = "unnamed"){
+  constructor = function(n, posA, posB = NULL, direction = NULL, L = NULL, label = "unnamed"){
     if (is.null(posB) && is.null(direction)) stop("Supply either `posB` or `direction`")
     if (!is.null(posB) && !is.null(direction)) stop("Supply only one of `posB` or `direction`")
     assertions::assert_length(posA, length = 3, msg = "posA must be a numeric vector of length 3: c(x, y, z)")
@@ -435,7 +519,7 @@ ProperRotationAxis <- S7::new_class(
 
     S7::new_object(
       S7::S7_object(),
-      Cn   = Cn,
+      n   = n,
       posA = posA,
       direction = direction,
       L = L,
@@ -450,9 +534,9 @@ ProperRotationAxis <- S7::new_class(
 S7::method(print, ProperRotationAxis) <- function(x, ...) {
   cat(
     "===================\n",
-    "Symmetry Axis\n",
+    "Proper Rotation Axis\n",
     "===================\n",
-    sprintf("Fold Symmetry / Order (Cn): C%g\n", x@Cn),
+    sprintf("Fold Symmetry / Order (Cn): C%g\n", x@n),
     sprintf("PosA: %s\n", toString(x@posA)),
     sprintf("PosB: %s\n", toString(x@posB)),
     sprintf("Label: %s\n", toString(x@label)),
@@ -467,11 +551,11 @@ S7::method(as.data.frame, ProperRotationAxis) <- function(x, ...) {
   posA = x@posA
   posB = x@posB
   label = x@label
-  Cn = x@Cn
+  Cn = x@n
 
   data.frame(
     label = label,
-    Cn = Cn,
+    Cn = n,
     x=posA["x"],
     y=posA["y"],
     z=posA["z"],
@@ -500,7 +584,7 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5){
 #' Applies a user-supplied transformation function to the two endpoints (`posA`, `posB`)
 #' that define a [`ProperRotationAxis`] line in 3D. This is useful for translating, rotating, or
 #' otherwise mapping the axis to a new position/orientation in space. The symmetry order
-#' `Cn` is left unchanged.
+#' `n` is left unchanged.
 #'
 #' @param x A [`structures::ProperRotationAxis`] object.
 #' @param transformation A function that takes a length-3 coordinate and returns a
@@ -520,7 +604,7 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5){
 #'
 #' @examples
 #' # Define an axis along +Z through the origin
-#' ax <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+#' ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1))
 #'
 #' # 1) Translate by (+1, +2, +3)
 #' translate <- function(p, dx=0, dy=0, dz=0) {
@@ -570,7 +654,7 @@ transform_symmetry_axis <- function(x, transformation, ...){
 #' Represents an improper rotation axis (S\eqn{_n}) in 3D, combining a proper
 #' rotation (C\eqn{_n}) about the axis with reflection in a plane perpendicular
 #' to that axis. Geometrically, the axis is described exactly as in
-#' [`ProperRotationAxis()`] (via `Cn`, `posA`, `direction`, `L`), with an
+#' [`ProperRotationAxis()`] (via `n`, `posA`, `direction`, `L`), with an
 #' additional point `plane_point` that fixes the location of the mirror plane.
 #'
 #' The mirror plane is defined as the set of points `x` satisfying
@@ -578,7 +662,7 @@ transform_symmetry_axis <- function(x, transformation, ...){
 #' the axis direction, passing through `plane_point`. In typical molecular
 #' symmetry, `plane_point` will also lie on the axis (e.g. at `posA`).
 #'
-#' @param Cn Numeric scalar. Axis fold/order (whole number >= 1).
+#' @param n Numeric scalar. Axis fold/order (whole number >= 1).
 #' @param posA Numeric length-3 vector giving a point on the axis (`c(x, y, z)`).
 #' @param posB Optional numeric length-3 vector giving a second point on the axis.
 #'   Mutually exclusive with `direction`. When supplied, `direction` and `L` are
@@ -599,7 +683,7 @@ transform_symmetry_axis <- function(x, transformation, ...){
 #' # S4 axis along +Z through the origin; mirror plane perpendicular to the axis
 #' # and cutting it at the origin (plane_point = posA).
 #' iax1 <- ImproperRotationAxis(
-#'   Cn          = 4L,
+#'   n          = 4L,
 #'   posA        = c(0, 0, 0),
 #'   posB        = c(0, 0, 1),
 #'   plane_point = c(0, 0, 0),
@@ -610,7 +694,7 @@ transform_symmetry_axis <- function(x, transformation, ...){
 #'
 #' # S6 axis along +Z, with the mirror plane shifted along the axis
 #' iax2 <- ImproperRotationAxis(
-#'   Cn          = 6L,
+#'   n          = 6L,
 #'   posA        = c(0, 0, 0),
 #'   direction   = c(0, 0, 1),
 #'   L           = 2,
@@ -645,7 +729,7 @@ ImproperRotationAxis <- S7::new_class(
     )
   ),
 
-  constructor = function(Cn,
+  constructor = function(n,
                          posA,
                          plane_point = posA,
                          posB      = NULL,
@@ -701,7 +785,7 @@ ImproperRotationAxis <- S7::new_class(
 
     S7::new_object(
       S7::S7_object(),
-      Cn = Cn,
+      n = n,
       posA = posA,
       direction = direction,
       L = L,
@@ -710,6 +794,25 @@ ImproperRotationAxis <- S7::new_class(
     )
   }
 )
+
+
+## Generics ----------------------------------------------------------------
+
+#' @export
+S7::method(print, ImproperRotationAxis) <- function(x, ...) {
+  cat(
+    "===================\n",
+    "Improper Rotation Axis\n",
+    "===================\n",
+    sprintf("Fold Symmetry / Order (Sn): S%g\n", x@n),
+    sprintf("Normal (direction): %s\n", toString(x@direction)),
+    sprintf("Normal (position): %s\n", toString(x@posA)),
+    sprintf("Plane (position): %s\n", toString(x@plane_point)),
+    sprintf("Label: %s\n", toString(x@label)),
+    sep = ""
+  )
+  return(invisible(x))
+}
 
 
 # [Symmetry Element] MirrorPlane -------------------------------------------------------------
@@ -774,6 +877,22 @@ MirrorPlane  <-  S7::new_class(
 )
 
 
+## Generics ----------------------------------------------------------------
+#' @export
+S7::method(print, MirrorPlane) <- function(x, ...) {
+  cat(
+    "===================\n",
+    "Mirror Plane\n",
+    "===================\n",
+    sprintf("Normal: %s\n", toString(x@normal)),
+    sprintf("Position: %s\n", toString(x@position)),
+    sprintf("Label: %s\n", toString(x@label)),
+    sep = ""
+  )
+  return(invisible(x))
+}
+
+
 # [Symmetry Element] CentreOfInversion -------------------------------------------------------
 
 ## Class -------------------------------------------------------------
@@ -796,7 +915,9 @@ MirrorPlane  <-  S7::new_class(
 #'   label = "i"
 #' )
 #'
-#' ci@type    # "Centre of Inversion"
+#' ci@type
+#'
+#' print(ci)
 #'
 #' @export
 CentreOfInversion <- S7::new_class(
@@ -821,7 +942,19 @@ CentreOfInversion <- S7::new_class(
 )
 
 
-
+# Generics ----------------------------------------------------------------
+#' @export
+S7::method(print, CentreOfInversion) <- function(x, ...) {
+  cat(
+    "===================\n",
+    "Centre of Inversion\n",
+    "===================\n",
+    sprintf("Position: %s\n", toString(x@position)),
+    sprintf("Label: %s\n", toString(x@label)),
+    sep = ""
+  )
+  return(invisible(x))
+}
 
 
 # Helpers -----------------------------------------------------------------
@@ -884,7 +1017,7 @@ is_improper_rotation_axis <- function(x){
 #'   (and not from `ImproperRotationAxis`), otherwise `FALSE`.
 #'
 #' @examples
-#' ax <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1))
+#' ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1))
 #' is_proper_rotation_axis(ax)        # TRUE
 #' is_proper_rotation_axis("nope")    # FALSE
 #'
@@ -903,7 +1036,7 @@ is_proper_rotation_axis <- function(x){
 #' @return A logical scalar: `TRUE` if `x` is a `ProperRotationAxis`, otherwise `FALSE`.
 #'
 #' @examples
-#' ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+#' ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
 #' is_symmetry_axis(ax)
 #' is_symmetry_axis("not_an_axis")
 #'

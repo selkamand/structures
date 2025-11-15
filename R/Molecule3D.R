@@ -134,7 +134,12 @@
 #' @export
 Molecule3D <- S7::new_class(
   name = "Molecule3D",
+
+
+  ## Properties --------------------------------------------------------------
   properties = list(
+
+    ### Core Configurable Properties   ---------------------------------------------
     name = S7::class_character,
     atoms = S7::class_data.frame,
     bonds = S7::class_data.frame,
@@ -159,7 +164,7 @@ Molecule3D <- S7::new_class(
       }
     ),
 
-    ## COMPUTED PROPERTIES
+    ### Computed, Read Only  ---------------------------------------------
     # List all atom ids (eleno) described by atoms data.frame
     atom_ids = S7::new_property(
       class = S7::class_numeric,
@@ -173,6 +178,7 @@ Molecule3D <- S7::new_class(
       getter = function(self){ unique(self@bonds$bond_id) },
       setter = function(self, value){stop("@bond_ids is a read only property")}
     ),
+
 
     # Maximum atom id (useful to know when combining two different molecules together or adding new atoms)
     maximum_atom_id = S7::new_property(
@@ -189,10 +195,13 @@ Molecule3D <- S7::new_class(
     ),
 
     # atom position matrix (row names are atom ids: eleno)
-    atom_positions = S7::new_property(class = S7::class_numeric, getter = function(self){
-      mx <- as.matrix(self@atoms[c("x", "y", "z")])
-      rownames(mx) <- self@atoms[["eleno"]]
-      return(mx)
+    atom_positions = S7::new_property(
+      class = S7::class_numeric,
+      setter = function(self, value) { stop("@atom_positions is a read only property") },
+      getter = function(self){
+        mx <- as.matrix(self@atoms[c("x", "y", "z")])
+        rownames(mx) <- self@atoms[["eleno"]]
+        return(mx)
     }),
 
     bond_positions = S7::new_property(class = S7::class_numeric, getter = function(self){
@@ -228,7 +237,6 @@ Molecule3D <- S7::new_class(
       setter = function(self, value){stop("@bond_positions_interleaved is a read only property")}
       ),
 
-
     # Center position of all atoms
     center = S7::new_property(class = S7::class_numeric, getter = function(self){
       mx_positions <- self@atom_positions
@@ -240,101 +248,7 @@ Molecule3D <- S7::new_class(
       return(center)
     }),
 
-
-    # Symmetry elements
-    symmetry_elements = S7::new_property(
-      class = SymmetryElementCollection,
-      # class = S7::as_class(SymmetryElementCollection())
-    ),
-
-    # Symmetry axes
-    symmetry_axes = S7::new_property(
-      class = S7::class_list,
-      setter = function(self, value){
-        # Make IDs stable and valid; avoid collisions with any current IDs
-        current_ids <- names(self@symmetry_axes) %||% character()
-        value <- normalize_symmetry_axes_list(value, existing_ids = current_ids)
-
-        S7::prop(self, "symmetry_axes") <- value
-        return(self)
-      },
-      validator = function(value){
-
-        # An empty list is a perfectly valid value
-        if(length(value) == 0) return(NULL)
-
-        # Check all values are of class ProperRotationAxis
-        for (axis in value){
-          if(!is_symmetry_axis(axis))
-            return(sprintf("Symmetry axes must only include elements of class `structures::ProperRotationAxis`. Invalid Class: [%s]", toString(class(axis))))
-        }
-
-        # Check all list entries are named with a unique ID
-        ids = names(value)
-        if(is.null(ids)) return("Symmetry axes must all have a unique ID (name in the @symmetry_axes list)")
-        if(any(!nzchar(ids))) return(sprintf("Symmetry axes must all have a unique identifer (name in the @symmetry_axes list). Found %d with no ID", sum(!nzchar(ids))))
-        if(any(duplicated(ids))) return(sprintf(
-          "Symmetry axes must all have a unique identifer (name in the @symmetry_axes list). Found %d duplicates: %s",
-          sum(duplicated(ids)),
-          toString(unique(ids[duplicated(ids)]))
-        ))
-      }
-    ),
-
-    # Get All Symmetry axes as a dataframe
-    symmetry_axes_dataframe = S7::new_property(
-      class = S7::class_data.frame,
-      getter = function(self) {
-        axes <- self@symmetry_axes
-
-        # Empty: return a zero-row df with stable column types
-        if (length(axes) == 0L) {
-          return(data.frame(
-            id    = character(0),
-            label = character(0),
-            Cn    = integer(0),
-            x     = numeric(0),
-            y     = numeric(0),
-            z     = numeric(0),
-            xend  = numeric(0),
-            yend  = numeric(0),
-            zend  = numeric(0),
-            stringsAsFactors = FALSE
-          ))
-        }
-
-        dfs <- lapply(axes, as.data.frame)  # one row per ProperRotationAxis
-        df  <- do.call(rbind, dfs)
-        df$id <- names(axes)
-
-        # Clean and stabilize column order
-        rownames(df) <- NULL
-        df <- df[, c("id", "label", "Cn", "x", "y", "z", "xend", "yend", "zend")]
-
-        return(df)
-      },
-      setter = function(self, value){stop("@symmetry_axes_dataframe is a read only property")}
-    ),
-
-    # Fetch unique list of symmetry axis orders
-    symmetry_axes_orders = S7::new_property(
-      class = S7::class_numeric,
-      getter = function(self){
-        orders <- vapply(X = self@symmetry_axes, FUN = function(x){x@Cn}, FUN.VALUE = numeric(1))
-        unique_orders <-unique(orders)
-        if(length(unique_orders) == 0) return(NULL)
-        return(unique_orders)
-      },
-      setter = function(self, value){stop("@symmetry_axes_orders is a read only property")}
-    ),
-
-    # Boolean: does the atom have any symmetry axes added
-    contains_symmetry_axes = S7::new_property(
-      class = S7::class_logical,
-      getter = function(self){ length(self@symmetry_axes) > 0 },
-      setter = function(self, value){stop("@contains_symmetry_axes is a read only property")}
-    ),
-
+    #### Connectivity ---------------------------------------------
     # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
     # Requires igraph
     connectivity = S7::new_property(
@@ -345,44 +259,25 @@ Molecule3D <- S7::new_class(
         lapply(split(names(components$membership), components$membership), as.numeric)
       },
       setter = function(self, value){stop("@components is a read only property")}
+    ),
+
+
+    ### Symmetry Related Properties ---------------------------------------------
+    # Symmetry elements
+    symmetry_elements = S7::new_property(
+      class = SymmetryElementCollection,
+    ),
+
+    # Boolean: does the atom have any proper rotation axes
+    contains_symmetry_elements = S7::new_property(
+      class = S7::class_logical,
+      getter = function(self){ length(self@symmetry_elements) > 0 },
+      setter = function(self, value){stop("@contains_symmetry_elements is a read only property")}
     )
+
   ),
 
-
-
-  # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_elements = SymmetryElements(), symmetry_axes = list(), misc = list(), anchor = NULL) {
-
-    # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
-    bonds <- format_bonds(bonds)
-
-    # Fix column types (and add 'element' column if not present)
-    atoms <- format_atoms(atoms)
-
-    # If anchor is NULL, default to the geometric center of atoms (or 0,0,0 if empty)
-    if(is.null(anchor)){
-      if(nrow(atoms) > 0){
-        center_x <- mean(atoms$x, na.rm = TRUE)
-        center_y <- mean(atoms$y, na.rm = TRUE)
-        center_z <- mean(atoms$z, na.rm = TRUE)
-        anchor <- c(center_x, center_y, center_z)
-      }
-      else
-        anchor <- c(0, 0, 0)
-    }
-
-    # Return the S7 object
-    S7::new_object(
-      S7::S7_object(),
-      name=name,
-      atoms = atoms,
-      bonds = bonds,
-      misc = misc,
-      symmetry_elements = symmetry_elements(),
-      anchor = anchor
-    )
-  },
-
+  ## Validator ---------------------------------------------
   validator = function(self) {
 
     ## ---- Validate Chemical Name ----
@@ -448,6 +343,40 @@ Molecule3D <- S7::new_class(
 
     ## If no problems:
     NULL
+  },
+
+  ## Constructor ---------------------------------------------
+  # Add/normalize columns as the object is being created
+  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_elements = SymmetryElements(), symmetry_axes = list(), misc = list(), anchor = NULL) {
+
+    # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
+    bonds <- format_bonds(bonds)
+
+    # Fix column types (and add 'element' column if not present)
+    atoms <- format_atoms(atoms)
+
+    # If anchor is NULL, default to the geometric center of atoms (or 0,0,0 if empty)
+    if(is.null(anchor)){
+      if(nrow(atoms) > 0){
+        center_x <- mean(atoms$x, na.rm = TRUE)
+        center_y <- mean(atoms$y, na.rm = TRUE)
+        center_z <- mean(atoms$z, na.rm = TRUE)
+        anchor <- c(center_x, center_y, center_z)
+      }
+      else
+        anchor <- c(0, 0, 0)
+    }
+
+    # Return the S7 object
+    S7::new_object(
+      S7::S7_object(),
+      name=name,
+      atoms = atoms,
+      bonds = bonds,
+      misc = misc,
+      symmetry_elements = symmetry_elements(),
+      anchor = anchor
+    )
   }
 )
 

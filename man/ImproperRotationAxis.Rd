@@ -5,7 +5,7 @@
 \title{ImproperRotationAxis: improper rotational symmetry axis (S_n)}
 \usage{
 ImproperRotationAxis(
-  Cn,
+  n,
   posA,
   plane_point = posA,
   posB = NULL,
@@ -15,7 +15,7 @@ ImproperRotationAxis(
 )
 }
 \arguments{
-\item{Cn}{Numeric scalar. Axis fold/order (whole number >= 1).}
+\item{n}{Numeric scalar. Axis fold/order (whole number >= 1).}
 
 \item{posA}{Numeric length-3 vector giving a point on the axis (\code{c(x, y, z)}).}
 
@@ -44,7 +44,7 @@ An S7 object of class \code{ImproperRotationAxis}.
 Represents an improper rotation axis (S\eqn{_n}) in 3D, combining a proper
 rotation (C\eqn{_n}) about the axis with reflection in a plane perpendicular
 to that axis. Geometrically, the axis is described exactly as in
-\code{\link[=ProperRotationAxis]{ProperRotationAxis()}} (via \code{Cn}, \code{posA}, \code{direction}, \code{L}), with an
+\code{\link[=ProperRotationAxis]{ProperRotationAxis()}} (via \code{n}, \code{posA}, \code{direction}, \code{L}), with an
 additional point \code{plane_point} that fixes the location of the mirror plane.
 }
 \details{
@@ -57,7 +57,7 @@ symmetry, \code{plane_point} will also lie on the axis (e.g. at \code{posA}).
 # S4 axis along +Z through the origin; mirror plane perpendicular to the axis
 # and cutting it at the origin (plane_point = posA).
 iax1 <- ImproperRotationAxis(
-  Cn          = 4L,
+  n          = 4L,
   posA        = c(0, 0, 0),
   posB        = c(0, 0, 1),
   plane_point = c(0, 0, 0),
@@ -68,7 +68,7 @@ iax1@type   # "Improper Rotation Axis"
 
 # S6 axis along +Z, with the mirror plane shifted along the axis
 iax2 <- ImproperRotationAxis(
-  Cn          = 6L,
+  n          = 6L,
   posA        = c(0, 0, 0),
   direction   = c(0, 0, 1),
   L           = 2,

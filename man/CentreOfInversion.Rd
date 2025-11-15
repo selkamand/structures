@@ -27,6 +27,8 @@ ci <- CentreOfInversion(
   label = "i"
 )
 
-ci@type    # "Centre of Inversion"
+ci@type
+
+print(ci)
 
 }

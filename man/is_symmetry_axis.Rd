@@ -16,7 +16,7 @@ A logical scalar: \code{TRUE} if \code{x} is a \code{ProperRotationAxis}, otherw
 Tests whether an object inherits from the \code{\link{ProperRotationAxis}} or \code{\link{ImproperRotationAxis}} class.
 }
 \examples{
-ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
 is_symmetry_axis(ax)
 is_symmetry_axis("not_an_axis")
 
