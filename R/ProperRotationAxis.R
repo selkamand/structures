@@ -1,3 +1,7 @@
+
+# ProperRotationAxis Class Definition -------------------------------------
+
+
 #' ProperRotationAxis: Rotational Symmetry Axis (C_n)
 #'
 #' The ProperRotationAxis object represents a proper rotation axis in molecular or solid-state symmetry.
@@ -312,7 +316,8 @@ is_symmetry_axis <- function(x){
 #'
 #'@export
 transform_symmetry_axis <- function(x, transformation, ...){
-  assertions::assert_class(x, "structures::ProperRotationAxis")
+  assertions::assert_class(x, c("structures::ProperRotationAxis", "structures::ImproperRotationAxis"))
+  #assertions::assert_class(x, "structures::ProperRotationAxis")
   assertions::assert_function(transformation)
 
   posA <- x@posA
