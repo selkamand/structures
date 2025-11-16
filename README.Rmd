@@ -105,7 +105,7 @@ operations — simply by supplying your own function.
 
 ### Using the move package to transform molecules
 
-The [move](https://github.com/selkamand/move) package contains common transformations that can plug straight into `transform_molecule`
+The [move](https://github.com/selkamand/move) package contains common transformations that can plug straight into `transform_molecule`.
 
 ```{r}
 library(move)
