@@ -8,7 +8,7 @@ Shape(
   vertices = default_vertices(),
   edges = default_edges(),
   faces = list(),
-  symmetry_axes = list()
+  symmetry_elements = SymmetryElementCollection()
 )
 }
 \arguments{
