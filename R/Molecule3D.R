@@ -695,6 +695,66 @@ filter_atoms <- function(x, eleno) {
   return(x)
 }
 
+
+#' Filter molecule for specific atoms by name
+#'
+#' Filters a molecule to include only atoms whose `elena` (atom name) matches
+#' one or more requested values. Orphaned bonds (i.e. bonds whose endpoints are
+#' not both retained) are automatically dropped, in the same way as
+#' [filter_atoms()].
+#'
+#' @param x A [`structures::Molecule3D`] object.
+#' @param elena Character vector of atom names to keep (matching
+#'   `x@atoms$elena`).
+#'
+#' @return A [`structures::Molecule3D`] object containing only atoms whose
+#'   `elena` is in `elena`, and the bonds between them.
+#'
+#' @examples
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Keep only atoms whose name is "C"
+#' molecule_C <- filter_atoms_by_name(molecule, elena = "C")
+#'
+#' @export
+filter_atoms_by_name <- function(x, elena) {
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  # Reuse existing helper to find matching IDs
+  eleno <- fetch_eleno_by_name(x, elena)
+  filter_atoms(x, eleno = eleno)
+}
+
+
+#' Filter molecule for specific atoms by element
+#'
+#' Filters a molecule to include only atoms whose `element` (chemical symbol)
+#' matches one or more requested values. Orphaned bonds (i.e. bonds whose
+#' endpoints are not both retained) are automatically dropped, in the same way
+#' as [filter_atoms()].
+#'
+#' @param x A [`structures::Molecule3D`] object.
+#' @param element Character vector of element symbols to keep (matching
+#'   `x@atoms$element`, e.g. `"C"`, `"H"`, `"O"`).
+#'
+#' @return A [`structures::Molecule3D`] object containing only atoms whose
+#'   `element` is in `element`, and the bonds between them.
+#'
+#' @examples
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Keep only carbon atoms
+#' molecule_C <- filter_atoms_by_element(molecule, element = "C")
+#'
+#' @export
+filter_atoms_by_element <- function(x, element) {
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  # Reuse existing helper to find matching IDs
+  eleno <- fetch_eleno_by_element(x, element)
+  filter_atoms(x, eleno = eleno)
+}
+
 ## Adding Symmetry Elements ---------------------------------------------------------
 
 
