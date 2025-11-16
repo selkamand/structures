@@ -2,7 +2,7 @@
 % Please edit documentation in R/1-SymmetryElements.R
 \name{transform_symmetry_axis}
 \alias{transform_symmetry_axis}
-\title{Apply a 3D transformation to a ProperRotationAxis}
+\title{Apply a 3D transformation to a rotation axis}
 \usage{
 transform_symmetry_axis(x, transformation, ...)
 }
@@ -23,10 +23,12 @@ vector \code{c(x=..., y=..., z=...)}. The function must return either:
 The same \code{ProperRotationAxis} object \code{x} with updated \code{posA} and \code{posB}.
 }
 \description{
-Applies a user-supplied transformation function to the two endpoints (\code{posA}, \code{posB})
-that define a \code{\link{ProperRotationAxis}} line in 3D. This is useful for translating, rotating, or
-otherwise mapping the axis to a new position/orientation in space. The symmetry order
-\code{n} is left unchanged.
+Applies a user-supplied transformation function to the geometric definition
+of a \code{\link{ProperRotationAxis}} or \code{\link{ImproperRotationAxis}}. For a proper axis,
+the endpoints (\code{posA}, \code{posB}) are transformed and the direction/length
+recomputed. For an improper axis, the same transformation is also applied
+to \code{plane_point} so that the associated mirror plane remains consistent
+with the transformed axis.
 }
 \details{
 The transformation is applied independently to \code{posA} and \code{posB}. No attempt is made

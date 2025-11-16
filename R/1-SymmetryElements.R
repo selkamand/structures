@@ -64,10 +64,52 @@ SymmetryElement <- S7::new_class(
       }
     )
   )
-
-  # No properties. Just useful as parent to all other Symmetry elements
 )
 
+
+## Generics ----------------------------------------------------------------
+
+#' Apply a 3D transformation to a symmetry element
+#'
+#' @description
+#' Generic wrapper that applies a coordinate transformation to any
+#' [`structures::SymmetryElement`] subclass. This keeps symmetry elements
+#' consistent with transformed molecular coordinates (see [transform_molecule()]).
+#'
+#' Concrete methods are provided for:
+#' \itemize{
+#'   \item [`structures::ProperRotationAxis`]
+#'   \item [`structures::ImproperRotationAxis`]
+#'   \item [`structures::MirrorPlane`]
+#'   \item [`structures::CentreOfInversion`]
+#' }
+#'
+#' @param x A [`structures::SymmetryElement`] object.
+#' @param transformation A function that takes a length-3 coordinate and returns a
+#'   transformed length-3 coordinate. The input will be passed as a named numeric
+#'   vector `c(x = ..., y = ..., z = ...)`. The function must return either:
+#'   \itemize{
+#'     \item a named numeric vector with names `x`, `y`, `z`, or
+#'     \item a list with elements `x`, `y`, `z` coercible to numeric.
+#'   }
+#' @param ... Additional arguments forwarded to `transformation`.
+#'
+#' @return A transformed symmetry element of the same class as `x`.
+#'
+#' @export
+transform_symmetry_element <- S7::new_generic(
+  name = "transform_symmetry_element", "x"
+)
+
+# If we end up adding more SymmetryElement subclasses later and forget to define a transform_symmetry_element methods
+# the code below will force a loud error
+#' @export
+S7::method(transform_symmetry_element, SymmetryElement) <- function(x, transformation, ...) {
+  stop(
+    "No transform_symmetry_element() method implemented for symmetry element of class: ",
+    paste(class(x), collapse = " / ")
+  )
+}
 # Symmetry Element Collection -------------------------------------------------------
 
 
@@ -101,8 +143,12 @@ SymmetryElement <- S7::new_class(
 SymmetryElementCollection <- S7::new_class(
   name = "SymmetryElementCollection",
   properties = list(
+
+    ### Writable --------------------------------------------------------------
     elements = S7::class_list,
     ids = S7::class_numeric,
+
+    ### Read Only --------------------------------------------------------------
     n_elements = S7::new_property(
       class = S7::class_integer,
       setter = function(self, value) {
@@ -111,6 +157,11 @@ SymmetryElementCollection <- S7::new_class(
       getter = function(self) {
         length(self@elements)
       }
+    ),
+    summary = S7::new_property(
+      class = S7::class_data.frame,
+      setter = function(self, value) { stop("@summary is a read only property") },
+      getter =  function(self){ as.data.frame(self) }
     ),
     mirror_planes = S7::new_property(
       class = S7::S7_object,
@@ -260,6 +311,13 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
   return(df_data)
 }
 
+## Generic ------------------------------------------------------------------
+
+
+
+
+
+
 
 ## Non-Generic Methods -----------------------------------------------------
 
@@ -396,6 +454,87 @@ combine_symmetry_element_collections <- function(collection1, collection2) {
     ids = c(ids_1, ids_2_new)
   )
 }
+
+fetch_symmetry_element_from_collection <- function(collection, id, error_if_missing = TRUE){
+  assertions::assert_class(collection, "structures::SymmetryElementCollection")
+  assertions::assert_number(id)
+  if(error_if_missing & !id %in% collection@ids) { stop("Failed to fetch element with [id=",id, "]. ID not found in collection. If you would prefer to return NULL when id is missing, set error_if_missing=FALSE")}
+  idx = match(id, collection@ids)
+  collection@elements[[idx]]
+}
+
+
+#' Fetch all proper rotation axes of a given order (Cn) from a collection
+#'
+#' @description
+#' Returns all [`structures::ProperRotationAxis`] objects in a
+#' [`structures::SymmetryElementCollection`] whose fold \code{n} matches
+#' the requested \code{Cn}.
+#'
+#' This is the low-level worker; see
+#' [fetch_all_proper_rotation_axes_with_order()] for the
+#' `Molecule3D`-convenience wrapper.
+#'
+#' @param collection A [`structures::SymmetryElementCollection`] object.
+#' @param Cn Integer (or integer-like numeric) fold/order to match
+#'   (e.g. \code{2}, \code{3}, \code{6}).
+#'
+#' @return
+#' \itemize{
+#'   \item \code{NULL} if the collection contains no symmetry elements at all.
+#'   \item Otherwise, a \emph{list} of [`structures::ProperRotationAxis`]
+#'         objects whose \code{n} equals \code{Cn}. The list may be empty if
+#'         no axes have the requested order.
+#' }
+#'
+#' @examples
+#' mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+#' ax2 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1), label = "C2(z)")
+#' ax3 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1), label = "C3(z)")
+#'
+#' coll <- SymmetryElementCollection(
+#'   elements = list(mp, ax2, ax3),
+#'   ids      = c(1, 2, 3)
+#' )
+#'
+#' fetch_all_proper_rotation_axes_with_order_from_collection(coll, Cn = 2L) # list of C2 axes
+#' fetch_all_proper_rotation_axes_with_order_from_collection(coll, Cn = 6L) # empty list
+#'
+#' @export
+fetch_all_proper_rotation_axes_with_order_from_collection <- function(collection, Cn) {
+  assertions::assert_class(collection, "structures::SymmetryElementCollection")
+
+  # No symmetry elements at all → NULL, to match older behaviour
+  if (collection@n_elements == 0L) {
+    return(NULL)
+  }
+
+  # Normalise order to integer-like
+  if (!is_integerlike(Cn)) {
+    stop("Cn must be an integer-like value, not: ", toString(Cn))
+  }
+  Cn <- as.integer(Cn)
+
+  # Restrict to proper rotation axes only
+  axes <- collection@proper_rotation_axes
+  if (length(axes) == 0L) {
+    # Collection has elements but none of type "Proper Rotation Axis"
+    return(list())
+  }
+
+  keep <- vapply(
+    X = axes,
+    FUN = function(axis) axis@n == Cn,
+    FUN.VALUE = logical(1)
+  )
+
+  axes[keep]
+}
+
+
+
+
+
 
 # Create an Class for each symmetry element that inherits from 'SymmetryElement'
 
@@ -656,6 +795,15 @@ S7::method(as.data.frame, ProperRotationAxis) <- function(x, ...) {
 }
 
 
+#' @export
+S7::method(transform_symmetry_element, ProperRotationAxis) <- function(x, transformation, ...) {
+  transform_symmetry_axis(x, transformation = transformation, ...)
+}
+
+
+
+
+
 ## Helpers -----------------------------------------------------------------
 is_integerlike <- function(x, tol = .Machine$double.eps^0.5) {
   if (length(x) == 0L) {
@@ -671,13 +819,15 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5) {
 
 ## Non-Generic Methods -----------------------------------------------------
 
-#' Apply a 3D transformation to a ProperRotationAxis
+#' Apply a 3D transformation to a rotation axis
 #'
 #' @description
-#' Applies a user-supplied transformation function to the two endpoints (`posA`, `posB`)
-#' that define a [`ProperRotationAxis`] line in 3D. This is useful for translating, rotating, or
-#' otherwise mapping the axis to a new position/orientation in space. The symmetry order
-#' `n` is left unchanged.
+#' Applies a user-supplied transformation function to the geometric definition
+#' of a [`ProperRotationAxis`] or [`ImproperRotationAxis`]. For a proper axis,
+#' the endpoints (`posA`, `posB`) are transformed and the direction/length
+#' recomputed. For an improper axis, the same transformation is also applied
+#' to `plane_point` so that the associated mirror plane remains consistent
+#' with the transformed axis.
 #'
 #' @param x A [`structures::ProperRotationAxis`] object.
 #' @param transformation A function that takes a length-3 coordinate and returns a
@@ -721,24 +871,52 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5) {
 #'
 #' @export
 transform_symmetry_axis <- function(x, transformation, ...) {
-  assertions::assert_class(x, c("structures::ProperRotationAxis", "structures::ImproperRotationAxis"))
+  assertions::assert_class(
+    x,
+    c("structures::ProperRotationAxis", "structures::ImproperRotationAxis")
+  )
   assertions::assert_function(transformation)
 
+  # --- Transform the axis line (posA / posB) ---
   posA <- x@posA
   posB <- x@posB
 
   posAnew <- transformation(posA, ...)
   posBnew <- transformation(posB, ...)
 
-  posAnew <- if (is.list(posAnew)) unlist(posAnew) else posAnew
-  posBnew <- if (is.list(posBnew)) unlist(posBnew) else posBnew
-  direction <- create_vector_from_start_end(start = posAnew, end = posBnew, unit = TRUE)
+  if (is.list(posAnew)) posAnew <- unlist(posAnew)
+  if (is.list(posBnew)) posBnew <- unlist(posBnew)
+
+  direction <- create_vector_from_start_end(
+    start = posAnew,
+    end   = posBnew,
+    unit  = TRUE
+  )
   L <- compute_distance(posAnew, posBnew)
 
-  new_axis <- S7::set_props(x, posA = posAnew, direction = direction, L = L)
+  # --- Base update (works for ProperRotationAxis) ---
+  new_axis <- S7::set_props(
+    x,
+    posA     = posAnew,
+    direction = direction,
+    L        = L
+  )
+
+  # --- Extra step for ImproperRotationAxis: transform plane_point too ---
+  if (is_improper_rotation_axis(new_axis)) {
+    plane_point <- new_axis@plane_point
+    plane_point_new <- transformation(plane_point, ...)
+
+    if (is.list(plane_point_new)) plane_point_new <- unlist(plane_point_new)
+
+    # Optional: you could assert that plane_point_new lies on the new axis,
+    # but that may be too strict for arbitrary transformations.
+    new_axis <- S7::set_props(new_axis, plane_point = plane_point_new)
+  }
 
   return(new_axis)
 }
+
 
 # [Symmetry Element] ImproperRotationAxis ----------------------------------------------------
 
@@ -915,6 +1093,10 @@ S7::method(print, ImproperRotationAxis) <- function(x, ...) {
   return(invisible(x))
 }
 
+#' @export
+S7::method(transform_symmetry_element, ImproperRotationAxis) <- function(x, transformation, ...) {
+  transform_symmetry_axis(x, transformation = transformation, ...)
+}
 
 # [Symmetry Element] MirrorPlane -------------------------------------------------------------
 
@@ -1001,6 +1183,37 @@ S7::method(print, MirrorPlane) <- function(x, ...) {
   return(invisible(x))
 }
 
+#' @export
+S7::method(transform_symmetry_element, MirrorPlane) <- function(x, transformation, ...) {
+  assertions::assert_function(transformation)
+
+  # A point on the plane and a second point offset along the normal
+  pos        <- x@position
+  pos_normal <- pos + x@normal
+
+  pos_new        <- transformation(pos,        ...)
+  pos_normal_new <- transformation(pos_normal, ...)
+
+  # Allow transforms that return lists
+  if (is.list(pos_new))        pos_new        <- unlist(pos_new)
+  if (is.list(pos_normal_new)) pos_normal_new <- unlist(pos_normal_new)
+
+  # Recompute unit normal from the transformed points
+  new_normal <- create_vector_from_start_end(
+    start = pos_new,
+    end   = pos_normal_new,
+    unit  = TRUE
+  )
+
+  x <- S7::set_props(
+    x,
+    position = pos_new,
+    normal   = new_normal
+  )
+  x
+}
+
+
 
 # [Symmetry Element] CentreOfInversion -------------------------------------------------------
 
@@ -1065,6 +1278,17 @@ S7::method(print, CentreOfInversion) <- function(x, ...) {
     sep = ""
   )
   return(invisible(x))
+}
+
+#' @export
+S7::method(transform_symmetry_element, CentreOfInversion) <- function(x, transformation, ...) {
+  assertions::assert_function(transformation)
+
+  pos_new <- transformation(x@position, ...)
+  if (is.list(pos_new)) pos_new <- unlist(pos_new)
+
+  x <- S7::set_props(x, position = pos_new)
+  x
 }
 
 
@@ -1208,3 +1432,6 @@ symmetry_element_abbreviations <- function() {
 valid_symmetry_element_types <- function() {
   c("Proper Rotation Axis",  "Improper Rotation Axis", "Mirror Plane", "Centre of Inversion")
 }
+
+
+
