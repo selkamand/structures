@@ -39,8 +39,6 @@ remotes::install_github("selkamand/structures")
 ``` r
 library(structures)
 
-library(structures)
-
 # Load a benzene structure
 path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
@@ -98,21 +96,21 @@ All transformations ultimately flow through a single low-level
 mechanism:
 
 ``` r
-transform_molecule(molecule, transformation = <function>)
+transform_molecule(molecule, transformation = <function>, ...)
 ```
 
 Here, `transformation(point)` must take a named numeric vector
-`c(x, y, z)` and return another 3-vector.
+`c(x, y, z)` and return another 3-vector. Additional arugments to
+transformation function can be supplied by `...`
 
 This makes it possible to apply any coordinate mapping - translation,
 rotation, reflection, projection, distortion, or even nonlinear
 geometric operations — simply by supplying your own function.
 
-While you can write many tranformation functions yourself, the
-[move](https://github.com/selkamand/move) package contains common
-transformations.
-
 ### Using the move package to transform molecules
+
+The [move](https://github.com/selkamand/move) package contains common
+transformations that can plug straight into `transform_molecule`
 
 ``` r
 library(move)
@@ -128,7 +126,7 @@ molecule_shifted <- transform_molecule(
 # Rotate around the Z-axis
 molecule_rotated <- transform_molecule(
   molecule,
-  transformation = move::rotate_vector_around_axis,,
+  transformation = move::rotate_vector_around_axis,
   angle = pi / 3,
   rotation_axis = c(0, 0, 1)
 )
