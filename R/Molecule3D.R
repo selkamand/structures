@@ -1533,7 +1533,7 @@ add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un
 #' @param torsion_angle Numeric scalar; dihedral angle \code{A<U+2013>B<U+2013>C<U+2013>D} in degrees.
 #' @param bond_angle Numeric scalar; bond angle \code{B<U+2013>C<U+2013>D} in degrees.
 #' @param bond_type Character scalar specifying the SYBYL/Tripos bond code for the
-#'   new C<U+2013>D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"1"}.
+#'   new C<U+2013>D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"du"}.
 #' @param elena Character scalar atom label for the dummy atom (default \code{"Du"}).
 #'
 #' @details
@@ -1566,7 +1566,7 @@ add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un
 #'   bond_length = 1.5,
 #'   torsion_angle = 60,
 #'   bond_angle = 109.5,
-#'   bond_type = "1",
+#'   bond_type = "du",
 #'   elena = "Du"
 #' )
 #' tail(m2@atoms)
@@ -1575,7 +1575,7 @@ add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un
 #' @seealso \code{\link{add_bonds}}, \code{\link{combine_molecules}},
 #'   \code{\link{fetch_atom_position}}, \code{\link{Molecule3D}}
 #' @export
-add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_length, torsion_angle, bond_angle, bond_type = "1", elena = "Du") {
+add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_length, torsion_angle, bond_angle, bond_type = "du", elena = "Du") {
   assertions::assert_class(molecule, "structures::Molecule3D")
 
   # positions is a 3x3 (or 3xN) matrix of A,B,C coordinates (rows = eleno, cols x/y/z)

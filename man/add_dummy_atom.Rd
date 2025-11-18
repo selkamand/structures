@@ -12,7 +12,7 @@ add_dummy_atom(
   bond_length,
   torsion_angle,
   bond_angle,
-  bond_type = "1",
+  bond_type = "du",
   elena = "Du"
 )
 }
@@ -31,7 +31,7 @@ a distance \code{bond_length} from \code{atom_id_c}, with bond angle
 \item{bond_angle}{Numeric scalar; bond angle \code{B<U+2013>C<U+2013>D} in degrees.}
 
 \item{bond_type}{Character scalar specifying the SYBYL/Tripos bond code for the
-new C<U+2013>D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"1"}.}
+new C<U+2013>D bond (e.g., \code{"1"}, \code{"2"}, \code{"ar"}, \code{"un"}). Defaults to \code{"du"}.}
 
 \item{elena}{Character scalar atom label for the dummy atom (default \code{"Du"}).}
 }
@@ -77,7 +77,7 @@ m2 <- add_dummy_atom(
   bond_length = 1.5,
   torsion_angle = 60,
   bond_angle = 109.5,
-  bond_type = "1",
+  bond_type = "du",
   elena = "Du"
 )
 tail(m2@atoms)
