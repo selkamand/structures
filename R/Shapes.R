@@ -39,6 +39,8 @@
 Shape <- S7::new_class(
   name = "Shape",
   properties = list(
+
+    ## Writeable ---------------------------------------------------------------
     vertices = S7::new_property(
       class = S7::class_data.frame,
       validator = function(value) {
@@ -89,6 +91,9 @@ Shape <- S7::new_class(
         }
       }
     ),
+    symmetry_elements = SymmetryElementCollection,
+
+    ## Read Only ---------------------------------------------------------------
     face_centroids = S7::new_property(
       class = S7::class_data.frame,
       setter = function(self, value) {
@@ -130,7 +135,18 @@ Shape <- S7::new_class(
         return(df_centers)
       }
     ),
-    symmetry_elements = SymmetryElementCollection,
+    geometric_center = S7::new_property(
+      class = S7::class_numeric,
+      setter = function(self, value) { stop("@geometric_center is a read only property") },
+      getter = function(self){
+        vertices = self@vertices
+        x = mean(vertices$x)
+        y = mean(vertices$y)
+        z = mean(vertices$z)
+        c("x" = x, "y" = y, "z"=z)
+      }
+    ),
+
     # symmetry_axes = S7::new_property(
     #   class = S7::class_list,
     #   validator = function(value) {
