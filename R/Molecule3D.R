@@ -1100,6 +1100,33 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
     Cn = Cn
   )
 }
+
+
+## Computations ------------------------------------------------------------
+
+#' Compute a best-fit plane through all atoms of a Molecule3D
+#'
+#' Extracts atomic Cartesian coordinates from a [`structures::Molecule3D`]
+#' object and computes the best-fit plane using
+#' [`move::compute_plane_from_points()`]. If only 3 atoms are present, it computes an exact solution.
+#' If there are more than 3 points it computes the best-fit plane by SVD.
+#'
+#' @param molecule A [`structures::Molecule3D`] object.
+#'
+#' @return A list describing the plane (normal & offset). See [move::compute_plane_from_points()] for details,
+#'
+#' @examples
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' plane <- compute_plane_from_atoms(m)
+#' plane$normal
+#'
+#' @export
+compute_plane_from_atoms <- function(molecule){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  mx <- molecule@atom_positions
+  move::compute_plane_from_points(mx)
+}
+
 ## Transformations ---------------------------------------------------------
 #' Apply arbitratry 3D transformations to molecule3D objects
 #'
@@ -1359,11 +1386,11 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
   )
 }
 
-# Transformations Around ProperRotationAxis ------------------------------------------
+## Transformations Around ProperRotationAxis ------------------------------------------
 
+#TODO: add
 
-
-## Operators (Adding and subtracting molecules)---------------------------------------------------------------
+##Operators (Adding and subtracting molecules)---------------------------------------------------------------
 
 #' Combine two Molecule3D objects
 #'

@@ -84,8 +84,8 @@ molecule_shifted <- translate_molecule_by_vector(molecule, c(0, 5, 0))
 # Rotate 90° around the Z-axis
 molecule_rotated <- rotate_molecule_around_vector(
   molecule,
-  axis   = c(0, 0, 1),
-  angle  = pi / 2
+  axis = c(0, 0, 1),
+  angle = pi / 2
 )
 ```
 
@@ -110,7 +110,7 @@ geometric operations — simply by supplying your own function.
 ### Using the move package to transform molecules
 
 The [move](https://github.com/selkamand/move) package contains common
-transformations that can plug straight into `transform_molecule`
+transformations that can plug straight into `transform_molecule`.
 
 ``` r
 library(move)
@@ -147,6 +147,32 @@ anchor-aware transformations like `translate_molecule_to_origin()`
 molecule_centered <- molecule |>
   set_anchor_by_atom(eleno = 1) |>
   translate_molecule_to_origin()
+```
+
+------------------------------------------------------------------------
+
+## Geometric analysis: molecular planes
+
+In addition to distances and angles, `structures` can compute **best-fit
+planes** through molecular coordinates. A common use case is to get the
+mean plane of an aromatic ring or ligand fragment.
+
+`compute_plane_from_atoms()` computes a plane through all atoms in a
+\[`Molecule3D`\] using svd fitting under the hood. If only 3 points are
+supplied, an exact plane will be computed using the cross-product.
+
+``` r
+# Best-fit plane through all atoms in the molecule
+plane <- compute_plane_from_atoms(molecule)
+
+# Unit normal vector of the plane
+plane$normal
+#>             x             y             z 
+#> -4.915898e-06  7.376443e-06 -1.000000e+00
+
+# Signed offset from the origin along that normal
+plane$offset
+#> [1] 8.333292e-06
 ```
 
 ------------------------------------------------------------------------

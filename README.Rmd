@@ -53,8 +53,8 @@ path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 
 print(molecule)
-
 ```
+
 ---
 
 ## Transforming Molecules
@@ -80,8 +80,8 @@ molecule_shifted <- translate_molecule_by_vector(molecule, c(0, 5, 0))
 # Rotate 90° around the Z-axis
 molecule_rotated <- rotate_molecule_around_vector(
   molecule,
-  axis   = c(0, 0, 1),
-  angle  = pi / 2
+  axis = c(0, 0, 1),
+  angle = pi / 2
 )
 ```
 
@@ -139,6 +139,29 @@ For example, a common transformation is to translate the molecule so that a part
 molecule_centered <- molecule |>
   set_anchor_by_atom(eleno = 1) |>
   translate_molecule_to_origin()
+```
+
+---
+
+
+## Geometric analysis: molecular planes
+
+In addition to distances and angles, `structures` can compute **best-fit planes**
+through molecular coordinates. A common use case is to get the mean plane of an
+aromatic ring or ligand fragment.
+
+`compute_plane_from_atoms()` computes a plane through all atoms in a
+[`Molecule3D`] using svd fitting under the hood. If only 3 points are supplied, an exact plane will be computed using the cross-product.
+
+```{r}
+# Best-fit plane through all atoms in the molecule
+plane <- compute_plane_from_atoms(molecule)
+
+# Unit normal vector of the plane
+plane$normal
+
+# Signed offset from the origin along that normal
+plane$offset
 ```
 
 ---
