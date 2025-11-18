@@ -129,9 +129,9 @@
 #'
 #' @seealso
 #' [structures::read_mol2()],
-#' [structures::ProperRotationAxis], [is_symmetry_axis()],
-#' [add_proper_rotation_axis()],
-#' [transform_molecule()], [transform_symmetry_axis()]
+#' [structures::ProperRotationAxis],
+#' [add_symmetry_element_to_molecule()],
+#' [transform_molecule()]
 #' @export
 Molecule3D <- S7::new_class(
   name = "Molecule3D",

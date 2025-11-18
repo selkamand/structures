@@ -145,7 +145,7 @@ m@symmetry_axes_dataframe
 }
 \seealso{
 \code{\link[=read_mol2]{read_mol2()}},
-\link{ProperRotationAxis}, \code{\link[=is_symmetry_axis]{is_symmetry_axis()}},
-\code{\link[=add_proper_rotation_axis]{add_proper_rotation_axis()}},
-\code{\link[=transform_molecule]{transform_molecule()}}, \code{\link[=transform_symmetry_axis]{transform_symmetry_axis()}}
+\link{ProperRotationAxis},
+\code{\link[=add_symmetry_element_to_molecule]{add_symmetry_element_to_molecule()}},
+\code{\link[=transform_molecule]{transform_molecule()}}
 }
