@@ -1107,7 +1107,7 @@ test_that("is_molecule returns FALSE for non-molecule inputs", {
   expect_false(is_molecule(1:3))
 
   # Also FALSE for other structures classes
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
   expect_false(is_molecule(ax))
 })
 
@@ -1139,8 +1139,8 @@ test_that("add_proper_rotation_axis appends a valid ProperRotationAxis and updat
 
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax3 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax3 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- add_proper_rotation_axis(m, ax2)
   expect_true(m@contains_symmetry_axes)
@@ -1162,9 +1162,9 @@ test_that("fetch_all_proper_rotation_axes_with_order returns only matching axes"
 
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2a <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2b <- ProperRotationAxis(Cn = 2L, posA = c(0,1,0), posB = c(0,1,1))
-  ax3  <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2a <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2b <- ProperRotationAxis(n = 2L, posA = c(0,1,0), posB = c(0,1,1))
+  ax3  <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- add_proper_rotation_axis(m, ax2a)
   m <- add_proper_rotation_axis(m, ax2b)
@@ -1175,10 +1175,10 @@ test_that("fetch_all_proper_rotation_axes_with_order returns only matching axes"
   only_C5 <- fetch_all_proper_rotation_axes_with_order(m, 5L)
 
   expect_equal(length(only_C2), 2L)
-  expect_true(all(vapply(only_C2, function(ax) ax@Cn, integer(1)) == 2L))
+  expect_true(all(vapply(only_C2, function(ax) ax@n, integer(1)) == 2L))
 
   expect_equal(length(only_C3), 1L)
-  expect_equal(only_C3[[1]]@Cn, 3L)
+  expect_equal(only_C3[[1]]@n, 3L)
 
   expect_true(is.null(only_C5) || length(only_C5) == 0L)
 })
@@ -1220,9 +1220,9 @@ test_that("returns only axes with matching Cn and preserves multiplicity", {
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2a <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2b <- ProperRotationAxis(Cn = 2L, posA = c(0,1,0), posB = c(0,1,1))
-  ax3  <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2a <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2b <- ProperRotationAxis(n = 2L, posA = c(0,1,0), posB = c(0,1,1))
+  ax3  <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- add_proper_rotation_axis(m, ax2a)
   m <- add_proper_rotation_axis(m, ax2b)
@@ -1232,10 +1232,10 @@ test_that("returns only axes with matching Cn and preserves multiplicity", {
   only_C3 <- fetch_all_proper_rotation_axes_with_order(m, 3L)
 
   expect_equal(length(only_C2), 2L)
-  expect_true(all(vapply(only_C2, function(ax) ax@Cn, integer(1)) == 2L))
+  expect_true(all(vapply(only_C2, function(ax) ax@n, integer(1)) == 2L))
 
   expect_equal(length(only_C3), 1L)
-  expect_identical(only_C3[[1]]@Cn, 3L)
+  expect_identical(only_C3[[1]]@n, 3L)
 })
 
 test_that("numeric vs integer Cn inputs behave equivalently", {
@@ -1247,7 +1247,7 @@ test_that("numeric vs integer Cn inputs behave equivalently", {
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1)))
+  m <- add_proper_rotation_axis(m, ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1)))
 
   out_int <- fetch_all_proper_rotation_axes_with_order(m, 2L)
   out_num <- fetch_all_proper_rotation_axes_with_order(m, 2)    # double
@@ -1258,7 +1258,7 @@ test_that("numeric vs integer Cn inputs behave equivalently", {
   expect_equal(length(out_num0), 1L)
 })
 
-test_that("returns empty list (not NULL) when axes exist but none match Cn", {
+test_that("returns empty list (not NULL) when axes exist but none match n", {
   atoms <- data.frame(
     eleno = c(1, 2),
     elena = c("C","O"),
@@ -1267,7 +1267,7 @@ test_that("returns empty list (not NULL) when axes exist but none match Cn", {
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  m <- add_proper_rotation_axis(m, ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1)))
+  m <- add_proper_rotation_axis(m, ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1)))
 
   out <- fetch_all_proper_rotation_axes_with_order(m, 2L)
   expect_true(is.list(out))
@@ -1289,7 +1289,7 @@ test_that("add_proper_rotation_axis rejects wrong classes", {
   expect_error(add_proper_rotation_axis(m, 123), "ProperRotationAxis", ignore.case = TRUE)
 
   # wrong: molecule not a Molecule3D
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
   expect_error(add_proper_rotation_axis(list(), ax), "Molecule3D", ignore.case = TRUE)
 })
 
@@ -1297,8 +1297,8 @@ test_that("add_proper_rotation_axis rejects wrong classes", {
 
 # Test Symmetry Axes IDs ---------------------------------------------------------------------
 test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- Molecule3D(
     name = "X",
@@ -1312,9 +1312,9 @@ test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
 })
 
 test_that("partially named symmetry_axes: blanks are filled with fresh numeric IDs", {
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
-  ax3 <- ProperRotationAxis(Cn = 3L, posA = c(2,0,0), posB = c(2,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax3 <- ProperRotationAxis(n = 3L, posA = c(2,0,0), posB = c(2,0,1))
 
   lst <- list(ax1, ax2, ax3)
   names(lst) <- c("A", "", "")  # assign blanks post-creation
@@ -1330,9 +1330,9 @@ test_that("partially named symmetry_axes: blanks are filled with fresh numeric I
 })
 
 test_that("pre-existing numeric IDs cause fresh IDs to start at max(existing)+1", {
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
-  ax3 <- ProperRotationAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax3 <- ProperRotationAxis(n = 4L, posA = c(2,0,0), posB = c(2,0,1))
 
   lst <- list(ax1, ax2, ax3)
   names(lst) <- c("2", "", "")  # keep "2", leave two blanks
@@ -1344,8 +1344,8 @@ test_that("pre-existing numeric IDs cause fresh IDs to start at max(existing)+1"
 })
 
 test_that("setting symmetry_axes with duplicate IDs errors (validator)", {
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
 
@@ -1359,7 +1359,7 @@ test_that("setting symmetry_axes with duplicate IDs errors (validator)", {
 
 test_that("add_proper_rotation_axis appends with next numeric ID when none exist", {
   m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
 
   m <- add_proper_rotation_axis(m, ax)
   expect_identical(names(m@symmetry_axes), "1")
@@ -1369,7 +1369,7 @@ test_that("add_proper_rotation_axis appends with next numeric ID when none exist
 })
 
 test_that("add_proper_rotation_axis uses max numeric among existing IDs, ignoring non-numeric names", {
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
 
   m <- Molecule3D(
     name = "X",
@@ -1387,7 +1387,7 @@ test_that("add_proper_rotation_axis uses max numeric among existing IDs, ignorin
 })
 
 test_that("add_proper_rotation_axis starts at '1' if all existing IDs are non-numeric", {
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
 
   m <- Molecule3D(
     name = "X",
@@ -1401,7 +1401,7 @@ test_that("add_proper_rotation_axis starts at '1' if all existing IDs are non-nu
 })
 
 test_that("replacing symmetry_axes preserves uniqueness and non-emptiness of IDs", {
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
   m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
 
   m@symmetry_axes <- list(ax, ax, ax)
@@ -1415,8 +1415,8 @@ test_that("replacing symmetry_axes preserves uniqueness and non-emptiness of IDs
 })
 
 test_that("transform_molecule keeps the symmetry axis IDs intact", {
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
 
   m <- Molecule3D(
     name = "X",
@@ -1455,7 +1455,7 @@ test_that("symmetry_axes_dataframe returns one row with correct values and id", 
   atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
   bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
 
-  ax <- ProperRotationAxis(Cn = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "axis-A")
+  ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "axis-A")
   m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list("5" = ax))
 
   df <- m@symmetry_axes_dataframe
@@ -1463,7 +1463,7 @@ test_that("symmetry_axes_dataframe returns one row with correct values and id", 
   expect_equal(nrow(df), 1L)
   expect_identical(df$id, "5")
   expect_identical(df$label, "axis-A")
-  expect_identical(as.integer(df$Cn), 3L)
+  expect_identical(as.integer(df$n), 3L)
   expect_equal(unname(c(df$x, df$y, df$z)), c(0,0,0))
   expect_equal(unname(c(df$xend, df$yend, df$zend)), c(0,0,1))
 })
@@ -1472,9 +1472,9 @@ test_that("symmetry_axes_dataframe preserves order and IDs for multiple axes", {
   atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
   bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
 
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1), label = "B")
-  ax3 <- ProperRotationAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1), label = "C")
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1), label = "B")
+  ax3 <- ProperRotationAxis(n = 4L, posA = c(2,0,0), posB = c(2,0,1), label = "C")
 
   m <- Molecule3D(
     name = "CO",
@@ -1496,7 +1496,7 @@ test_that("symmetry_axes_dataframe preserves order and IDs for multiple axes", {
 test_that("symmetry_axes_dataframe updates after transform_molecule and preserves IDs", {
   atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
   bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(1,0,0), label = "A")
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(1,0,0), label = "A")
   m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list("7" = ax))
 
   # Translate by (+1, +2, +3)
@@ -1517,8 +1517,8 @@ test_that("symmetry_axes_dataframe cooperates with add_proper_rotation_axis auto
   bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
   m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(0,1,0), posB = c(0,1,1), label = "B")
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(0,1,0), posB = c(0,1,1), label = "B")
 
   m <- add_proper_rotation_axis(m, ax1)
   m <- add_proper_rotation_axis(m, ax2)
@@ -1568,7 +1568,7 @@ test_that("print.Molecule3D works even with symmetry axes present", {
     z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list(ax))
 
   out <- NULL
@@ -1593,7 +1593,7 @@ test_that("transform_molecule() translates atoms, anchor, and symmetry axes", {
     z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
-  axis  <- ProperRotationAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  axis  <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- Molecule3D(
     name = "CO",
@@ -1619,7 +1619,7 @@ test_that("transform_molecule() translates atoms, anchor, and symmetry axes", {
   ax_new <- m2@symmetry_axes[[1]]
   expect_equal(ax_new@posA, axis@posA + 1)
   expect_equal(ax_new@posB, axis@posB + 1)
-  expect_identical(ax_new@Cn, axis@Cn)
+  expect_identical(ax_new@n, axis@n)
 })
 
 test_that("transform_molecule() works when no symmetry axes exist", {
@@ -1647,7 +1647,7 @@ test_that("transform_molecule() preserves Cn and rotates correctly about Z", {
     x = 1, y = 0, z = 0
   )
   bonds <- minimal_bonds()
-  axis  <- ProperRotationAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  axis  <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- Molecule3D("Rot", atoms = atoms, bonds = bonds,
                   symmetry_axes = list(axis),
@@ -1671,7 +1671,7 @@ test_that("transform_molecule() preserves Cn and rotates correctly about Z", {
   # axis along Z unchanged by rotation about Z
   expect_equal(m2@symmetry_axes[[1]]@posA, axis@posA, tolerance = 1e-12)
   expect_equal(m2@symmetry_axes[[1]]@posB, axis@posB, tolerance = 1e-12)
-  expect_equal(m2@symmetry_axes[[1]]@Cn, axis@Cn)
+  expect_equal(m2@symmetry_axes[[1]]@n, axis@n)
 })
 
 test_that("transform_molecule() handles multiple symmetry axes and preserves orders", {
@@ -1687,8 +1687,8 @@ test_that("transform_molecule() handles multiple symmetry axes and preserves ord
     origin_atom_id = c(1, 1),
     target_atom_id = c(2, 3)
   )
-  ax1 <- ProperRotationAxis(Cn = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
-  ax2 <- ProperRotationAxis(Cn = 3L, posA = c(1, 0, 0), posB = c(1, 1, 0))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 1, 0))
 
   m <- Molecule3D(
     name = "COH",
@@ -1736,7 +1736,7 @@ test_that("transform_molecule() forwards ... arguments to transformation functio
     z = c(1, 2)
   )
   bonds <- minimal_bonds()
-  ax <- ProperRotationAxis(Cn = 2L, posA = c(1, 1, 1), posB = c(2, 2, 2))
+  ax <- ProperRotationAxis(n = 2L, posA = c(1, 1, 1), posB = c(2, 2, 2))
 
   m <- Molecule3D("scale", atoms = atoms, bonds = bonds,
                   symmetry_axes = list(ax), anchor = c(1, 1, 1))
@@ -1836,9 +1836,9 @@ test_that("transform_molecule() surfaces errors from malformed transformation re
 
 test_that("transform_molecule preserves original symmetry axis IDs even when non-contiguous or non-numeric", {
   # Build three axes
-  axA <- ProperRotationAxis(Cn = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  axB <- ProperRotationAxis(Cn = 3L, posA = c(1,0,0), posB = c(1,0,1))
-  axC <- ProperRotationAxis(Cn = 4L, posA = c(2,0,0), posB = c(2,0,1))
+  axA <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  axB <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  axC <- ProperRotationAxis(n = 4L, posA = c(2,0,0), posB = c(2,0,1))
 
   # Name them with sparse, mixed IDs
   axes <- list(axA, axB, axC)
