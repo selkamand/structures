@@ -534,8 +534,6 @@ fetch_all_proper_rotation_axes_with_order_from_collection <- function(collection
 
 
 
-
-
 # Create an Class for each symmetry element that inherits from 'SymmetryElement'
 
 

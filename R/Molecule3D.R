@@ -1169,6 +1169,74 @@ fetch_symmetry_element_from_molecule <- function(molecule, id, error_if_missing 
   fetch_symmetry_element_from_collection(collection, id = id, error_if_missing = error_if_missing)
 }
 
+
+#' Fetch the ID of the first proper rotation axis of order Cn
+#'
+#' @description
+#' Returns the identifier (ID) of the **first** stored
+#' [`structures::ProperRotationAxis`] within a [`structures::Molecule3D`]
+#' whose order (`@n`) matches the user-supplied value `Cn`.
+#'
+#' This is a convenience helper for quickly selecting a representative
+#' symmetry axis of a given order (e.g. the “principal” C\eqn{_2}, C\eqn{_3},
+#' C\eqn{_6}, etc.).
+#'
+#' @param molecule A [`structures::Molecule3D`] object containing one or more
+#'   symmetry elements.
+#' @param Cn Integer (or integer-like numeric). The order of the proper rotation
+#'   axis to search for (e.g. `2`, `3`, `6`).
+#'
+#' @return
+#' A **character scalar** giving the ID of the first matching proper rotation
+#' axis, or `NA_character_` if none exist.
+#'
+#' @details
+#' The function operates on the molecule's internal
+#' `@symmetry_elements@elements` list, which stores each symmetry element under
+#' a unique ID (the list name). It:
+#'
+#' \enumerate{
+#'   \item Iterates over all stored symmetry elements.
+#'   \item Filters only those that are
+#'         [`structures::ProperRotationAxis`] objects.
+#'   \item Checks whether their order (`axis@n`) matches `Cn`.
+#'   \item Returns the ID (list name) of the **first** match.
+#' }
+#'
+#' If the molecule contains no proper rotation axes with order `Cn`, the function
+#' returns `NA_character_`.
+#'
+#' @examples
+#' atoms <- data.frame(
+#'   eleno = c(1,2),
+#'   elena = c("C","O"),
+#'   x = c(0,1), y = c(0,0), z = c(0,0)
+#' )
+#' m <- Molecule3D("CO", atoms = atoms, bonds = minimal_bonds())
+#'
+#' m <- add_symmetry_element_to_molecule(
+#'   m,
+#'   ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "C2(z)")
+#' )
+#'
+#' fetch_id_of_first_proper_rotation_axis_with_order(m, Cn = 2)
+#'
+#' @seealso
+#'   [`fetch_all_proper_rotation_axes_with_order()`],
+#'   [`fetch_symmetry_element_from_molecule()`],
+#'   [`structures::ProperRotationAxis`]
+#'
+#' @export
+fetch_id_of_first_proper_rotation_axis_with_order <- function(molecule, Cn){
+  elements <- molecule@symmetry_elements
+  is_proper_rotation_axis_with_order <- vapply(elements@elements, function(el){
+    if(!is_proper_rotation_axis(el)) return(FALSE)
+    return(el@n %in% Cn)
+  }, FUN.VALUE = logical(1))
+
+  elements@ids[is_proper_rotation_axis_with_order][1]
+}
+
 #' Fetch all proper rotation axes of a given order (Cn) from a Molecule3D
 #'
 #' @description
