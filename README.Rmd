@@ -233,7 +233,20 @@ Once symmetry elements have been added to the molecule we can use those to infor
 # Print out available symmetry elements
 as.data.frame(molecule@symmetry_elements)
 
-rotate_molecule_so_rotation_axis_aligns_with_vector(molecule, symmetry_element_id = 1, target = c(0,1,0))
+
+# Rotate so C6 symmetry axis points right
+rotate_molecule_so_symmetry_axis_aligns_with_vector(
+  molecule, 
+  symmetry_element_id = 1, 
+  target = c(0,1,0)
+)
+
+# Rotate 30 degrees around the C6 symmetry axis
+rotate_molecule_around_symmetry_axis(
+  molecule, 
+  symmetry_element_id = 1, 
+  angle = pi/6 # 30 degrees
+)
 ```
 ## Dummy atoms
 

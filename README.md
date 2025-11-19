@@ -308,7 +308,34 @@ as.data.frame(molecule@symmetry_elements)
 #>   ids                 type   label
 #> 1   1 Proper Rotation Axis unnamed
 
-rotate_molecule_so_rotation_axis_aligns_with_vector(molecule, symmetry_element_id = 1, target = c(0,1,0))
+
+# Rotate so C6 symmetry axis points right
+rotate_molecule_so_symmetry_axis_aligns_with_vector(
+  molecule, 
+  symmetry_element_id = 1, 
+  target = c(0,1,0)
+)
+#> ===================
+#> Chemical Molecule3D
+#> ===================
+#> Name: benzene
+#> Atoms: 12 (0 dummy atoms)
+#> Bonds: 12
+#> Symmetry Elements: 1
+#> Symmetry Axes: 1
+#> Symmetry Orders (Cn): 6
+#> 
+#> -------------------
+#> See @atoms paramater for atom positions
+#> See @bonds paramater for bond positions
+#> See @symmetry_elements for symmetry elements
+
+# Rotate 30 degrees around the C6 symmetry axis
+rotate_molecule_around_symmetry_axis(
+  molecule, 
+  symmetry_element_id = 1, 
+  angle = pi/6 # 30 degrees
+)
 #> ===================
 #> Chemical Molecule3D
 #> ===================
