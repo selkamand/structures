@@ -535,11 +535,11 @@ format_atoms <- function(atoms) {
     atoms[["z"]] <- as.numeric(atoms[["z"]])
   }
 
-  # If atom_type column is not present, make one (and set all values to 'Any'.
-  # This is a vid SYBYL atom type
+  # If atom_type column is not present, make one (and set all values to 'Any' - a valid SYBYL atom type)
   if(!"atom_type" %in% cols){
     atoms["atom_type"] <- rep("Any", times = nrow(atoms))
   }
+  # Otherise, cast as character
   else{
    atoms[["atom_type"]] <- as.character(atoms[["atom_type"]])
 
@@ -547,6 +547,13 @@ format_atoms <- function(atoms) {
    # (e.g. capitalise oxygen in sulfur type
    atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o", "S.O", atoms[["atom_type"]])
    atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o2", "S.O2", atoms[["atom_type"]])
+
+   # Unexpected Atom Types
+   unexpected_types <- setdiff(atoms[["atom_type"]], valid_atom_types())
+   if(length(unexpected_types) > 0){
+     warning("Unexpected atom types found: [", toString(unexpected_types), "]. Replacing these with 'Any'")
+     atoms[["atom_type"]][atoms[["atom_type"]] %in% unexpected_types] <- "Any"
+   }
   }
 
   # Add element column
