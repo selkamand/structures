@@ -1501,7 +1501,68 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
 
 ## Transformations Around ProperRotationAxis ------------------------------------------
 
-#TODO: add
+#' Rotate a molecule so that a symmetry axis aligns with a target vector
+#'
+#' Rotates an entire [`structures::Molecule3D`] object so that the direction of
+#' a stored symmetry element (typically a [`structures::ProperRotationAxis`])
+#' aligns with a user-supplied 3D target vector.
+#'
+#' This is achieved by:
+#' \enumerate{
+#'   \item Extracting the symmetry element specified by `symmetry_element_id`.
+#'   \item Computing the rotation (axis + angle) required to align the element’s
+#'         direction vector to `target`, using
+#'         [`move::rotate_vector_to_align_with_target()`].
+#'   \item Applying the resulting rotation to the entire molecule via
+#'         [`rotate_molecule_around_vector()`], including atoms, the anchor, and
+#'         all symmetry elements.
+#' }
+#'
+#' @details
+#' This helper is useful when a molecule has annotated symmetry elements and
+#' needs to be re-oriented so one of its symmetry axes matches a desired global
+#' direction (e.g., align a C\eqn{_n} axis with the z-axis).
+#'
+#' The symmetry element’s direction is taken from its internal `@direction`
+#' vector, which is automatically normalised.
+#' The **target vector** does not need to be unit length.
+#'
+#' The rotation behaviour (parallel, anti-parallel, numerical tolerance, etc.)
+#' follows the rules in [`move::rotate_vector_to_align_with_target()`].
+#'
+#' @param molecule A [`structures::Molecule3D`] object.
+#' @param symmetry_element_id Character ID of the symmetry element to align.
+#'   Must exist in `molecule@symmetry_elements`.
+#' @param target Numeric length-3 vector giving the desired direction in space.
+#'
+#' @return A [`structures::Molecule3D`] object rotated so that the selected symmetry
+#' element’s direction matches `target`.
+#'
+#' @examples
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#'
+#' # Add a C6 axis (id assigned automatically)
+#' m <- add_symmetry_element_to_molecule(
+#'   m,
+#'   ProperRotationAxis(n = 6, posA = c(0,0,-1), posB = c(0,0,1))
+#' )
+#'
+#' # Get the axis ID
+#' ax_id <- m@symmetry_elements@summary$ids[1]
+#'
+#' # Align it with the global x-axis
+#' m2 <- rotate_molecule_so_rotation_axis_aligns_with_vector(
+#'   molecule = m,
+#'   symmetry_element_id = ax_id,
+#'   target = c(1, 0, 0)
+#' )
+#'
+#' @seealso
+#'   [`move::rotate_vector_to_align_with_target()`],
+#'   [`rotate_molecule_around_vector()`],
+#'   [`fetch_symmetry_element_from_molecule()`]
+#'
+#' @export
 rotate_molecule_so_rotation_axis_aligns_with_vector <- function(molecule, symmetry_element_id, target){
   assertions::assert_class(molecule, "structures::Molecule3D")
   assertions::assert_length(symmetry_element_id, length = 1)

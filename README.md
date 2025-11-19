@@ -48,7 +48,7 @@ print(molecule)
 #> Chemical Molecule3D
 #> ===================
 #> Name: benzene
-#> Atoms: 12
+#> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
 #> Symmetry Elements: 0
 #> Symmetry Axes: 0
@@ -190,7 +190,7 @@ Providing S7 Classes for:
 These elements can be added to any `Molecule3D` structure and will
 participate in transformations.
 
-## Creating Symmetry Elements
+### Creating Symmetry Elements
 
 ``` r
 ProperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0, 1))
@@ -250,7 +250,7 @@ print(molecule)
 #> Chemical Molecule3D
 #> ===================
 #> Name: benzene
-#> Atoms: 12
+#> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
 #> Symmetry Elements: 1
 #> Symmetry Axes: 1
@@ -295,6 +295,51 @@ fetch_all_proper_rotation_axes_with_order(molecule, Cn = 6)
 #> Direction: 0, 0, 1
 #> PosB: 0, 0, 1
 #> Label: unnamed
+```
+
+### Transforming based on Symmetry Elements
+
+Once symmetry elements have been added to the molecule we can use those
+to inform transformations
+
+``` r
+# Print out available symmetry elements
+as.data.frame(molecule@symmetry_elements)
+#>   ids                 type   label
+#> 1   1 Proper Rotation Axis unnamed
+
+rotate_molecule_so_rotation_axis_aligns_with_vector(molecule, symmetry_element_id = 1, target = c(0,1,0))
+#> ===================
+#> Chemical Molecule3D
+#> ===================
+#> Name: benzene
+#> Atoms: 12 (0 dummy atoms)
+#> Bonds: 12
+#> Symmetry Elements: 1
+#> Symmetry Axes: 1
+#> Symmetry Orders (Cn): 6
+#> 
+#> -------------------
+#> See @atoms paramater for atom positions
+#> See @bonds paramater for bond positions
+#> See @symmetry_elements for symmetry elements
+```
+
+## Dummy atoms
+
+mol2 files can contain dummy atoms, indicated by the `atom_type` column
+being “Du” / “Du.C” (see mol2 specification). These dummy atoms can be
+deleted.
+
+``` r
+path <- system.file(package = "structures", "fe_dummies.mol2")
+molecule_with_dummies <- read_mol2(path)
+molecule_without_dummies <- remove_dummy_atoms(molecule_with_dummies)
+
+message("Number of dummy atoms in original molecule: ", molecule_with_dummies@n_dummy_atoms)
+#> Number of dummy atoms in original molecule: 3
+message("Dummy atoms in molecule after deletion: ", molecule_without_dummies@n_dummy_atoms)
+#> Dummy atoms in molecule after deletion: 0
 ```
 
 ------------------------------------------------------------------------
