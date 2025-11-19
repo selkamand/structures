@@ -10,7 +10,7 @@ compute_plane_from_atoms(molecule)
 \item{molecule}{A \code{\link{Molecule3D}} object.}
 }
 \value{
-A list describing the plane (normal & offset). See \code{\link[move:compute_plane_from_points]{move::compute_plane_from_points()}} for details,
+A list describing the plane (normal, offset, and point centroid). See \code{\link[move:compute_plane_from_points]{move::compute_plane_from_points()}} for details,
 }
 \description{
 Extracts atomic Cartesian coordinates from a \code{\link{Molecule3D}}

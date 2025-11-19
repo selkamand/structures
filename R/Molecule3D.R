@@ -1113,7 +1113,7 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
 #'
 #' @param molecule A [`structures::Molecule3D`] object.
 #'
-#' @return A list describing the plane (normal & offset). See [move::compute_plane_from_points()] for details,
+#' @return A list describing the plane (normal, offset, and point centroid). See [move::compute_plane_from_points()] for details,
 #'
 #' @examples
 #' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
