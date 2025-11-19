@@ -27,6 +27,7 @@ Molecule3D(
 \itemize{
 \item \code{element} (character) element symbol; if missing, it is derived from
 \code{elena} by removing digits (e.g., \code{"C3"} <U+2192> \code{"C"}).
+\item \code{atom_type} valid SYBYL atom types. See \code{\link[=valid_atom_types]{valid_atom_types()}} for valid values. If not supplied will automatically be set to 'Any'.
 }
 Data types are enforced so that \code{eleno}, \code{elena}, and \code{element}
 are character, and \code{x}, \code{y}, \code{z} are numeric.

@@ -20,6 +20,7 @@
 #'   \itemize{
 #'     \item \code{element} (character) element symbol; if missing, it is derived from
 #'           \code{elena} by removing digits (e.g., \code{"C3"} <U+2192> \code{"C"}).
+#'      \item \code{atom_type} valid SYBYL atom types. See [valid_atom_types()] for valid values. If not supplied will automatically be set to 'Any'.
 #'   }
 #'   Data types are enforced so that \code{eleno}, \code{elena}, and \code{element}
 #'   are character, and \code{x}, \code{y}, \code{z} are numeric.
@@ -273,6 +274,14 @@ Molecule3D <- S7::new_class(
       return(center)
     }),
 
+    # Center position of all atoms
+    n_dummy_atoms = S7::new_property(
+      class = S7::class_numeric,
+      setter = function(self, value) { stop("@n_dummy_atoms is a read only property") },
+      getter = function(self) {
+        sum(self@atoms[["atom_type"]] %in% c("Du", "Du.C"))
+      }),
+
     #### Connectivity ---------------------------------------------
     # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
     # Requires igraph
@@ -351,7 +360,7 @@ Molecule3D <- S7::new_class(
     }
 
     ## ---- Validate Atom Columns ----
-    required_atom_cols <- c("eleno", "elena", "element", "x", "y", "z")
+    required_atom_cols <- c("eleno", "elena", "element", "x", "y", "z", "atom_type")
     observed_atom_cols <- colnames(self@atoms)
 
     if (!all(required_atom_cols %in% observed_atom_cols)) {
@@ -384,6 +393,10 @@ Molecule3D <- S7::new_class(
       return(sprintf("@atoms column 'elena' must NOT contain any missing values. Found: [%d]", sum(is.na(elena))))
     }
 
+    atom_type <- self@atoms[["atom_type"]]
+    if(!all(atom_type %in% valid_atom_types())) {
+      return(sprintf("@atoms column 'atom_type' must only contain valid SYBYL atom types. Invalid values: [%s]. See `valid_atom_types()` for a valid list)", toString(setdiff(atom_type, valid_atom_types()))))
+    }
 
     ## ---- Ensure all origin/target atom Ids in bonds dataframe are in atom dataframe  ----
     atom_ids <- self@atoms$eleno
@@ -502,6 +515,7 @@ minimal_bonds <- function() {
 
 
 # Format atoms data.frame (cast required columns as the required types)
+# Adds an atom_type column if not already present - and defaults values to 'Any'
 # Also add an 'element' column representing elena with numbers stripped out
 format_atoms <- function(atoms) {
   cols <- colnames(atoms)
@@ -519,6 +533,20 @@ format_atoms <- function(atoms) {
   }
   if ("z" %in% cols) {
     atoms[["z"]] <- as.numeric(atoms[["z"]])
+  }
+
+  # If atom_type column is not present, make one (and set all values to 'Any'.
+  # This is a vid SYBYL atom type
+  if(!"atom_type" %in% cols){
+    atoms["atom_type"] <- rep("Any", times = nrow(atoms))
+  }
+  else{
+   atoms[["atom_type"]] <- as.character(atoms[["atom_type"]])
+
+   # Fix some commonly variable / off-spec atom types seen in the wild
+   # (e.g. capitalise oxygen in sulfur type
+   atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o", "S.O", atoms[["atom_type"]])
+   atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o2", "S.O2", atoms[["atom_type"]])
   }
 
   # Add element column
@@ -567,6 +595,70 @@ valid_bond_types <- function() {
   c("single" = "1", "double" = "2", "triple" = "3", "amide" = "am", "aromatic" = "ar", "dummy" = "du", "unknown" = "un", "not connected" = "nc")
 }
 
+#' SYBYL bond types
+#'
+#' @returns a character vector with all valid SYBYL atom types
+#' @export
+#'
+#' @examples
+#' valid_atom_types()
+valid_atom_types <- function(){
+  c(
+    "carbon sp3" = "C.3",
+    "carbon sp2" = "C.2",
+    "carbon sp" = "C.1",
+    "carbon aromatic" = "C.ar",
+    "carbocation (C+) used only in a guadinium group" = "C.cat",
+    "dummy atom" = "Du",
+    "nitrogen sp3" = "N.3",
+    "nitrogen sp2" = "N.2",
+    "nitrogen sp" = "N.1",
+    "nitrogen aromatic" = "N.ar",
+    "nitrogen amide" = "N.am",
+    "nitrogen trigonal planar" = "N.pl3",
+    "nitrogen sp3 positively charged" = "N.4",
+    "hydrogen" = "H",
+    "hydrogen in Single Point Charge (SPC) water model" = "H.spc",
+    "hydrogen in Transferable intermolecular Potential (TIP3P) water model" = "H.t3p",
+    "lone pair" = "LP",
+    "dummy carbon" = "Du.C",
+    "any atom" = "Any",
+    "halogen" = "Hal",
+    "heteroatom = N, O, S, P" = "Het",
+    "heavy atom (non hydrogen)" = "Hev",
+    "lithium" = "Li",
+    "sodium" = "Na",
+    "oxygen sp3" = "O.3",
+    "oxygen sp2" = "O.2",
+    "oxygen in carboxylate and phosphate groups" = "O.co2",
+    "oxygen in Single Point Charge (SPC) water model" = "O.spc",
+    "oxygen in Transferable Intermolecular Potential (TIP3P) water model" = "O.t3p",
+    "sulfur sp3" = "S.3",
+    "sulfur sp2" = "S.2",
+    "sulfoxide sulfur" = "S.O",
+    "sulfone sulfur" = "S.O2",
+    "phosphorous sp3" = "P.3",
+    "fluorine" = "F",
+    "chlorine" = "Cl",
+    "bromine" = "Br",
+    "iodine" = "I",
+    "tin" = "Sn",
+    "magnesium" = "Mg",
+    "aluminum" = "Al",
+    "silicon" = "Si",
+    "potassium" = "K",
+    "calcium" = "Ca",
+    "chromium (tetrahedral)" = "Cr.th",
+    "chromium (octahedral)" = "Cr.oh",
+    "manganese" = "Mn",
+    "iron" = "Fe",
+    "cobalt (octahedral)" = "Co.oh",
+    "copper" = "Cu",
+    "zinc" = "Zn",
+    "selenium" = "Se",
+    "molybdenum" = "Mo"
+  )
+}
 
 
 # Generics ----------------------------------------------------------------
@@ -583,7 +675,7 @@ S7::method(print, Molecule3D) <- function(x, ...) {
     "Chemical Molecule3D\n",
     "===================\n",
     sprintf("Name: %s\n", x@name),
-    sprintf("Atoms: %d\n", nrow(x@atoms)),
+    sprintf("Atoms: %d (%d dummy atoms)\n", nrow(x@atoms), x@n_dummy_atoms),
     sprintf("Bonds: %d\n", nrow(x@bonds)),
     sprintf("Symmetry Elements: %d\n", length(x@symmetry_elements@elements)),
     sprintf("Symmetry Axes: %d\n", length(x@symmetry_elements@proper_rotation_axes)),
@@ -667,6 +759,25 @@ remove_atoms <- function(x, eleno) {
   return(x)
 }
 
+#' Remove Dummy atoms
+#'
+#' Remove dummy atoms from a molecule.
+#' Dummy are identified based on 'atom_type' (according to SYBYL mol2 specification should be set to 'Du' / 'Du.C' for dummy atoms).
+#'
+#' @param x a [Molecule3D()] object
+#'
+#' @returns a [Molecule3D()] object with dummy atoms (and any bonds involving dummy atoms) removed
+#' @export
+#'
+#' @examples
+#' path <- system.file(package = "structures", "fe_dummies.mol2")
+#' molecule_with_dummies <- read_mol2(path)
+#' remove_dummy_atoms(molecule_with_dummies)
+remove_dummy_atoms <- function(x, dummy_type = c("Du", "Du.C")){
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  dummy_eleno <- x@atoms$eleno[x@atoms$atom_type %in% dummy_type]
+  remove_atoms(x, dummy_eleno)
+}
 
 #' Filter molecule for specific atoms
 #'
@@ -1386,9 +1497,22 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
   )
 }
 
+
+
 ## Transformations Around ProperRotationAxis ------------------------------------------
 
 #TODO: add
+rotate_molecule_so_rotation_axis_aligns_with_vector <- function(molecule, symmetry_element_id, target){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  assertions::assert_length(symmetry_element_id, length = 1)
+  assertions::assert_length(target, length = 3)
+
+  sym_element <- fetch_symmetry_element_from_molecule(molecule, id = symmetry_element_id, error_if_missing = TRUE)
+
+  # Step 1: Rotate molecule to align with target
+  params <- move::rotate_vector_to_align_with_target(sym_element@direction, target = target, return = "axis_plus_angle")
+  rotate_molecule_around_vector(molecule = molecule, axis = params$axis, angle = params$angle)
+}
 
 ##Operators (Adding and subtracting molecules)---------------------------------------------------------------
 
