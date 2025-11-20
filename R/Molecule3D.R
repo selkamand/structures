@@ -999,6 +999,29 @@ fetch_eleno_by_element <- function(x, element) {
   unique(unlist(x@atoms[x@atoms$element %in% element, "eleno", drop = FALSE]))
 }
 
+#' Fetch atom identifiers by SYBYL atom type
+#'
+#' @param x A [`structures::Molecule3D`] object.
+#' @param atom_type Character vector of SYBYL atom types to match
+#'   (values in `x@atoms$atom_type`; see [valid_atom_types()]).
+#'
+#' @returns A numeric vector of atom identifiers (`eleno`) whose
+#'   `atom_type` matches any value in `atom_type`.
+#'
+#' @export
+#'
+#' @examples
+#' path <- system.file(package = "structures", "fe_dummies.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Get Iron and dummy atoms
+#' fetch_eleno_by_atom_type(molecule, c("Fe", "Du", "Du.C"))
+fetch_eleno_by_atom_type <- function(x, atom_type){
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  unique(unlist(x@atoms[x@atoms$atom_type %in% atom_type, "eleno", drop = FALSE]))
+}
+
+
 #' Fetch all atoms on one side of a bond
 #'
 #' Given a bond ID and a "direction" atom on that bond, returns the set of atom
