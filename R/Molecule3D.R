@@ -705,7 +705,7 @@ S7::method(as.data.frame, Molecule3D) <- function(x, ...) {
 # as.matrix <- S7::new_generic("as.matrix", "x")
 S7::method(as.matrix, Molecule3D) <- function(x, ...) {
   mx <- as.matrix(x@atoms[c("x", "y", "z")])
-  rownames(mx) <- x@atoms[["eleno"]]
+  rownames(mx) <- as.character(x@atoms[["eleno"]])
   return(mx)
 }
 
