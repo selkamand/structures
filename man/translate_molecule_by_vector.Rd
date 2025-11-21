@@ -20,7 +20,10 @@ Adds a translation vector to all atom coordinates using
 keeping it consistent with the new coordinates.
 }
 \examples{
-# m <- translate_molecule_by_vector(m, c(1, 0, 0))
+
+molecule
+m <- translate_molecule_by_vector(m, c(1, 0, 0))
+
 }
 \seealso{
 \code{\link{translate_molecule_to_origin}},

@@ -1543,7 +1543,10 @@ translate_molecule_to_position <- function(x, new_position) {
 #'
 #' @return A \code{Molecule3D} object translated by \code{vector}.
 #' @examples
-#' # m <- translate_molecule_by_vector(m, c(1, 0, 0))
+#'
+#' molecule
+#' m <- translate_molecule_by_vector(m, c(1, 0, 0))
+#'
 #' @seealso \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{translate_molecule_to_position}},
 #'   \code{\link{set_anchor_by_position}}, \code{\link{set_anchor_by_atom}}
@@ -1555,6 +1558,27 @@ translate_molecule_by_vector <- function(x, vector) {
   })
 }
 
+#' Translate molecule in a given direction
+#'
+#' Translates all atom coordinates in a [`structures::Molecule3D`] object
+#' along a specified direction by a given distance.
+#'
+#' @param x A [Molecule3D()] object
+#' @inheritParams move::translate_position_in_direction
+#'
+#' @returns A [Molecule3D()] object translated along \code{direction} by \code{magnitude} units
+#' @export
+#'
+#' @examples
+#' # m <- translate_molecule_in_direction(m, direction = c(1, 0, 0), magnitude = 2)
+translate_molecule_in_direction <- function(x, direction, magnitude){
+  transform_molecule(
+    x = x,
+    transformation = move::translate_position_in_direction,
+    direction = direction,
+    magnitude = magnitude
+  )
+}
 
 #' Rotate a Molecule3D around an arbitrary axis through a point
 #'
