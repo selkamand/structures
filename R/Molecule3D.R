@@ -1134,7 +1134,10 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id) {
 #' m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 #'
 #' # Append a symmetry axis (ID is assigned automatically)
-#' m <- add_symmetry_element_to_molecule(m, ProperRotationAxis(n = 2, posA = c(0, 0, 0), posB = c(0, 0, 1)))
+#' m <- add_symmetry_element_to_molecule(
+#'     m,
+#'     ProperRotationAxis(n = 2, posA = c(0, 0, 0), posB = c(0, 0, 1))
+#'   )
 #'
 #' # Inspect available axis IDs
 #' m@symmetry_elements@summary
