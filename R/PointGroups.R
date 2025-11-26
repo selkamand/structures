@@ -16,7 +16,7 @@ PointGroup3D <- S7::new_class(
       class = S7::class_character,
       validator = function(value){
         if(length(value) != 1) return(sprintf("Point Group @name must be a string (character vector with length 1: Not [%s]", length(value)))
-        if(!value %in% crystallographic_pointgroup_names()) warning(sprintf("Point group name ['%s'] is not a valid Schönflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]", value, toString(crystallographic_pointgroup_names())))
+        if(!value %in% crystallographic_pointgroup_names()) warning(sprintf("Point group name ['%s'] is not a valid Schoenflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]", value, toString(crystallographic_pointgroup_names())))
         return(NULL)
       }
     ),
