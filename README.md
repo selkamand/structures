@@ -5,6 +5,15 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/selkamand/structures/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/selkamand/structures/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/selkamand/structures/graph/badge.svg)](https://app.codecov.io/gh/selkamand/structures)
+![GitHub Issues or Pull
+Requests](https://img.shields.io/github/issues-closed/selkamand/structures)
+[![code
+size](https://img.shields.io/github/languages/code-size/selkamand/structures.svg)](https://github.com/selkamand/structures)
+![GitHub last
+commit](https://img.shields.io/github/last-commit/selkamand/structures)
 <!-- badges: end -->
 
 An R package for working with **3D molecular structures** in R.
