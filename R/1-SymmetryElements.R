@@ -120,21 +120,70 @@ S7::method(transform_symmetry_element, SymmetryElement) <- function(x, transform
 #' of a molecule or point group and for coercing the collection to a data frame.
 #'
 #' @param elements A list of objects inheriting from
-#'   [`structures::SymmetryElement`].
+#'   [`structures::SymmetryElement`]. Each entry represents one symmetry element
+#'   (e.g., mirror plane, proper rotation axis, improper rotation axis,
+#'   centre of inversion).
 #' @param ids Numeric vector of the same length as `elements`,
-#'   giving a unique identifier for each element.
-#' @param n_elements Integer: Read-only, How many elements are in this collection.
+#'   giving a unique identifier for each element. If `NULL`, sequential IDs
+#'   (`seq_along(elements)`) are generated in the constructor.
 #'
-#' @return An S7 object of class `SymmetryElementCollection`.
+#' @details
+#' In addition to the writable properties `elements` and `ids`, objects of class
+#' `SymmetryElementCollection` expose a number of derived, read-only properties:
+#'
+#' \itemize{
+#'   \item \code{n_elements} (integer) — number of elements in the collection
+#'     (i.e., \code{length(elements)}).
+#'
+#'   \item \code{summary} (data.frame) — tabular summary of the collection,
+#'     obtained via \code{as.data.frame(x)}. Each row typically corresponds to
+#'     a single symmetry element and includes its ID, type, label, and any
+#'     other element-specific metadata.
+#'
+#'   \item \code{mirror_planes} (list) — subset of \code{elements} containing
+#'     only those with \code{el@type == "Mirror Plane"}.
+#'
+#'   \item \code{proper_rotation_axes} (list) — subset of \code{elements}
+#'     containing only proper rotation axes (those with
+#'     \code{el@type == "Proper Rotation Axis"}).
+#'
+#'   \item \code{improper_rotation_axes} (list) — subset of \code{elements}
+#'     containing only improper rotation axes (those with
+#'     \code{el@type == "Improper Rotation Axis"}).
+#'
+#'   \item \code{centres_of_inversion} (list) — subset of \code{elements}
+#'     containing only centres of inversion (those with
+#'     \code{el@type == "Centre of Inversion"}).
+#'
+#'   \item \code{collections_split} (list) — a list of
+#'     `SymmetryElementCollection` objects produced by
+#'     \code{split_collections_by_type(self)}, typically one per symmetry
+#'     element type.
+#'
+#'   \item \code{unique_proper_axis_orders} (integer vector) — sorted, unique
+#'     set of \code{n} values for all proper rotation axes in the collection
+#'     (e.g., \code{c(2L, 3L, 6L)} for C\eqn{_2}, C\eqn{_3}, and C\eqn{_6} axes).
+#' }
+#'
+#' All of these derived properties are read-only and are recomputed on access
+#' from the underlying `elements` list.
+#'
+#' @return An S7 object of class `SymmetryElementCollection` with writable
+#'   properties `elements` and `ids`, and the read-only properties described
+#'   in the Details section.
 #'
 #' @examples
-#' mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "<U+03C3>_xy")
+#' mp <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
 #' ci <- CentreOfInversion(position = c(0, 0, 0), label = "i")
 #'
 #' coll <- SymmetryElementCollection(
 #'   elements = list(mp, ci),
 #'   ids = c(1, 2)
 #' )
+#'
+#' coll@n_elements
+#' coll@mirror_planes
+#' coll@centres_of_inversion
 #'
 #' # Summarise elements as a data frame
 #' as.data.frame(coll)
