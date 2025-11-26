@@ -111,10 +111,12 @@ update the anchor to keep it consistent with the new coordinate frame.
 }
 
 \examples{
-# Typical use via parser
-# mol <- structures::read_mol2("benzene.mol2")
+# Read mol2 file into a Molecule3D object
+benzene <- read_mol2(system.file("benzene.mol2", package = "structures"))
+print(benzene)
 
-# Direct creation, symmetry axes, and anchor operations
+# Directly create Molecule3D
+# object from atoms and bonds data.frames
 atoms <- data.frame(
   eleno = c(1, 2),
   elena = c("C", "O"),
@@ -125,14 +127,21 @@ bonds <- data.frame(
   origin_atom_id = 1,
   target_atom_id = 2
 )
-ax <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+
 m <- Molecule3D(
   name = "CO", atoms = atoms, bonds = bonds,
-  symmetry_axes = list(ax), anchor = c(0, 0, 0)
+  anchor = c(0, 0, 0)
 )
-m@symmetry_axes_orders
-m@contains_symmetry_axes
-m@symmetry_axes_dataframe
+
+# Add a proper rotation axis
+proper_rotation_axis <- ProperRotationAxis(
+  n = 3L,
+  posA = c(0, 0, 0),
+  posB = c(0, 0, 1),
+  label = "C3(z)"
+)
+m <- add_symmetry_element_to_molecule(m, proper_rotation_axis)
+print(m)
 
 }
 \seealso{
