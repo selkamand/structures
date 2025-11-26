@@ -8,7 +8,7 @@ PointGroup3D(name = "", symmetry_elements = list())
 }
 \arguments{
 \item{name}{String (length 1). What is the name of this point group. We do not restrict this since with no lattice restriction there are infinitely many point groups.
-However, if you are creating one of the 32 Crystallographic 3D point groups (the ones which allow for periodic crystals) we recommend setting this based on the Schönflies notation. See \code{\link[=crystallographic_pointgroup_names]{crystallographic_pointgroup_names()}}.}
+However, if you are creating one of the 32 Crystallographic 3D point groups (the ones which allow for periodic crystals) we recommend setting this based on the Schoenflies notation. See \code{\link[=crystallographic_pointgroup_names]{crystallographic_pointgroup_names()}}.}
 
 \item{symmetry_elements}{A list of \code{\link[=SymmetryElement]{SymmetryElement()}} objects.}
 }

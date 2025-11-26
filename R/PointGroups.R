@@ -6,7 +6,7 @@
 #' which symmetry operations can be performed without changing the position of atoms.
 #'
 #' @param name String (length 1). What is the name of this point group. We do not restrict this since with no lattice restriction there are infinitely many point groups.
-#' However, if you are creating one of the 32 Crystallographic 3D point groups (the ones which allow for periodic crystals) we recommend setting this based on the Schönflies notation. See [crystallographic_pointgroup_names()].
+#' However, if you are creating one of the 32 Crystallographic 3D point groups (the ones which allow for periodic crystals) we recommend setting this based on the Schoenflies notation. See [crystallographic_pointgroup_names()].
 #' @param symmetry_elements A list of [SymmetryElement()] objects.
 #' @export
 PointGroup3D <- S7::new_class(
