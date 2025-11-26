@@ -297,6 +297,18 @@ S7::method(print, SymmetryElementCollection) <- function(x, ...) {
 
 #' @export
 S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
+
+  # When empty
+  if(length(x@elements) == 0){
+    return(
+      data.frame(
+        ids = numeric(0),
+        type = character(0),
+        label = character(0)
+      )
+    )
+  }
+
   ls_info <- lapply(x@elements, function(el) {
     data.frame(
       type = el@type %||% character(0),
@@ -307,6 +319,8 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
   df_data <- as.data.frame(do.call(rbind, ls_info))
   df_data$ids <- x@ids
   df_data <- df_data[c("ids", setdiff(colnames(df_data), "ids"))]
+
+
 
   return(df_data)
 }
@@ -432,8 +446,8 @@ add_symmetry_element_to_collection <- function(collection, new) {
 #' @export
 combine_symmetry_element_collections <- function(collection1, collection2) {
   # Assertions
-  assertions::assert_class(collection1, class = "SymmetryElementCollection")
-  assertions::assert_class(collection2, class = "SymmetryElementCollection")
+  assertions::assert_class(collection1, class = "structures::SymmetryElementCollection")
+  assertions::assert_class(collection2, class = "structures::SymmetryElementCollection")
 
   # Ids
   ids_1 <- collection1@ids
@@ -781,7 +795,7 @@ S7::method(as.data.frame, ProperRotationAxis) <- function(x, ...) {
 
   data.frame(
     label = label,
-    Cn = n,
+    Cn = Cn,
     x = posA["x"],
     y = posA["y"],
     z = posA["z"],
