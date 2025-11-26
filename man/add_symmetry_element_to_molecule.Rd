@@ -28,7 +28,7 @@ atoms <- data.frame(
 bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 ax <- ProperRotationAxis(n = 2, posA = c(0, 0, 0), posB = c(0, 0, 1))
-m <- add_proper_rotation_axis_to_molecule(m, ax)
+m <- add_symmetry_element_to_molecule(m, ax)
 
 length(m@symmetry_elements@proper_rotation_axes) # 1
 m@symmetry_elements@unique_proper_axis_orders # 2

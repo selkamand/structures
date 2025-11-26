@@ -39,7 +39,7 @@ bonds <- data.frame(
 )
 m <- Molecule3D("CO", atoms = atoms, bonds = bonds)
 
-m <- add_proper_rotation_axis(
+m <- add_symmetry_element_to_molecule(
   m,
   ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1), label = "C2(z)")
 )
