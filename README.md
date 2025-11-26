@@ -7,10 +7,17 @@
 
 <!-- badges: end -->
 
-An R package for working with 3D molecular structures in R.  
-It provides the **`Molecule3D`** class for representing molecular
-geometry, together with parsers for the `.mol2` file format and a
-growing set of geometric manipulation tools.
+An R package for working with **3D molecular structures** in R.
+
+`structures` provides:
+
+- The **`Molecule3D`** class for representing molecules with atoms,
+  bonds, and 3D coordinates  
+- A parser for the `.mol2` file format  
+- Tools for transforming and manipulating molecular geometry  
+- A complete system for attaching and transforming **point-group
+  symmetry elements**  
+- A growing set of geometric and atom connectivity utilities
 
 ------------------------------------------------------------------------
 
@@ -32,8 +39,8 @@ remotes::install_github("selkamand/structures")
 ``` r
 library(structures)
 
-# Read a mol2 file into a Molecule3D object
-path <- system.file(package="structures", "benzene.mol2")
+# Load a benzene structure
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 
 print(molecule)
@@ -41,17 +48,102 @@ print(molecule)
 #> Chemical Molecule3D
 #> ===================
 #> Name: benzene
-#> Atoms: 12
+#> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Symmetry Elements: 0
 #> Symmetry Axes: 0
+#> Symmetry Orders (Cn): 
 #> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
-#> See @symmetry_axes for symmetry axes
+#> See @symmetry_elements for symmetry elements
+```
 
-# Set anchor to the first element and translate the molecule so that
-# the anchor atom is at the origin (0, 0, 0)
+------------------------------------------------------------------------
+
+## Transforming Molecules
+
+The `structures` package includes several **high-level convenience
+functions** for common molecular transformations, such as:
+
+- `translate_molecule_by_vector()`
+- `rotate_molecule_around_vector()`
+- `rotate_molecule_around_anchor()`
+- `rotate_molecule_around_atom()`
+- `scale_molecule()`
+- `reflect_molecule_through_plane()`
+
+These helpers provide simple, readable ways to apply typical rigid-body
+operations without writing transformation functions yourself.
+
+``` r
+# Translate the molecule 5 units along Y axis
+molecule_shifted <- translate_molecule_by_vector(molecule, c(0, 5, 0))
+
+# Rotate 90° around the Z-axis
+molecule_rotated <- rotate_molecule_around_vector(
+  molecule,
+  axis = c(0, 0, 1),
+  angle = pi / 2
+)
+```
+
+The package also provides a unified interface for applying any
+transformations.
+
+All transformations ultimately flow through a single low-level
+mechanism:
+
+``` r
+transform_molecule(molecule, transformation = <function>, ...)
+```
+
+Here, `transformation(point)` must take a named numeric vector
+`c(x, y, z)` and return another 3-vector. Additional arugments to
+transformation function can be supplied by `...`
+
+This makes it possible to apply any coordinate mapping - translation,
+rotation, reflection, projection, distortion, or even nonlinear
+geometric operations — simply by supplying your own function.
+
+### Using the move package to transform molecules
+
+The [move](https://github.com/selkamand/move) package contains common
+transformations that can plug straight into `transform_molecule`.
+
+``` r
+library(move)
+
+# Translate a molecule 5 units up along Y axis
+molecule_shifted <- transform_molecule(
+  molecule, 
+  transformation = move::translate_position_in_direction, 
+  direction = c(0, 1, 0), 
+  magnitude = 5
+)
+
+# Rotate around the Z-axis
+molecule_rotated <- transform_molecule(
+  molecule,
+  transformation = move::rotate_vector_around_axis,
+  angle = pi / 3,
+  rotation_axis = c(0, 0, 1)
+)
+```
+
+## Anchors
+
+Molecules can be tagged with an ‘anchor’ atom/position about which
+various transformations can be made.
+
+For example, a common transformation is to translate the molecule so
+that a particular atom is at the origin. One easy way to achieve this is
+to simply set the molecules ‘anchor’ to the target atom and apply
+anchor-aware transformations like `translate_molecule_to_origin()`
+
+``` r
+# Using anchors and higher-level helpers
 molecule_centered <- molecule |>
   set_anchor_by_atom(eleno = 1) |>
   translate_molecule_to_origin()
@@ -59,40 +151,97 @@ molecule_centered <- molecule |>
 
 ------------------------------------------------------------------------
 
-## Symmetry Axes
+## Geometric analysis: molecular planes
 
-The `structures` package now supports defining and storing **rotational
-symmetry axes** within a `Molecule3D` object.
+In addition to distances and angles, `structures` can compute **best-fit
+planes** through molecular coordinates. A common use case is to get the
+mean plane of an aromatic ring or ligand fragment.
 
-### The `SymAxis` class
-
-A **`SymAxis`** object represents a proper rotation axis (Cₙ) defined
-by: - `Cn`: the fold/order of the axis (e.g., 2, 3, 4, …), - `posA` and
-`posB`: two points in 3D space (`c(x, y, z)`) defining the axis line.
+`compute_plane_from_atoms()` computes a plane through all atoms in a
+\[`Molecule3D`\] using svd fitting under the hood. If only 3 points are
+supplied, an exact plane will be computed using the cross-product.
 
 ``` r
-# Create a simple C3 symmetry axis through the Z axis
-axis_C3 <- SymAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
-print(axis_C3)
+# Best-fit plane through all atoms in the molecule
+plane <- compute_plane_from_atoms(molecule)
+
+# Unit normal vector of the plane
+plane$normal
+#>             x             y             z 
+#> -4.915898e-06  7.376443e-06 -1.000000e+00
+
+# Signed offset from the origin along that normal
+plane$offset
+#> [1] 8.333292e-06
+```
+
+------------------------------------------------------------------------
+
+## Symmetry Elements
+
+The `structures` package now supports all standard symmetry elements.
+Providing S7 Classes for:
+
+1.  Proper Rotation Axes (`ProperRotationAxis()`)
+2.  Improper Rotation Axes (`ImproperRotationAxis()`)
+3.  Mirror Planes (`MirrorPlane()`)
+4.  Centres of Inversion (`CentreOfInversion()`)
+
+These elements can be added to any `Molecule3D` structure and will
+participate in transformations.
+
+### Creating Symmetry Elements
+
+``` r
+ProperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0, 1))
 #> ===================
-#> Symmetry Axis
+#> Proper Rotation Axis
 #> ===================
-#> Fold Symmetry / Order (Cn): C3
-#> PosA: 0, 0, 0
+#> Fold Symmetry / Order (Cn): C6
+#> PosA: 0, 0, -1
+#> Direction: 0, 0, 1
 #> PosB: 0, 0, 1
+#> Label: unnamed
+
+ImproperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0,  1), plane_point = c(0, 0,  0))
+#> ===================
+#> Improper Rotation Axis
+#> ===================
+#> Fold Symmetry / Order (Sn): S6
+#> Normal (direction): 0, 0, 1
+#> Normal (position): 0, 0, -1
+#> Plane (position): 0, 0, 0
+#> Label: unnamed
+
+MirrorPlane(position = c(0, 0, 0), normal = c(0, 0, 1))
+#> ===================
+#> Mirror Plane
+#> ===================
+#> Normal: 0, 0, 1
+#> Position: 0, 0, 0
+#> Label: unnamed
+
+CentreOfInversion(position = c(0, 0, 0))
+#> ===================
+#> Centre of Inversion
+#> ===================
+#> Position: 0, 0, 0
 #> Label: unnamed
 ```
 
-### Adding symmetry axes to molecules
+Any `Molecule3D` object can be annotated with these symmetry elements.
 
-Symmetry axes can be attached to any `Molecule3D` object using
-\[`add_symmetry_axis()`\]:
+### Adding Symmetry Elements
+
+Symmetry elements can be attached to any `Molecule3D` object using
+helper functions: e.g. \[`add_symmetry_element_to_molecule()`\]:
 
 ``` r
-# Add a symmetry axis to the benzene molecule
-molecule <- add_symmetry_axis(
+
+# Add a C6 symmetry axis to the benzene molecule
+molecule <- add_symmetry_element_to_molecule(
   molecule,
-  SymAxis(Cn = 6L, posA = c(0, 0, -1), posB = c(0, 0, 1))
+  ProperRotationAxis(n = 6, posA = c(0, 0, -1), posB = c(0, 0, 1))
 )
 
 # Inspect updated molecule summary
@@ -101,33 +250,123 @@ print(molecule)
 #> Chemical Molecule3D
 #> ===================
 #> Name: benzene
-#> Atoms: 12
+#> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Symmetry Elements: 1
 #> Symmetry Axes: 1
 #> Symmetry Orders (Cn): 6
 #> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
-#> See @symmetry_axes for symmetry axes
+#> See @symmetry_elements for symmetry elements
+
+# Or to see a more detailed description
+print(molecule@symmetry_elements)
+#> ===================
+#> Symmetry Element Collection
+#> ===================
+#> Number of Elements: 1
+#> Proper Rotation Axis: 1
+#> Improper Rotation Axis: 0
+#> Mirror Plane: 0
+#> Centre of Inversion: 0
+#> 
+#> Unique Proper Axis Orders: 6
+#> -------------------
+#> See @elements paramater for a list of symmetry elements
 ```
 
-The molecule keeps track of: - all attached symmetry axes
-(`@symmetry_axes`), - unique orders present (`@symmetry_axes_orders`), -
-and whether any symmetry axes exist (`@contains_symmetry_axes`).
+The molecule keeps track of: - all attached symmetry elements
+(`@symmetry_elements`), - unique symmetry orders present
+(`@symmetry_axes_orders`), - and whether any symmetry axes exist
+(`@contains_symmetry_axes`).
 
 You can also retrieve all axes of a given order:
 
 ``` r
-fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
-#> $`1`
+fetch_all_proper_rotation_axes_with_order(molecule, Cn = 6)
+#> [[1]]
 #> ===================
-#> Symmetry Axis
+#> Proper Rotation Axis
 #> ===================
 #> Fold Symmetry / Order (Cn): C6
 #> PosA: 0, 0, -1
+#> Direction: 0, 0, 1
 #> PosB: 0, 0, 1
 #> Label: unnamed
+```
+
+### Transforming based on Symmetry Elements
+
+Once symmetry elements have been added to the molecule we can use those
+to inform transformations
+
+``` r
+# Print out available symmetry elements
+as.data.frame(molecule@symmetry_elements)
+#>   ids                 type   label
+#> 1   1 Proper Rotation Axis unnamed
+
+
+# Rotate so C6 symmetry axis points right
+rotate_molecule_so_symmetry_axis_aligns_with_vector(
+  molecule, 
+  symmetry_element_id = 1, 
+  target = c(0,1,0)
+)
+#> ===================
+#> Chemical Molecule3D
+#> ===================
+#> Name: benzene
+#> Atoms: 12 (0 dummy atoms)
+#> Bonds: 12
+#> Symmetry Elements: 1
+#> Symmetry Axes: 1
+#> Symmetry Orders (Cn): 6
+#> 
+#> -------------------
+#> See @atoms paramater for atom positions
+#> See @bonds paramater for bond positions
+#> See @symmetry_elements for symmetry elements
+
+# Rotate 30 degrees around the C6 symmetry axis
+rotate_molecule_around_symmetry_axis(
+  molecule, 
+  symmetry_element_id = 1, 
+  angle = pi/6 # 30 degrees
+)
+#> ===================
+#> Chemical Molecule3D
+#> ===================
+#> Name: benzene
+#> Atoms: 12 (0 dummy atoms)
+#> Bonds: 12
+#> Symmetry Elements: 1
+#> Symmetry Axes: 1
+#> Symmetry Orders (Cn): 6
+#> 
+#> -------------------
+#> See @atoms paramater for atom positions
+#> See @bonds paramater for bond positions
+#> See @symmetry_elements for symmetry elements
+```
+
+## Dummy atoms
+
+mol2 files can contain dummy atoms, indicated by the `atom_type` column
+being “Du” / “Du.C” (see mol2 specification). These dummy atoms can be
+deleted.
+
+``` r
+path <- system.file(package = "structures", "fe_dummies.mol2")
+molecule_with_dummies <- read_mol2(path)
+molecule_without_dummies <- remove_dummy_atoms(molecule_with_dummies)
+
+message("Number of dummy atoms in original molecule: ", molecule_with_dummies@n_dummy_atoms)
+#> Number of dummy atoms in original molecule: 3
+message("Dummy atoms in molecule after deletion: ", molecule_without_dummies@n_dummy_atoms)
+#> Dummy atoms in molecule after deletion: 0
 ```
 
 ------------------------------------------------------------------------
@@ -139,7 +378,7 @@ fetch_all_symmetry_axes_with_order(molecule, Cn = 6L)
 - ⚙️ Coordinate manipulation (`translate_molecule_*`,
   `transform_molecule()`)  
 - 🧭 Persistent anchors for positioning molecules  
-- 🔁 **New:** Rotational symmetry support via `SymAxis` and
+- 🔁 **New:** Rotational symmetry support via `ProperRotationAxis` and
   `add_symmetry_axis()`  
 - 🧩 Connectivity and geometric utilities (`fetch_eleno_*`,
   `compute_distance_between_atoms()`)

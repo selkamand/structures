@@ -19,7 +19,7 @@ Filters a molecule to include only specific atoms by atom_id (eleno).
 Will also drop orphaned bonds. To delete atoms from a molecule, see \code{\link[=remove_atoms]{remove_atoms()}}
 }
 \examples{
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
-filter_atoms(molecule, c(1,2,3))
+filter_atoms(molecule, c(1, 2, 3))
 }

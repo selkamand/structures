@@ -47,7 +47,7 @@ The \code{@connectivity} property relies on \pkg{igraph} (via an
 internal conversion to an igraph and \code{igraph::components()}).
 }
 \examples{
-m <- read_mol2(system.file("fe_tripod.mol2", package="structures"))
+m <- read_mol2(system.file("fe_tripod.mol2", package = "structures"))
 # Suppose bond 4 connects atoms 10 and 12, and we want the side attached to atom 10:
 ids <- fetch_eleno_downstream_of_bond(molecule = m, bond_id = 16, direction_atom_id = 20)
 ids

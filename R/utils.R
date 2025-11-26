@@ -104,12 +104,12 @@ fresh_numeric_ids <- function(k, existing_ids) {
 
 # --- Validation ---------------------------------------------------------------
 
-ensure_axes_are_symaxis <- function(value) {
+ensure_axes_are_ProperRotationAxis <- function(value) {
   if (length(value) == 0L) return(invisible(TRUE))
   for (axis in value) {
     if (!is_symmetry_axis(axis)) {
       stop(sprintf(
-        "All symmetry_axes must be `structures::SymAxis`. Invalid: [%s]",
+        "All symmetry_axes must be `structures::ProperRotationAxis`. Invalid: [%s]",
         toString(class(axis))
       ), call. = FALSE)
     }
@@ -119,7 +119,7 @@ ensure_axes_are_symaxis <- function(value) {
 
 validate_symmetry_axes_list <- function(value) {
   # Class check
-  ensure_axes_are_symaxis(value)
+  ensure_axes_are_ProperRotationAxis(value)
 
   # Names: exist, non-empty, unique
   ids <- names(value)
@@ -139,12 +139,12 @@ validate_symmetry_axes_list <- function(value) {
 # --- Normalisation (auto-name + uniqueness) ----------------------------------
 
 # Normalize a symmetry_axes list:
-#  - ensure all elements are SymAxis
+#  - ensure all elements are ProperRotationAxis
 #  - ensure names exist
 #  - fill any empty names with fresh numeric IDs that don't collide
 normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
   if (!is.list(value)) stop("symmetry_axes must be a list.", call. = FALSE)
-  ensure_axes_are_symaxis(value)
+  ensure_axes_are_ProperRotationAxis(value)
 
   ids <- axis_ids(value)
 
@@ -298,4 +298,13 @@ pmean <- function(..., na.rm = FALSE) {
   n <- max(vapply(args, length, 1L))
   args <- lapply(args, rep_len, length.out = n)
   rowMeans(do.call(cbind, args), na.rm = na.rm)
+}
+
+
+
+# Operators ---------------------------------------------------------------
+
+`%||%` <- function(LHS, RHS){
+    if(is.null(LHS)) return(RHS)
+    else return(LHS)
 }

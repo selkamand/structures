@@ -19,7 +19,8 @@ Sets the \code{anchor} of a \code{Molecule3D} to the current coordinates
 of a specified atom (\code{eleno}).
 }
 \examples{
-# m <- set_anchor_by_atom(m, "5")
+m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+m <- set_anchor_by_atom(m, eleno = 5)
 }
 \seealso{
 \code{\link{set_anchor_by_position}},

@@ -25,10 +25,10 @@ A \code{Molecule3D} object with additional rows in \code{@bonds}.
 Appends one or more new bond records to a \code{Molecule3D} object. Each bond
 connects a specified origin atom (\code{origin_atom_id}) to one or more
 target atoms (\code{target_atom_ids}). Bond IDs are automatically assigned by
-incrementing from the molecule’s current \code{@maximum_bond_id}.
+incrementing from the molecule<U+2019>s current \code{@maximum_bond_id}.
 }
 \details{
-This function extends the molecule’s \code{@bonds} table. It creates sequential
+This function extends the molecule<U+2019>s \code{@bonds} table. It creates sequential
 numeric \code{bond_id}s starting from \code{molecule@maximum_bond_id + 1}.
 If multiple targets are supplied, one bond row is added per target.
 

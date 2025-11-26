@@ -33,7 +33,7 @@ delegates the point-wise rotation to
 The axis direction is interpreted up to scale; only its orientation matters.
 }
 \examples{
-# Rotate benzene 45° around the global z-axis through the origin
+# Rotate benzene 45<U+00B0> around the global z-axis through the origin
 # m <- structures::read_mol2(system.file("benzene.mol2", package = "structures"))
 # m_rot <- rotate_molecule_around_vector(m, axis = c(0,0,1), position = c(0,0,0), angle = pi/4)
 

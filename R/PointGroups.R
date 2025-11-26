@@ -1,0 +1,117 @@
+#  PointGroup3D -----------------------------------------------------------
+
+#' PointGroup3D: A 3D Point Group
+#'
+#' In geometry, a point group is a list of Symmetry Elements (see [SymmetryElement()]) about
+#' which symmetry operations can be performed without changing the position of atoms.
+#'
+#' @param name String (length 1). What is the name of this point group. We do not restrict this since with no lattice restriction there are infinitely many point groups.
+#' However, if you are creating one of the 32 Crystallographic 3D point groups (the ones which allow for periodic crystals) we recommend setting this based on the Schoenflies notation. See [crystallographic_pointgroup_names()].
+#' @param symmetry_elements A list of [SymmetryElement()] objects.
+#' @export
+PointGroup3D <- S7::new_class(
+  name = "PointGroup",
+  properties = list(
+    name = S7::new_property(
+      class = S7::class_character,
+      validator = function(value){
+        if(length(value) != 1) return(sprintf("Point Group @name must be a string (character vector with length 1: Not [%s]", length(value)))
+        if(!value %in% crystallographic_pointgroup_names()) warning(sprintf("Point group name ['%s'] is not a valid Schoenflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]", value, toString(crystallographic_pointgroup_names())))
+        return(NULL)
+      }
+    ),
+    symmetry_elements = S7::new_property(
+      class = S7::class_list,
+      validator = function(value){
+        for (element in value){
+          if(!inherits(element, "SymmetryElement")) return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))
+        }
+        return(NULL)
+      }
+    )
+    # Add computed properties to pull out all of a specific type of symmetry axis ()
+  ),
+  constructor = function(name= "", symmetry_elements = list()){
+    S7::new_object(
+      S7::S7_object(),
+      name = name,
+      symmetry_elements = symmetry_elements
+    )
+  }
+)
+
+
+# Helpers -----------------------------------------------------------------
+
+
+
+#' Schönflies notation of the 32 crystallographic point groups
+#'
+#' Returns the 32 crystallographic 3D point groups in Schönflies notation,
+#' either as a named character vector (default) or grouped into a named list
+#' by crystal system.
+#'
+#' @param as_list Logical. If `FALSE` (default), returns a single named vector
+#'   with repeated names indicating crystal system. If `TRUE`, returns a list
+#'   where each element is a vector of point groups in that system.
+#'
+#' @return A named character vector (default) or a named list of character vectors.
+#' @export
+#'
+#' @examples
+#' crystallographic_pointgroup_names()
+crystallographic_pointgroup_names <- function(as_list=FALSE){
+  point_groups_3d <- c(
+    # Triclinic (2)
+    triclinic = "C1",
+    triclinic = "Ci",
+
+    # Monoclinic (3)
+    monoclinic = "C2",
+    monoclinic = "Cs",
+    monoclinic = "C2h",
+
+    # Orthorhombic (3)
+    orthorhombic = "D2",
+    orthorhombic = "C2v",
+    orthorhombic = "D2h",
+
+    # Tetragonal (7)
+    tetragonal = "C4",
+    tetragonal = "S4",
+    tetragonal = "C4h",
+    tetragonal = "D4",
+    tetragonal = "C4v",
+    tetragonal = "D2d",
+    tetragonal = "D4h",
+
+    # Trigonal (5)
+    trigonal = "C3",
+    trigonal = "C3i",
+    trigonal = "D3",
+    trigonal = "C3v",
+    trigonal = "D3d",
+
+    # Hexagonal (7)
+    hexagonal = "C6",
+    hexagonal = "C3h",
+    hexagonal = "C6h",
+    hexagonal = "D6",
+    hexagonal = "C6v",
+    hexagonal = "D3h",
+    hexagonal = "D6h",
+
+    # Cubic (5)
+    cubic = "T",
+    cubic = "Th",
+    cubic = "O",
+    cubic = "Td",
+    cubic = "Oh"
+  )
+
+  if(as_list){
+    point_groups_3d <- split(point_groups_3d, names(point_groups_3d))
+    point_groups_3d <- lapply(point_groups_3d, unname)
+  }
+  return(point_groups_3d)
+}

@@ -17,8 +17,8 @@
 #'   listing undirected edges by vertex name. May be empty.
 #' @param faces A named list of character vectors, where each vector contains
 #'   vertex names that form a polygonal face. May be empty.
-#' @param symmetry_axes An optional list of [`SymAxis`] objects describing known
-#'   symmetry axes. May be empty.
+#' @param symmetry_elements An optional SymmetryElementCollection object describing known
+#'   symmetry axes.
 #'
 #' @return A `Shape` S7 object.
 #'
@@ -39,6 +39,8 @@
 Shape <- S7::new_class(
   name = "Shape",
   properties = list(
+
+    ## Writeable ---------------------------------------------------------------
     vertices = S7::new_property(
       class = S7::class_data.frame,
       validator = function(value) {
@@ -89,21 +91,78 @@ Shape <- S7::new_class(
         }
       }
     ),
-    symmetry_axes = S7::new_property(
-      class = S7::class_list,
-      validator = function(value) {
-        if (length(value) == 0) {
-          return(NULL)
+    symmetry_elements = SymmetryElementCollection,
+
+    ## Read Only ---------------------------------------------------------------
+    face_centroids = S7::new_property(
+      class = S7::class_data.frame,
+      setter = function(self, value) {
+        stop("@face_centers is a read only property")
+      },
+      getter = function(self) {
+        faces <- self@faces
+        if (length(faces) == 0) {
+          return(data.frame(
+            face = character(0),
+            x = numeric(0),
+            y = numeric(0),
+            z = numeric(0),
+            vertex_x = character(0),
+            vertex_y = character(0),
+            vertex_z = character(0),
+
+            stringsAsFactors = FALSE
+          ))
         }
-        ok <- vapply(value, is_symmetry_axis, logical(1))
-        if (!all(ok)) {
-          return("symmetry_axes must be a list of SymAxis objects")
-        }
+
+        verts <- self@vertices
+
+
+        centers <- lapply(names(faces), function(fname) {
+          vnames <- faces[[fname]]
+          idx <- match(vnames, verts$name)
+          coords <- verts[idx, c("x", "y", "z"), drop = FALSE]
+          data.frame(
+            face = fname,
+            x = mean(coords$x),
+            y = mean(coords$y),
+            z = mean(coords$z),
+            vertices = paste0(vnames, collapse = "-")
+          )
+        })
+        df_centers <- do.call(rbind, centers)
+        rownames(df_centers) <- NULL
+        return(df_centers)
+      }
+    ),
+    geometric_center = S7::new_property(
+      class = S7::class_numeric,
+      setter = function(self, value) { stop("@geometric_center is a read only property") },
+      getter = function(self){
+        vertices = self@vertices
+        x = mean(vertices$x)
+        y = mean(vertices$y)
+        z = mean(vertices$z)
+        c("x" = x, "y" = y, "z"=z)
       }
     ),
 
+    # symmetry_axes = S7::new_property(
+    #   class = S7::class_list,
+    #   validator = function(value) {
+    #     if (length(value) == 0) {
+    #       return(NULL)
+    #     }
+    #     ok <- vapply(value, is_symmetry_axis, logical(1))
+    #     if (!all(ok)) {
+    #       return("symmetry_axes must be a list of ProperRotationAxis objects")
+    #     }
+    #   }
+    # ),
+
     # Computed Properties (edge centers, face centers, triangles, quads, etcs)
     edge_positions = S7::new_property(
+      class = S7::class_data.frame,
       setter = function(self, value) {
         stop("@edge_positions is a read only property")
       },
@@ -134,15 +193,24 @@ Shape <- S7::new_class(
           z_middle = pmean(z, zend, na.rm = TRUE)
         )
       }
+    ),
+    # Edges interleaved
+    segments_interleaved = S7::new_property(
+      class = S7::class_data.frame,
+      setter = function(self, value) { stop("@edge_positions is a read only property")},
+      getter = function(self){
+        interleaved = to_interleaved(self@edge_positions)
+        return(interleaved)
+      }
     )
   ),
-  constructor = function(vertices = default_vertices(), edges = default_edges(), faces = list(), symmetry_axes = list()) {
+  constructor = function(vertices = default_vertices(), edges = default_edges(), faces = list(), symmetry_elements = SymmetryElementCollection()) {
     S7::new_object(
       S7::S7_object(),
       vertices = vertices,
       edges = edges,
       faces = faces,
-      symmetry_axes = symmetry_axes
+      symmetry_elements = SymmetryElementCollection()
     )
   },
   validator = function(self) {
@@ -234,7 +302,7 @@ compute_shape_edges_by_min_distance <- function(vertices_df, tol = 1e-8) {
   if (n <= 1) {
     return(default_edges())
   }
-  dmat <- as.matrix(dist(coords))
+  dmat <- as.matrix(stats::dist(coords))
   min_nonzero <- min(dmat[dmat > 0])
   edges <- which(abs(dmat - min_nonzero) < tol & upper.tri(dmat), arr.ind = TRUE)
   if (nrow(edges) == 0) {
@@ -263,9 +331,16 @@ compute_shape_edges_by_min_distance <- function(vertices_df, tol = 1e-8) {
 #'
 #' @export
 shape_cube <- function() {
-  signs <- expand.grid(x = c(-1, 1), y = c(-1, 1), z = c(-1, 1), KEEP.ALIVE = FALSE, stringsAsFactors = FALSE)
+  signs <- expand.grid(
+    x = c(-1, 1),
+    y = c(-1, 1),
+    z = c(-1, 1),
+    KEEP.ALIVE = FALSE,
+    stringsAsFactors = FALSE
+  )
   signs$name <- paste0("V", seq_len(nrow(signs)))
   df_vertices <- signs[, c("name", "x", "y", "z")]
+
   coords <- as.matrix(df_vertices[, c("x", "y", "z")])
   n <- nrow(coords)
   pairs <- which(upper.tri(matrix(0, n, n)), arr.ind = TRUE)
@@ -274,6 +349,7 @@ shape_cube <- function() {
   }
   keep <- apply(pairs, 1, function(ij) is_edge(ij[1], ij[2]))
   pairs <- pairs[keep, , drop = FALSE]
+
   df_edges <- if (nrow(pairs)) {
     data.frame(
       vertex1 = df_vertices$name[pairs[, 1]],
@@ -283,8 +359,19 @@ shape_cube <- function() {
   } else {
     default_edges()
   }
-  Shape(vertices = df_vertices, edges = df_edges, faces = list())
+
+  faces <- list(
+    F1 = c("V1", "V2", "V4", "V3"), # x = -1
+    F2 = c("V5", "V6", "V8", "V7"), # x =  1
+    F3 = c("V1", "V2", "V6", "V5"), # y = -1
+    F4 = c("V3", "V4", "V8", "V7"), # y =  1
+    F5 = c("V1", "V3", "V7", "V5"), # z = -1
+    F6 = c("V2", "V4", "V8", "V6")  # z =  1
+  )
+
+  Shape(vertices = df_vertices, edges = df_edges, faces = faces)
 }
+
 
 # Octahedron --------------------------------------------------------------
 
@@ -315,7 +402,19 @@ shape_octahedron <- function() {
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
   df_edges <- compute_shape_edges_by_min_distance(df_vertices)
-  Shape(vertices = df_vertices, edges = df_edges, faces = list())
+
+  faces <- list(
+    F1 = c("V1", "V3", "V5"),
+    F2 = c("V1", "V3", "V6"),
+    F3 = c("V1", "V4", "V5"),
+    F4 = c("V1", "V4", "V6"),
+    F5 = c("V2", "V3", "V5"),
+    F6 = c("V2", "V3", "V6"),
+    F7 = c("V2", "V4", "V5"),
+    F8 = c("V2", "V4", "V6")
+  )
+
+  Shape(vertices = df_vertices, edges = df_edges, faces = faces)
 }
 
 # Icosahedron -------------------------------------------------------------
@@ -346,7 +445,31 @@ shape_icosahedron <- function() {
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
   df_edges <- compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
-  Shape(vertices = df_vertices, edges = df_edges, faces = list())
+
+  faces <- list(
+    F1  = c("V1", "V2", "V9"),
+    F2  = c("V1", "V2", "V11"),
+    F3  = c("V1", "V5", "V6"),
+    F4  = c("V1", "V5", "V9"),
+    F5  = c("V1", "V6", "V11"),
+    F6  = c("V2", "V7", "V8"),
+    F7  = c("V2", "V7", "V9"),
+    F8  = c("V2", "V8", "V11"),
+    F9  = c("V3", "V4", "V10"),
+    F10 = c("V3", "V4", "V12"),
+    F11 = c("V3", "V5", "V6"),
+    F12 = c("V3", "V5", "V10"),
+    F13 = c("V3", "V6", "V12"),
+    F14 = c("V4", "V7", "V8"),
+    F15 = c("V4", "V7", "V10"),
+    F16 = c("V4", "V8", "V12"),
+    F17 = c("V5", "V9", "V10"),
+    F18 = c("V6", "V11", "V12"),
+    F19 = c("V7", "V9", "V10"),
+    F20 = c("V8", "V11", "V12")
+  )
+
+  Shape(vertices = df_vertices, edges = df_edges, faces = faces)
 }
 
 # Dodecahedron ------------------------------------------------------------
@@ -380,7 +503,23 @@ shape_dodecahedron <- function() {
   df_vertices <- as.data.frame(verts)
   df_vertices$name <- rownames(verts)
   df_edges <- compute_shape_edges_by_min_distance(df_vertices, tol = 1e-8)
-  Shape(vertices = df_vertices, edges = df_edges, faces = list())
+
+  faces <- list(
+    F1  = c("V1", "V9",  "V5",  "V14", "V13"),
+    F2  = c("V1", "V9",  "V11", "V3",  "V17"),
+    F3  = c("V1", "V13", "V2",  "V18", "V17"),
+    F4  = c("V2", "V10", "V6",  "V14", "V13"),
+    F5  = c("V2", "V10", "V12", "V4",  "V18"),
+    F6  = c("V3", "V11", "V7",  "V16", "V15"),
+    F7  = c("V3", "V15", "V4",  "V18", "V17"),
+    F8  = c("V4", "V12", "V8",  "V16", "V15"),
+    F9  = c("V5", "V9",  "V11", "V7",  "V19"),
+    F10 = c("V5", "V14", "V6",  "V20", "V19"),
+    F11 = c("V6", "V10", "V12", "V8",  "V20"),
+    F12 = c("V7", "V16", "V8",  "V20", "V19")
+  )
+
+  Shape(vertices = df_vertices, edges = df_edges, faces = faces)
 }
 
 # Generics ----------------------------------------------------------------

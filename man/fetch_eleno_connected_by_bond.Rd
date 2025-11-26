@@ -21,7 +21,7 @@ bond in a \code{Molecule3D} object. This is a convenience helper to quickly
 inspect bond connectivity or to use as input for other geometric operations.
 }
 \examples{
-m <- read_mol2(system.file("fe_tripod.mol2", package="structures"))
+m <- read_mol2(system.file("fe_tripod.mol2", package = "structures"))
 fetch_eleno_connected_by_bond(m, bond_id = 16)
 
 }

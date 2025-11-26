@@ -26,14 +26,16 @@ This lets you apply any function from the move package to a Molecule3D object.
 \examples{
 # Example: rotate points around Z-axis
 
-path <- system.file(package="structures", "benzene.mol2")
+path <- system.file(package = "structures", "benzene.mol2")
 molecule <- read_mol2(path)
 
 rotate_z <- function(p) {
   angle <- pi / 4
-  c(x = p["x"] * cos(angle) - p["y"] * sin(angle),
+  c(
+    x = p["x"] * cos(angle) - p["y"] * sin(angle),
     y = p["x"] * sin(angle) + p["y"] * cos(angle),
-    z = p["z"])
+    z = p["z"]
+  )
 }
 
 transform_molecule(molecule, rotate_z)

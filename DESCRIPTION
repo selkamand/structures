@@ -11,7 +11,7 @@ Authors@R:
 Description: Provides object-oriented classes and utilities for representing, 
     manipulating, and analyzing three-dimensional molecular structures. 
     The core 'Molecule3D' class stores atomic coordinates, bonds, and anchors 
-    for positioning molecules, while the 'SymAxis' class represents proper 
+    for positioning molecules, while the 'ProperRotationAxis' class represents proper 
     rotational symmetry axes (Cₙ). Includes functionality for reading Tripos MOL2 
     files, geometric transformations, anchor manipulation, and integration with 
     cheminformatics toolkits for coordinate-based modeling.
