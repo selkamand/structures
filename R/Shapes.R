@@ -17,8 +17,8 @@
 #'   listing undirected edges by vertex name. May be empty.
 #' @param faces A named list of character vectors, where each vector contains
 #'   vertex names that form a polygonal face. May be empty.
-#' @param symmetry_axes An optional list of [`ProperRotationAxis`] objects describing known
-#'   symmetry axes. May be empty.
+#' @param symmetry_elements An optional SymmetryElementCollection object describing known
+#'   symmetry axes.
 #'
 #' @return A `Shape` S7 object.
 #'
