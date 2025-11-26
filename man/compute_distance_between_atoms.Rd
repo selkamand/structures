@@ -19,5 +19,5 @@ Compute distance between two points
 }
 \examples{
 m <- read_mol2(system.file("benzene.mol2", package = "structures"))
-compute_distance_between_atoms(m, eleno1 = 1, eleno1 = 2)
+compute_distance_between_atoms(m, eleno1 = 1, eleno2 = 2)
 }

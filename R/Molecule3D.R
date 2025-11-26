@@ -1386,7 +1386,7 @@ locate_molecule_center <- function(x) {
 #'
 #' @examples
 #' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
-#' compute_distance_between_atoms(m, eleno1 = 1, eleno1 = 2)
+#' compute_distance_between_atoms(m, eleno1 = 1, eleno2 = 2)
 compute_distance_between_atoms <- function(x, eleno1, eleno2) {
   assertions::assert_class(x, "structures::Molecule3D")
   valid_ids <- x@atom_ids
