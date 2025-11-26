@@ -10,6 +10,10 @@ fetch_symmetry_element_from_molecule(molecule, id, error_if_missing = TRUE)
 \item{molecule}{A \code{\link[=Molecule3D]{Molecule3D()}} object.}
 
 \item{id}{the ID of a symmetry element.}
+
+\item{error_if_missing}{Logical; if \code{TRUE} (default), an error is thrown
+when \code{id} is not found in the collection. If \code{FALSE}, the
+function returns \code{NULL} when \code{id} is missing.}
 }
 \value{
 A \code{\link[=ProperRotationAxis]{ProperRotationAxis()}} object

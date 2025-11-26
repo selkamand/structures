@@ -518,11 +518,50 @@ combine_symmetry_element_collections <- function(collection1, collection2) {
   )
 }
 
+
+#' Fetch a symmetry element from a collection by ID
+#'
+#' Looks up a single symmetry element in a
+#' [`structures::SymmetryElementCollection`] by its numeric ID.
+#'
+#' @param collection A [`structures::SymmetryElementCollection`] object.
+#' @param id Numeric scalar giving the ID of the element to fetch
+#'   (must be present in \code{collection@ids}).
+#' @param error_if_missing Logical; if \code{TRUE} (default), an error is thrown
+#'   when \code{id} is not found in the collection. If \code{FALSE}, the
+#'   function returns \code{NULL} when \code{id} is missing.
+#'
+#' @return A single [`structures::SymmetryElement`] object corresponding to
+#'   \code{id}, or \code{NULL} if \code{id} is not found and
+#'   \code{error_if_missing = FALSE}.
+#'
+#' @examples
+#' mp  <- MirrorPlane(normal = c(0, 0, 1), position = c(0, 0, 0), label = "σ_xy")
+#' ci  <- CentreOfInversion(position = c(0, 0, 0), label = "i")
+#' coll <- SymmetryElementCollection(
+#'   elements = list(mp, ci),
+#'   ids      = c(1, 2)
+#' )
+#'
+#' el1 <- fetch_symmetry_element_from_collection(coll, id = 1)
+#' el2 <- fetch_symmetry_element_from_collection(coll, id = 2)
+#'
+#' # Return NULL if ID is missing and error_if_missing = FALSE
+#' el_missing <- fetch_symmetry_element_from_collection(
+#'   coll,
+#'   id = 999,
+#'   error_if_missing = FALSE
+#' )
+#'
+#' @export
 fetch_symmetry_element_from_collection <- function(collection, id, error_if_missing = TRUE){
   assertions::assert_class(collection, "structures::SymmetryElementCollection")
   assertions::assert_number(id)
-  if(error_if_missing & !id %in% collection@ids) { stop("Failed to fetch element with [id=",id, "]. ID not found in collection. If you would prefer to return NULL when id is missing, set error_if_missing=FALSE")}
-  idx = match(id, collection@ids)
+  if (error_if_missing && !id %in% collection@ids) {
+    stop("Failed to fetch element with [id=", id,
+         "]. ID not found in collection. If you would prefer to return NULL when id is missing, set error_if_missing = FALSE")
+  }
+  idx <- match(id, collection@ids)
   collection@elements[[idx]]
 }
 

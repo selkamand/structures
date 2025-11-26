@@ -1150,7 +1150,7 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id) {
 #'
 #' @param molecule A [Molecule3D()] object.
 #' @param id the ID of a symmetry element.
-#'
+#' @inheritParams fetch_symmetry_element_from_collection
 #' @returns A [ProperRotationAxis()] object
 #' @export
 #'
