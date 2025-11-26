@@ -1521,7 +1521,7 @@ symmetry_element_abbreviations <- function() {
     "Cn" = "Proper Rotation Axes",
     "Sn" = "Improper Rotation Axes",
     "sigma" = "Mirror Plane",
-    "i" = "Centre of Inversion",
+    "i" = "Centre of Inversion"
   )
 }
 
