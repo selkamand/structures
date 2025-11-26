@@ -17,7 +17,14 @@ Check if an object is an ImproperRotationAxis
 }
 \examples{
 # Assuming ImproperRotationAxis() will have a constructor similar to other elements:
-iax <- ImproperRotationAxis()
+iax <- ImproperRotationAxis(
+  n = 4L,
+  posA = c(0, 0, 0),
+  posB = c(0, 0, 1),
+  plane_point = c(0, 0, 0),
+  label = "S4(z)"
+)
+
 is_improper_rotation_axis(iax) # TRUE
 is_improper_rotation_axis(NULL) # FALSE
 
