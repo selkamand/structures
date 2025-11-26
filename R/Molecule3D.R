@@ -4,7 +4,7 @@
 #' Create a Molecule3D object
 #'
 #' Constructs an S7 object representing a single molecule with 3D coordinates.
-#' In most workflows, you will not call this constructor directly <U+2014> molecule
+#' In most workflows, you will not call this constructor directly molecule
 #' objects are usually created by parsers such as [structures::read_mol2()].
 #'
 #' @param name Character scalar. Molecule name.
@@ -54,25 +54,22 @@
 #'   \code{\link{set_anchor_by_atom}} or to an arbitrary position via
 #'   \code{\link{set_anchor_by_position}}.
 #'
-#' @param symmetry_axes List of zero or more [`structures::ProperRotationAxis`] objects
-#'   describing proper rotation axes embedded in the molecule. Each element must
-#'   satisfy [is_symmetry_axis()]. An empty list is valid and indicates that no
-#'   symmetry axes have been annotated yet.
+#' @param symmetry_elements A [`structures::SymmetryElementCollection`] object describing a set of symmetry axes
+#' embedded in the molecule
 #'
 #' @details
 #' During creation, \code{atoms} and \code{bonds} are processed using internal
 #' helpers (\code{format_atoms()} and \code{format_bonds()}) to ensure
 #' required columns are present, types are correct, and that all bond endpoints
-#' refer to valid atoms. If \code{symmetry_axes} is supplied, each element is
-#' validated to be a [`structures::ProperRotationAxis`]. The class also exposes derived,
+#' refer to valid atoms. If \code{symmetry_elements} is supplied, it is validated
+#' to be a [`structures::SymmetryElementCollection`]. The class also exposes derived,
 #' read-only properties related to symmetry:
 #' \itemize{
-#'   \item \code{@symmetry_axes_orders} <U+2014> unique set of \code{Cn} values present.
-#'   \item \code{@contains_symmetry_axes} <U+2014> logical flag indicating whether any axes exist.
+#'   \item \code{@contains_symmetry_axes} logical flag indicating whether any symmetry elements have been added to this molecule.
 #' }
 #' Coordinate transforms applied via \code{\link{transform_molecule}} will also
 #' transform the endpoints of each stored symmetry axis so they remain consistent
-#' with atom coordinates (the axis order \code{Cn} is preserved).
+#' with atom coordinates.
 #'
 #' @section Anchor:
 #' The \emph{anchor} is a persistent reference position stored as a length-3 numeric
@@ -94,14 +91,8 @@
 #'   \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 #'   \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 #'   \item \strong{center}
-#'   \item \strong{symmetry_axes} <U+2014> list of [`structures::ProperRotationAxis`] objects
-#'   \item \strong{symmetry_axes_orders} <U+2014> numeric vector of unique \code{Cn} values (read-only)
-#'   \item \strong{contains_symmetry_axes} <U+2014> logical (read-only)
-#'   \item \strong{symmetry_axes_dataframe} <U+2014> data frame (read-only) with one row per
-#'   symmetry axis. Columns: \code{id} (character; the axis ID = list name),
-#'   \code{label} (character), \code{Cn} (integer-like), \code{x,y,z} (numeric; start
-#'   point), \code{xend,yend,zend} (numeric; end point). Returns a zero-row data frame
-#'   with the same columns when no axes are present.
+#'   \item \strong{symmetry_elements} A [`structures::SymmetryElementCollection`] object describing the symmetry axes of this molecule.
+#'   \item \strong{contains_symmetry_elements} logical (read-only)
 #' }
 #'
 #' @examples
