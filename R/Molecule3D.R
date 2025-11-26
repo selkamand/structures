@@ -119,7 +119,7 @@
 #'   origin_atom_id = 1,
 #'   target_atom_id = 2
 #' )
-#' ax <- ProperRotationAxis(Cn = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+#' ax <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 #' m <- Molecule3D(
 #'   name = "CO", atoms = atoms, bonds = bonds,
 #'   symmetry_axes = list(ax), anchor = c(0, 0, 0)
