@@ -20,7 +20,8 @@ Moves all atom coordinates by a translation that places \code{x@anchor} at
 \code{\link{transform_molecule}}.
 }
 \examples{
-# m <- translate_molecule_to_position(m, c(5, 0, -2))
+m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+m <- translate_molecule_to_position(m, c(5, 0, -2))
 }
 \seealso{
 \code{\link{translate_molecule_to_origin}},

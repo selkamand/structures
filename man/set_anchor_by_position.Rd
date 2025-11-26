@@ -20,7 +20,8 @@ Sets the \code{anchor} of a \code{Molecule3D} to an arbitrary position
 helpers to reposition the molecule.
 }
 \examples{
-# m <- set_anchor_by_position(m, c(1, 2, 3))
+m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+m <- set_anchor_by_position(m, c(1, 2, 3))
 }
 \seealso{
 \code{\link{set_anchor_by_atom}},

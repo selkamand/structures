@@ -20,8 +20,7 @@ Adds a translation vector to all atom coordinates using
 keeping it consistent with the new coordinates.
 }
 \examples{
-
-molecule
+m <- read_mol2(system.file("benzene.mol2", package = "structures"))
 m <- translate_molecule_by_vector(m, c(1, 0, 0))
 
 }

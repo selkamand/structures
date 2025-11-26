@@ -1369,9 +1369,8 @@ transform_molecule <- function(x, transformation, ...) {
 #' @export
 #'
 #' @examples
-#' path <- system.file(package = "structures", "benzene.mol2")
-#' molecule <- read_mol2(path)
-#' locate_molecule_center(molecule)
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' locate_molecule_center(m)
 locate_molecule_center <- function(x) {
   assertions::assert_class(x, "structures::Molecule3D")
   x@center
@@ -1386,9 +1385,8 @@ locate_molecule_center <- function(x) {
 #' @export
 #'
 #' @examples
-#' path <- system.file(package = "structures", "benzene.mol2")
-#' molecule <- read_mol2(path)
-#' compute_distance_between_atoms(molecule, 1, 2)
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' compute_distance_between_atoms(m, eleno1 = 1, eleno1 = 2)
 compute_distance_between_atoms <- function(x, eleno1, eleno2) {
   assertions::assert_class(x, "structures::Molecule3D")
   valid_ids <- x@atom_ids
@@ -1411,7 +1409,8 @@ compute_distance_between_atoms <- function(x, eleno1, eleno2) {
 #'
 #' @return A \code{Molecule3D} object with \code{x@anchor} set to \code{position}.
 #' @examples
-#' # m <- set_anchor_by_position(m, c(1, 2, 3))
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' m <- set_anchor_by_position(m, c(1, 2, 3))
 #' @seealso \code{\link{set_anchor_by_atom}},
 #'   \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{translate_molecule_to_position}},
@@ -1432,7 +1431,8 @@ set_anchor_by_position <- function(x, position) {
 #'
 #' @return A \code{Molecule3D} object with \code{x@anchor} set to the atom position.
 #' @examples
-#' # m <- set_anchor_by_atom(m, "5")
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' m <- set_anchor_by_atom(m, eleno = 5)
 #' @seealso \code{\link{set_anchor_by_position}},
 #'   \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{translate_molecule_to_position}},
@@ -1477,7 +1477,8 @@ translate_molecule_to_origin <- function(x) {
 #'
 #' @return A \code{Molecule3D} object translated so \code{x@anchor == new_position}.
 #' @examples
-#' # m <- translate_molecule_to_position(m, c(5, 0, -2))
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' m <- translate_molecule_to_position(m, c(5, 0, -2))
 #' @seealso \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{translate_molecule_by_vector}},
 #'   \code{\link{set_anchor_by_position}}, \code{\link{set_anchor_by_atom}}
@@ -1499,8 +1500,7 @@ translate_molecule_to_position <- function(x, new_position) {
 #'
 #' @return A \code{Molecule3D} object translated by \code{vector}.
 #' @examples
-#'
-#' molecule
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
 #' m <- translate_molecule_by_vector(m, c(1, 0, 0))
 #'
 #' @seealso \code{\link{translate_molecule_to_origin}},
