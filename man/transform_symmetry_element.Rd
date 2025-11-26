@@ -10,14 +10,6 @@ transform_symmetry_element(x, ...)
 \item{x}{A \code{\link{SymmetryElement}} object.}
 
 \item{...}{Additional arguments forwarded to \code{transformation}.}
-
-\item{transformation}{A function that takes a length-3 coordinate and returns a
-transformed length-3 coordinate. The input will be passed as a named numeric
-vector \code{c(x = ..., y = ..., z = ...)}. The function must return either:
-\itemize{
-\item a named numeric vector with names \code{x}, \code{y}, \code{z}, or
-\item a list with elements \code{x}, \code{y}, \code{z} coercible to numeric.
-}}
 }
 \value{
 A transformed symmetry element of the same class as \code{x}.

@@ -85,13 +85,6 @@ SymmetryElement <- S7::new_class(
 #' }
 #'
 #' @param x A [`structures::SymmetryElement`] object.
-#' @param transformation A function that takes a length-3 coordinate and returns a
-#'   transformed length-3 coordinate. The input will be passed as a named numeric
-#'   vector `c(x = ..., y = ..., z = ...)`. The function must return either:
-#'   \itemize{
-#'     \item a named numeric vector with names `x`, `y`, `z`, or
-#'     \item a list with elements `x`, `y`, `z` coercible to numeric.
-#'   }
 #' @param ... Additional arguments forwarded to `transformation`.
 #'
 #' @return A transformed symmetry element of the same class as `x`.
@@ -375,8 +368,6 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
 }
 
 ## Generic ------------------------------------------------------------------
-
-
 
 
 
@@ -894,7 +885,7 @@ S7::method(as.data.frame, ProperRotationAxis) <- function(x, ...) {
   )
 }
 
-
+#'
 #' @export
 S7::method(transform_symmetry_element, ProperRotationAxis) <- function(x, transformation, ...) {
   transform_symmetry_axis(x, transformation = transformation, ...)
