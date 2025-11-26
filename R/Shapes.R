@@ -302,7 +302,7 @@ compute_shape_edges_by_min_distance <- function(vertices_df, tol = 1e-8) {
   if (n <= 1) {
     return(default_edges())
   }
-  dmat <- as.matrix(dist(coords))
+  dmat <- as.matrix(stats::dist(coords))
   min_nonzero <- min(dmat[dmat > 0])
   edges <- which(abs(dmat - min_nonzero) < tol & upper.tri(dmat), arr.ind = TRUE)
   if (nrow(edges) == 0) {
