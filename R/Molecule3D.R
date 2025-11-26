@@ -772,7 +772,7 @@ remove_atoms <- function(x, eleno) {
 #' Dummy are identified based on 'atom_type' (according to SYBYL mol2 specification should be set to 'Du' / 'Du.C' for dummy atoms).
 #'
 #' @param x a [Molecule3D()] object
-#'
+#' @param dummy_type a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C"
 #' @returns a [Molecule3D()] object with dummy atoms (and any bonds involving dummy atoms) removed
 #' @export
 #'
