@@ -1,3 +1,7 @@
+
+# Reading Mol2 ------------------------------------------------------------
+
+
 #' Read Mol2 file to a 'Structure' class object
 #'
 #' @param path path to the mol2 file
@@ -44,10 +48,27 @@ read_mol2 <- function(path, name = NULL){
     warning("No bonds found in mol2 file: ", path)
     df_bonds <- minimal_bonds()
   }
+
+  # Get mol_type and charge_type from molecule section
+  mol_type <- NULL
+  charge_type <- NULL
+  if ("MOLECULE" %in% names(ls_contents_substplit_named)){
+    char_vec <- ls_contents_substplit_named[["MOLECULE"]]
+    if(length(char_vec) >= 4){
+      mol_type <- char_vec[3]
+      charge_type <- char_vec[4]
+      # Note char_vec[1] is also the name of the molecule - so might be worth exposing a setting of how we choose name
+      # Currently if name=NULL we infer from filename, which works well.
+      # But it might be worth adding the option to infer from TRIPOS<MOLECULE> section
+    }
+  }
+
   chemical <- Molecule3D(
     name = name,
     atoms = df_atom,
     bonds = df_bonds,
+    mol_type = mol_type,
+    charge_type = charge_type,
     misc = ls_contents_substplit_named
   )
 
@@ -69,4 +90,143 @@ character_to_dataframe <- function(char, cols, header = FALSE){
 
   return(df)
 
+}
+
+
+
+# Writing Mol2 ------------------------------------------------------------
+
+#' Write Mol2 file
+#'
+#' Writes a [`Molecule3D`] object to disk in mol2 format.
+#'
+#' @param molecule A [Molecule3D()] object.
+#' @param path path to mol2 file.
+#'
+#' @returns invisibly returns NULL. This function is run for its side effects. .
+#'
+#' @export
+#'
+#' @examples
+#' \dontshow{
+#' .old_wd <- setwd(tempdir())
+#' }
+#'
+#' # Read mol2 file
+#' mol2_path <- system.file("benzene.mol2", package = "structures")
+#' mol <- read_mol2(mol2_path)
+#'
+#' # Write minimal mol2 file
+#' write_mol2(mol, "benzene.written.mol2")
+#'
+#' \dontshow{
+#' setwd(.old_wd)
+#' }
+write_mol2 <- function(molecule, path){
+  name <- molecule@name
+  n_atoms <- nrow(molecule@atoms)
+  n_bonds <- nrow(molecule@bonds)
+  molecule_type <- molecule@mol_type
+  charge_type <- molecule@charge_type
+
+  creation_time <- Sys.time()
+
+  # Write molecule header and minimal "@<TRIPOS>MOLECULE" section
+  cat(
+    sep = "\n",file = path, append = FALSE,
+    sprintf("#\tName: %s", name),
+    sprintf("#\tCreation Time: %s\n", creation_time),
+    "@<TRIPOS>MOLECULE",
+    name,
+    sprintf("\t%d\t%d", n_atoms, n_bonds), # TODO (OPTIONAL): There are additional, optional outputs we could write here (i.e. num_substructures, features, and sets)
+    molecule_type,
+    charge_type,
+    "" # Just to add an extra newline after molecule section
+  )
+
+  # Write @<TRIPOS>ATOM section
+  write("@<TRIPOS>ATOM", file = path, append = TRUE)
+  df_atoms <- molecule_to_mol2_atoms(molecule, digits = 4)
+
+  utils::write.table(
+    x = df_atoms,
+    file = path,
+    append = TRUE,
+    quote = FALSE,
+    col.names = FALSE,
+    row.names = FALSE,
+    sep="\t"
+  )
+
+  # Write @<TRIPOS>BOND section
+  write("@<TRIPOS>BOND", file = path, append = TRUE)
+  df_bonds <- molecule_to_mol2_bonds(molecule)
+
+  utils::write.table(
+    x = df_bonds,
+    file = path,
+    append = TRUE,
+    quote = FALSE,
+    col.names = FALSE,
+    row.names = FALSE,
+    sep="\t"
+  )
+}
+
+
+# Extractors --------------------------------------------------------------
+
+molecule_to_mol2_atoms <- function(molecule, digits = 4){
+  assertions::assert_class(molecule, class = "structures::Molecule3D")
+  df_atoms <- molecule@atoms
+  df_atoms$x <- round(df_atoms$x, digits = digits)
+  df_atoms$y <- round(df_atoms$y, digits = digits)
+  df_atoms$z <- round(df_atoms$z, digits = digits)
+  df_atoms <- format_numeric_columns(df_atoms, digits = digits)
+  df_atoms$empty <- rep("", times = nrow(df_atoms))
+
+  # Start with essential columns
+  cols <- c("empty", "eleno", "elena", "x", "y", "z", "atom_type")
+
+  # Add optional columns that are present in data and non-NA
+  optional_columns <- c("subst_id", "subst_name", "charge", "status_bit")
+  observed_cols <- colnames(df_atoms)
+  for (opt in optional_columns){
+    if(!opt %in% observed_cols) break
+    if(all(is.na(df_atoms[[opt]]))) break
+    cols <- c(cols, opt)
+  }
+
+  df_mol2_atoms <- df_atoms[, cols, drop=FALSE]
+
+  return(df_mol2_atoms)
+}
+
+
+molecule_to_mol2_bonds <- function(molecule){
+  assertions::assert_class(molecule, class = "structures::Molecule3D")
+  df_bonds <- molecule@bonds
+  df_bonds$empty <- rep("", times = nrow(df_bonds))
+
+  # Start with essential columns
+  cols <- c("empty", "bond_id", "origin_atom_id", "target_atom_id", "bond_type")
+
+  if("status_bits" %in% colnames(df_bonds) & !all(is.na(df_bonds[["status_bits"]]))){
+    cols <- c(cols, "status_bits")
+  }
+
+  df_mol2_bonds <- df_bonds[,cols, drop=FALSE]
+
+
+  return(df_mol2_bonds)
+}
+
+
+# Utils --------------------------------------------------------------------
+format_numeric_columns <- function(df, digits = 6) {
+  is_num <- vapply(df, is.numeric, logical(1))
+  df[is_num] <- lapply(df[is_num], function(col) {
+    format(col, scientific = FALSE, trim = TRUE, digits = digits)
+  })
+  return(df)
 }

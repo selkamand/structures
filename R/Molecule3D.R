@@ -41,6 +41,18 @@
 #'   }
 #'   All other columns are retained as-is.
 #'
+#' @param mol_type Character scalar giving the SYBYL mol2
+#'   **molecule type** written in the `@<TRIPOS>MOLECULE` section (the
+#'   `mol_type` field). Must be one of [valid_molecule_types()] (e.g.
+#'   `"SMALL"`, `"BIOPOLYMER"`, `"PROTEIN"`, `"NUCLEIC_ACID"`, `"SACCHARIDE"`).
+#'   If `NULL`, it defaults to `"SMALL"`.
+#'
+#' @param charge_type Character scalar giving the SYBYL mol2
+#'   **charge type** written in the `@<TRIPOS>MOLECULE` section (the
+#'   `charge_type` field). Must be one of [valid_charge_types()]
+#'   (e.g. `"NO_CHARGES"`, `"GASTEIGER"`, `"MMFF94_CHARGES"`, `"USER_CHARGES"`).
+#'   If `NULL`, it defaults to `"NO_CHARGES"`.
+#'
 #' @param misc A list containing any additional metadata (e.g., provenance,
 #'   notes, or debug information). Stored without modification.
 #'
@@ -88,6 +100,10 @@
 #' @return An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 #' \itemize{
 #'   \item \strong{name}, \strong{atoms}, \strong{bonds}, \strong{misc}, \strong{anchor}
+#'   \item \strong{mol_type} SYBYL/Tripos molecule type (e.g. \code{"SMALL"}, \code{"BIOPOLYMER"}).
+#'         Defaults to \code{"SMALL"} if not supplied.
+#'   \item \strong{charge_type} SYBYL/Tripos charge type (e.g. \code{"NO_CHARGES"}, \code{"GASTEIGER"}).
+#'         Defaults to \code{"NO_CHARGES"} if not supplied.
 #'   \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 #'   \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 #'   \item \strong{center}
@@ -145,6 +161,38 @@ Molecule3D <- S7::new_class(
     name = S7::class_character,
     atoms = S7::class_data.frame,
     bonds = S7::class_data.frame,
+    mol_type = S7::new_property(
+      class = S7::class_character,
+      setter = function(self, value){
+        if(is.null(value)) value <- "SMALL"
+        self@mol_type <- value
+        return(self)
+      },
+      validator = function(value){
+        if(length(value) != 1) {return(sprintf("length of @mol_type must be 1, not [%d]", length(value)))}
+        valid_cols <- valid_molecule_types()
+        if(!value %in% valid_cols) {
+          return(sprintf("@mol_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])", value, toString(valid_cols)))
+        }
+        return(NULL)
+      }
+    ),
+    charge_type = S7::new_property(
+      class = S7::class_character,
+      setter = function(self, value){
+        if(is.null(value)) value <- "NO_CHARGES"
+        self@charge_type <- value
+        return(self)
+      },
+      validator = function(value){
+        if(length(value) != 1) {return(sprintf("length of @charge_type must be 1, not [%d]", length(value)))}
+        valid_cols <- valid_charge_types()
+        if(!value %in% valid_cols) {
+          return(sprintf("@charge_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])", value, toString(valid_cols)))
+        }
+        return(NULL)
+      }
+    ),
     misc = S7::class_list,
     anchor = S7::new_property(
       S7::class_numeric,
@@ -420,8 +468,9 @@ Molecule3D <- S7::new_class(
   },
 
   ## Constructor ---------------------------------------------
+
   # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), symmetry_elements = SymmetryElementCollection(), misc = list(), anchor = NULL) {
+  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), mol_type = NULL, charge_type = NULL, symmetry_elements = SymmetryElementCollection(), misc = list(), anchor = NULL) {
     # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
     bonds <- format_bonds(bonds)
 
@@ -446,6 +495,8 @@ Molecule3D <- S7::new_class(
       name = name,
       atoms = atoms,
       bonds = bonds,
+      mol_type = mol_type,
+      charge_type = charge_type,
       misc = misc,
       symmetry_elements = symmetry_elements,
       anchor = anchor
@@ -667,6 +718,81 @@ valid_atom_types <- function(){
   )
 }
 
+#' Valid SYBYL/Tripos molecule types
+#'
+#' Returns the set of valid `mol_type` values for the
+#' `@<TRIPOS>MOLECULE` section of a mol2 file. These represent
+#' the high-level classification of a molecular system used by
+#' the Tripos/SYBYL format.
+#'
+#' @details
+#' The supported molecule types are:
+#' \itemize{
+#'   \item \code{"SMALL"} — small organic or inorganic molecule
+#'   \item \code{"BIOPOLYMER"} — general biopolymer
+#'   \item \code{"PROTEIN"} — protein molecule
+#'   \item \code{"NUCLEIC_ACID"} — nucleic acid (DNA/RNA)
+#'   \item \code{"SACCHARIDE"} — carbohydrate/sugar
+#' }
+#'
+#' These values correspond to the official Tripos mol2 specification.
+#' They are used to validate the \code{@mol_type} property of
+#' [`structures::Molecule3D`].
+#'
+#' @return A character vector of valid SYBYL molecule types.
+#'
+#' @examples
+#' valid_molecule_types()
+#'
+#' @export
+valid_molecule_types <- function(){
+  c(
+    "SMALL", "BIOPOLYMER",
+    "PROTEIN", "NUCLEIC_ACID", "SACCHARIDE"
+  )
+}
+
+#' Valid SYBYL/Tripos charge models
+#'
+#' Returns the set of valid `charge_type` values for the
+#' `@<TRIPOS>MOLECULE` section of a mol2 file. These indicate
+#' how partial atomic charges were computed or assigned.
+#'
+#' @details
+#' The supported charge types include:
+#' \itemize{
+#'   \item \code{"NO_CHARGES"} — no charges supplied
+#'   \item \code{"DEL_RE"} — Del Re charges
+#'   \item \code{"GASTEIGER"} — Gasteiger charges
+#'   \item \code{"GAST_HUCK"} — Gasteiger–Hückel charges
+#'   \item \code{"HUCKEL"} — Hückel charges
+#'   \item \code{"PULLMAN"} — Pullman charges
+#'   \item \code{"GAUSS80_CHARGES"} — Gaussian-80 charges
+#'   \item \code{"AMPAC_CHARGES"} — AMPAC semi-empirical charges
+#'   \item \code{"MULLIKEN_CHARGES"} — Mulliken population charges
+#'   \item \code{"DICT_CHARGES"} — dictionary-based charges
+#'   \item \code{"MMFF94_CHARGES"} — MMFF94 force field charges
+#'   \item \code{"USER_CHARGES"} — user-supplied charges
+#' }
+#'
+#' These values correspond to the official Tripos mol2 specification
+#' and are used to validate the \code{@charge_type} property of
+#' [`structures::Molecule3D`].
+#'
+#' @return A character vector of valid SYBYL charge types.
+#'
+#' @examples
+#' valid_charge_types()
+#'
+#' @export
+valid_charge_types <- function(){
+  c(
+    "NO_CHARGES", "DEL_RE", "GASTEIGER", "GAST_HUCK", "HUCKEL",
+    "PULLMAN", "GAUSS80_CHARGES", "AMPAC_CHARGES",
+    "MULLIKEN_CHARGES", "DICT_CHARGES", "MMFF94_CHARGES",
+    "USER_CHARGES"
+  )
+}
 
 # Generics ----------------------------------------------------------------
 # print <- S7::new_generic("print", "x")
@@ -684,10 +810,13 @@ S7::method(print, Molecule3D) <- function(x, ...) {
     sprintf("Name: %s\n", x@name),
     sprintf("Atoms: %d (%d dummy atoms)\n", nrow(x@atoms), x@n_dummy_atoms),
     sprintf("Bonds: %d\n", nrow(x@bonds)),
+    sprintf("Molecule type: %s\n", x@mol_type),
+    sprintf("Charge type: %s\n", x@charge_type),
+    "-------------------\n",
     sprintf("Symmetry Elements: %d\n", length(x@symmetry_elements@elements)),
     sprintf("Symmetry Axes: %d\n", length(x@symmetry_elements@proper_rotation_axes)),
     sprintf("Symmetry Orders (Cn): %s\n", toString(symmetry_collection@unique_proper_axis_orders)),
-    "\n-------------------\n",
+    "-------------------\n",
     "See @atoms paramater for atom positions\n",
     "See @bonds paramater for bond positions\n",
     "See @symmetry_elements for symmetry elements\n"
@@ -2001,3 +2130,4 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
 
   return(combined)
 }
+

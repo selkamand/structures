@@ -8,6 +8,8 @@ Molecule3D(
   name = "MyChemical",
   atoms = minimal_atoms(),
   bonds = minimal_bonds(),
+  mol_type = NULL,
+  charge_type = NULL,
   symmetry_elements = SymmetryElementCollection(),
   misc = list(),
   anchor = NULL
@@ -48,6 +50,18 @@ if missing, it is added with the value \code{"un"} (unknown).
 }
 All other columns are retained as-is.}
 
+\item{mol_type}{Character scalar giving the SYBYL mol2
+\strong{molecule type} written in the \verb{@<TRIPOS>MOLECULE} section (the
+\code{mol_type} field). Must be one of \code{\link[=valid_molecule_types]{valid_molecule_types()}} (e.g.
+\code{"SMALL"}, \code{"BIOPOLYMER"}, \code{"PROTEIN"}, \code{"NUCLEIC_ACID"}, \code{"SACCHARIDE"}).
+If \code{NULL}, it defaults to \code{"SMALL"}.}
+
+\item{charge_type}{Character scalar giving the SYBYL mol2
+\strong{charge type} written in the \verb{@<TRIPOS>MOLECULE} section (the
+\code{charge_type} field). Must be one of \code{\link[=valid_charge_types]{valid_charge_types()}}
+(e.g. \code{"NO_CHARGES"}, \code{"GASTEIGER"}, \code{"MMFF94_CHARGES"}, \code{"USER_CHARGES"}).
+If \code{NULL}, it defaults to \code{"NO_CHARGES"}.}
+
 \item{symmetry_elements}{A \code{\link{SymmetryElementCollection}} object describing a set of symmetry axes
 embedded in the molecule}
 
@@ -68,6 +82,10 @@ to this point. Typically set to an atom<U+2019>s coordinates via
 An S7 object of class \code{"Molecule3D"} with (among others) the properties:
 \itemize{
 \item \strong{name}, \strong{atoms}, \strong{bonds}, \strong{misc}, \strong{anchor}
+\item \strong{mol_type} SYBYL/Tripos molecule type (e.g. \code{"SMALL"}, \code{"BIOPOLYMER"}).
+Defaults to \code{"SMALL"} if not supplied.
+\item \strong{charge_type} SYBYL/Tripos charge type (e.g. \code{"NO_CHARGES"}, \code{"GASTEIGER"}).
+Defaults to \code{"NO_CHARGES"} if not supplied.
 \item \strong{atom_ids}, \strong{bond_ids}, \strong{maximum_atom_id}, \strong{maximum_bond_id}
 \item \strong{atom_positions}, \strong{bond_positions}, \strong{bond_positions_interleaved}
 \item \strong{center}
