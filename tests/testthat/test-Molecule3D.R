@@ -1787,3 +1787,168 @@ test_that("transform_molecule() surfaces errors from malformed transformation re
   bad_transform <- function(p) c(99, 100) # length 2 instead of 3
   expect_error(transform_molecule(m, bad_transform))
 })
+
+
+# Test Mol & Charge type ----------------------------------------
+
+test_that("Molecule3D defaults mol_type and charge_type when NULL", {
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C","O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+
+  m <- Molecule3D(
+    name   = "default-types",
+    atoms  = atoms,
+    bonds  = minimal_bonds(),
+    mol_type    = NULL,
+    charge_type = NULL
+  )
+
+  expect_equal(m@mol_type, "SMALL")
+  expect_equal(m@charge_type, "NO_CHARGES")
+})
+
+test_that("Molecule3D accepts valid mol_type and charge_type values", {
+  atoms <- data.frame(
+    eleno = c(1),
+    elena = c("C"),
+    x = 0, y = 0, z = 0
+  )
+
+  m <- Molecule3D(
+    name   = "explicit-types",
+    atoms  = atoms,
+    bonds  = minimal_bonds(),
+    mol_type    = "BIOPOLYMER",
+    charge_type = "MMFF94_CHARGES"
+  )
+
+  expect_equal(m@mol_type, "BIOPOLYMER")
+  expect_equal(m@charge_type, "MMFF94_CHARGES")
+})
+
+test_that("Molecule3D rejects invalid mol_type values", {
+  atoms <- data.frame(
+    eleno = c(1),
+    elena = c("C"),
+    x = 0, y = 0, z = 0
+  )
+
+  expect_error(
+    Molecule3D(
+      name   = "bad-mol-type",
+      atoms  = atoms,
+      bonds  = minimal_bonds(),
+      mol_type    = "BANANA",
+      charge_type = "NO_CHARGES"
+    ),
+    regexp = "mol_type.*valid SYBYL molecule types",
+    ignore.case = TRUE
+  )
+
+  # length > 1
+  expect_error(
+    Molecule3D(
+      name   = "bad-mol-type-length",
+      atoms  = atoms,
+      bonds  = minimal_bonds(),
+      mol_type    = c("SMALL", "PROTEIN"),
+      charge_type = "NO_CHARGES"
+    ),
+    regexp = "length of @mol_type must be 1",
+    ignore.case = TRUE
+  )
+})
+
+test_that("Molecule3D rejects invalid charge_type values", {
+  atoms <- data.frame(
+    eleno = c(1),
+    elena = c("C"),
+    x = 0, y = 0, z = 0
+  )
+
+  expect_error(
+    Molecule3D(
+      name   = "bad-charge-type",
+      atoms  = atoms,
+      bonds  = minimal_bonds(),
+      mol_type    = "SMALL",
+      charge_type = "ELECTRIC_EEL"
+    ),
+    regexp = "charge_type.*valid SYBYL molecule types",
+    ignore.case = TRUE
+  )
+
+  expect_error(
+    Molecule3D(
+      name   = "bad-charge-type-length",
+      atoms  = atoms,
+      bonds  = minimal_bonds(),
+      mol_type    = "SMALL",
+      charge_type = c("NO_CHARGES", "MMFF94_CHARGES")
+    ),
+    regexp = "length of @charge_type must be 1",
+    ignore.case = TRUE
+  )
+})
+
+test_that("mol_type and charge_type setters normalise NULL to defaults", {
+  atoms <- data.frame(
+    eleno = c(1),
+    elena = c("C"),
+    x = 0, y = 0, z = 0
+  )
+  m <- Molecule3D("setter-test", atoms = atoms, bonds = minimal_bonds(),
+                  mol_type = "PROTEIN", charge_type = "MMFF94_CHARGES")
+
+  # Explicitly setting to NULL goes back to defaults via setter
+  m@mol_type    <- NULL
+  m@charge_type <- NULL
+
+  expect_equal(m@mol_type, "SMALL")
+  expect_equal(m@charge_type, "NO_CHARGES")
+})
+
+
+# Test valid_molecule_types / valid_charge_types --------------------------
+
+test_that("valid_molecule_types() returns the expected SYBYL molecule types", {
+  types <- valid_molecule_types()
+
+  expect_true(is.character(types))
+  expect_true(all(c("SMALL", "BIOPOLYMER", "PROTEIN", "NUCLEIC_ACID", "SACCHARIDE") %in% types))
+
+  # No obvious junk values
+  expect_false(any(types == ""))
+})
+
+test_that("valid_charge_types() returns the expected SYBYL charge types", {
+  types <- valid_charge_types()
+
+  expect_true(is.character(types))
+  expect_true(all(c("NO_CHARGES", "GASTEIGER", "MMFF94_CHARGES", "USER_CHARGES") %in% types))
+  expect_false(any(types == ""))
+})
+
+test_that("Molecule3D mol_type and charge_type are always members of valid_* helpers", {
+  atoms <- data.frame(
+    eleno = c(1),
+    elena = c("C"),
+    x = 0, y = 0, z = 0
+  )
+
+  m <- Molecule3D(
+    name   = "consistency",
+    atoms  = atoms,
+    bonds  = minimal_bonds(),
+    mol_type    = "PROTEIN",
+    charge_type = "DEL_RE"
+  )
+
+  expect_true(m@mol_type    %in% valid_molecule_types())
+  expect_true(m@charge_type %in% valid_charge_types())
+})
