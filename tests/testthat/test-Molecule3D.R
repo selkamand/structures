@@ -498,6 +498,173 @@ test_that("combine_molecules works when both molecules have no bonds", {
   expect_equal(cmb@name, "A")
 })
 
+test_that("combine_molecules adds inter-molecule bonds (update_ids=TRUE) and maps endpoints", {
+  # m1 atoms: 1-2
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1), y = 0, z = 0
+  )
+  bonds1 <- minimal_bonds()
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = bonds1)
+
+  # m2 atoms: 1-2 (will be shifted by +2)
+  atoms2 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("H", "H"),
+    x = c(2, 3), y = 0, z = 0
+  )
+  bonds2 <- minimal_bonds()
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = bonds2)
+
+  # create bond from m1 atom 2 -> m2 atom 1 (original id in m2)
+  create_bonds <- data.frame(eleno1 = 2, eleno2 = 1, bond_type = "1")
+
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+
+  # One new bond row added
+  expect_equal(nrow(cmb@bonds), 1)
+
+  # Endpoint mapping: m2 atom 1 becomes 1 + m1@maximum_atom_id (= 3)
+  expected_target <- 1 + m1@maximum_atom_id
+  expect_equal(cmb@bonds$origin_atom_id[1], 2)
+  expect_equal(cmb@bonds$target_atom_id[1], expected_target)
+  expect_equal(cmb@bonds$bond_type[1], "1")
+
+  # New bond_id uses next available id
+  expect_equal(cmb@bonds$bond_id[1], 1)
+
+  # Source is the inter-molecule tag (adjust if you picked a different convention)
+  expect_true("source" %in% names(cmb@bonds))
+})
+
+test_that("combine_molecules adds multiple inter-molecule bonds with sequential bond_id", {
+  atoms1 <- data.frame(eleno = 1:3, elena = c("C","C","O"), x = 0:2, y = 0, z = 0)
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
+
+  atoms2 <- data.frame(eleno = 1:3, elena = c("H","H","H"), x = 3:5, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  create_bonds <- data.frame(
+    eleno1 = c(1, 2, 3),
+    eleno2 = c(1, 2, 3),
+    bond_type = c("1", "2", "ar")
+  )
+
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+
+  expect_equal(nrow(cmb@bonds), 3)
+  expect_equal(sort(cmb@bonds$bond_id), 1:3)
+
+  # Targets mapped by + max atom id in m1 (=3)
+  expect_setequal(cmb@bonds$target_atom_id, (1:3) + m1@maximum_atom_id)
+  expect_setequal(cmb@bonds$origin_atom_id, 1:3)
+  expect_setequal(cmb@bonds$bond_type, c("1","2","ar"))
+})
+
+test_that("combine_molecules inter-bond addition respects existing bonds and continues bond_id", {
+  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  bonds1 <- data.frame(
+    bond_id = c(5, 10),
+    origin_atom_id = c("1","1"),
+    target_atom_id = c("2","2"),
+    bond_type = c("1","1")
+  )
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = bonds1)
+
+  atoms2 <- data.frame(eleno = c(1), elena = "H", x = 2, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  create_bonds <- data.frame(eleno1 = 2, eleno2 = 1, bond_type = "2")
+
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+
+  # Existing 2 + new 1
+  expect_equal(nrow(cmb@bonds), 3)
+
+  # New bond id should be max(existing)+1 = 11
+  expect_true(any(cmb@bonds$bond_id == 11))
+
+  new_row <- cmb@bonds[cmb@bonds$bond_id == 11, ]
+  expect_equal(new_row$origin_atom_id, 2)
+  expect_equal(new_row$target_atom_id, 1 + m1@maximum_atom_id)
+  expect_equal(new_row$bond_type, "2")
+})
+
+test_that("combine_molecules accepts shorthand list-of-pairs create_bonds and defaults bond_type", {
+  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
+
+  atoms2 <- data.frame(eleno = c(1,2), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  create_bonds <- list(c(1, 1), c(2, 2))
+
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+
+  expect_equal(nrow(cmb@bonds), 2)
+  # If your default is "un", assert that; otherwise change expected value.
+  expect_true(all(cmb@bonds$bond_type == "un"))
+  expect_setequal(cmb@bonds$origin_atom_id, c(1, 2))
+  expect_setequal(cmb@bonds$target_atom_id, c(1, 2) + m1@maximum_atom_id)
+})
+
+test_that("combine_molecules errors when create_bonds references missing atoms", {
+  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
+
+  atoms2 <- data.frame(eleno = c(1,2), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  # bad eleno1 (m1)
+  expect_error(
+    combine_molecules(m1, m2, create_bonds = data.frame(eleno1 = 999, eleno2 = 1), update_ids = TRUE),
+    regexp = "molecule1|eleno1|not.*in|missing|present",
+    ignore.case = TRUE
+  )
+
+  # bad eleno2 (m2)
+  expect_error(
+    combine_molecules(m1, m2, create_bonds = data.frame(eleno1 = 1, eleno2 = 999), update_ids = TRUE),
+    regexp = "molecule2|eleno2|not.*in|missing|present",
+    ignore.case = TRUE
+  )
+})
+
+test_that("combine_molecules inter-bonds still work with update_ids=FALSE when no duplicates", {
+  # Use non-overlapping atom ids so update_ids=FALSE is allowed
+  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
+
+  atoms2 <- data.frame(eleno = c(10,11), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  # Since update_ids=FALSE, m2 ids are not shifted; create_bonds uses original ids
+  create_bonds <- data.frame(eleno1 = 2, eleno2 = 10, bond_type = "1")
+
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = FALSE)
+
+  expect_equal(nrow(cmb@bonds), 1)
+  expect_equal(cmb@bonds$origin_atom_id[1], 2)
+  expect_equal(cmb@bonds$target_atom_id[1], 10)
+  expect_equal(cmb@bonds$bond_type[1], "1")
+})
+
+test_that("combine_molecules inter-bonds endpoints always exist in combined atoms", {
+  atoms1 <- data.frame(eleno = 1:2, elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
+
+  atoms2 <- data.frame(eleno = 1:2, elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
+
+  create_bonds <- data.frame(eleno1 = c(1,2), eleno2 = c(1,2), bond_type = "1")
+  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+
+  eleno_chr <- as.character(cmb@atoms$eleno)
+  expect_true(all(as.character(cmb@bonds$origin_atom_id) %in% eleno_chr))
+  expect_true(all(as.character(cmb@bonds$target_atom_id) %in% eleno_chr))
+})
+
 
 # Test Center -------------------------------------------------------------
 test_that("center returns column means for x/y/z", {
