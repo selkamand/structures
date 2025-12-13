@@ -4,11 +4,23 @@
 \alias{combine_molecules}
 \title{Combine two Molecule3D objects}
 \usage{
-combine_molecules(molecule1, molecule2, update_ids = TRUE)
+combine_molecules(molecule1, molecule2, create_bonds = NULL, update_ids = TRUE)
 }
 \arguments{
 \item{molecule1, molecule2}{\code{Molecule3D} objects to combine.
 \code{molecule1} provides the base object (including its \code{@anchor}).}
+
+\item{create_bonds}{Optional specification of new bonds to create BETWEEN molecule1 and
+molecule2 during the combine. Preferred form is a data.frame/tibble with columns:
+\itemize{
+\item eleno1: atom id in molecule1
+\item eleno2: atom id in molecule2
+\item bond_type (optional): SYBYL/Tripos code ("1","2","3","ar","am","du","un","nc")
+or the corresponding name ("single","double",...).
+}
+
+Shorthand: a list of length-2 numeric vectors (each c(eleno1, eleno2)) is also accepted;
+in that case bond_type defaults to "un".}
 
 \item{update_ids}{Logical (default \code{TRUE}). When \code{TRUE}, offsets the
 atom IDs and bond IDs of \code{molecule2} by \code{molecule1@maximum_atom_id}

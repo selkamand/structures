@@ -1899,7 +1899,15 @@ rotate_molecule_around_symmetry_axis <- function(molecule, symmetry_element_id, 
 #'   atom IDs and bond IDs of \code{molecule2} by \code{molecule1@maximum_atom_id}
 #'   and \code{molecule1@maximum_bond_id}, respectively, to avoid identifier
 #'   collisions. When \code{FALSE}, IDs are used as-is (and may clash).
+#' @param create_bonds Optional specification of new bonds to create BETWEEN molecule1 and
+#' molecule2 during the combine. Preferred form is a data.frame/tibble with columns:
+#'   - eleno1: atom id in molecule1
+#'   - eleno2: atom id in molecule2
+#'   - bond_type (optional): SYBYL/Tripos code ("1","2","3","ar","am","du","un","nc")
+#'     or the corresponding name ("single","double",...).
 #'
+#'  Shorthand: a list of length-2 numeric vectors (each c(eleno1, eleno2)) is also accepted;
+#'  in that case bond_type defaults to "un".
 #' @details
 #' The function:
 #' \itemize{
@@ -1928,25 +1936,40 @@ rotate_molecule_around_symmetry_axis <- function(molecule, symmetry_element_id, 
 #' @seealso \code{\link{Molecule3D}}, \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{set_anchor_by_atom}}
 #' @export
-combine_molecules <- function(molecule1, molecule2, update_ids = TRUE) {
+combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_ids = TRUE) {
   assertions::assert_class(molecule1, "structures::Molecule3D")
   assertions::assert_class(molecule2, "structures::Molecule3D")
+
+  # 1) Normalize + validate against ORIGINAL ids (before any renumbering)
+  cb <- normalize_create_bonds(create_bonds)
+  validate_create_bonds(molecule1, molecule2, cb)
 
   atoms1 <- molecule1@atoms
   atoms2 <- molecule2@atoms
   bonds1 <- molecule1@bonds
   bonds2 <- molecule2@bonds
 
-  if (update_ids) {
-    old_ids <- atoms2$eleno
-    new_ids <- atoms2$eleno + molecule1@maximum_atom_id
-    atoms2$eleno <- atoms2$eleno + molecule1@maximum_atom_id
+  # 2) Build an explicit atom id map for molecule2 (old -> new).
+  atom_offset <- if (isTRUE(update_ids)) molecule1@maximum_atom_id else 0
+  bond_offset <- if (isTRUE(update_ids)) molecule1@maximum_bond_id else 0
 
-    bonds2$bond_id <- if (nrow(bonds2) > 0) bonds2$bond_id + molecule1@maximum_bond_id
-    bonds2$origin_atom_id <- new_ids[match(bonds2$origin_atom_id, old_ids)]
-    bonds2$target_atom_id <- new_ids[match(bonds2$target_atom_id, old_ids)]
+  old_atom_ids2 <- atoms2$eleno
+  new_atom_ids2 <- old_atom_ids2 + atom_offset
+  atom_map2 <- new_atom_ids2
+  names(atom_map2) <- old_atom_ids2  # names are old ids (as character)
+
+  # 3) Apply renumbering to molecule2 atoms + its internal bonds
+  if (isTRUE(update_ids)) {
+    atoms2$eleno <- new_atom_ids2
+
+    if (nrow(bonds2) > 0) {
+      bonds2$bond_id <- bonds2$bond_id + bond_offset
+      bonds2$origin_atom_id <- unname(atom_map2[as.character(bonds2$origin_atom_id)])
+      bonds2$target_atom_id <- unname(atom_map2[as.character(bonds2$target_atom_id)])
+    }
   }
 
+  # 4) Source tagging
   atoms1$source <- molecule1@name
   atoms2$source <- molecule2@name
 
@@ -1956,17 +1979,138 @@ combine_molecules <- function(molecule1, molecule2, update_ids = TRUE) {
   atoms <- dplyr::bind_rows(atoms1, atoms2)
   bonds <- dplyr::bind_rows(bonds1, bonds2)
 
-  # Combine Symmetry Elements
+  # 5) Add inter-molecule bonds (using cb and the atom_map2)
+  if (!is.null(cb)) {
+    # Map molecule2 endpoint to the combined id space (even if update_ids = FALSE, atom_offset=0 so map is identity)
+    cb_target_new <- unname(atom_map2[as.character(cb$eleno2)])
+
+    if (anyNA(cb_target_new)) {
+      # Should never happen because we validated, but keeps failures readable.
+      bad <- cb$eleno2[is.na(cb_target_new)]
+      stop("Internal error: failed to map create_bonds eleno2 ids: [", toString(bad), "]")
+    }
+
+    next_bond_id <- max(c(0, bonds$bond_id), na.rm = TRUE)
+
+    new_link_bonds <- data.frame(
+      bond_id        = next_bond_id + seq_len(nrow(cb)),
+      origin_atom_id = cb$eleno1,        # molecule1 ids unchanged
+      target_atom_id = cb_target_new,    # molecule2 ids mapped to combined space
+      bond_type      = cb$bond_type,
+      source         = paste0(molecule1@name, "__", molecule2@name),
+      stringsAsFactors = FALSE
+    )
+
+    bonds <- dplyr::bind_rows(bonds, new_link_bonds)
+  }
+
+  # 6) Combine symmetry elements
   new_symmetry_elements <- combine_symmetry_element_collections(
     molecule1@symmetry_elements,
     molecule2@symmetry_elements
   )
 
+  # 7) Build result object
   new <- molecule1
   new <- S7::set_props(new, atoms = atoms, bonds = bonds, symmetry_elements = new_symmetry_elements)
 
   return(new)
 }
+
+normalize_create_bonds <- function(create_bonds, default_bond_type = "un") {
+  if (is.null(create_bonds)) return(NULL)
+
+  # Accept: data.frame / tibble / matrix
+  if (is.matrix(create_bonds)) {
+    create_bonds <- as.data.frame(create_bonds, stringsAsFactors = FALSE)
+  }
+
+  if (is.data.frame(create_bonds)) {
+    df <- create_bonds
+
+    # If user didn’t name columns, assume first two are endpoints
+    if (!all(c("eleno1", "eleno2") %in% names(df))) {
+      if (ncol(df) < 2) stop("create_bonds must have at least 2 columns (eleno1, eleno2).")
+      names(df)[1:2] <- c("eleno1", "eleno2")
+    }
+
+  } else if (is.list(create_bonds)) {
+    # Accept shorthand list(list(...)) or list(c(a,b), c(a,b))
+    if (all(vapply(create_bonds, is.numeric, logical(1)))) {
+      mat <- do.call(rbind, create_bonds)
+      if (ncol(mat) != 2) stop("create_bonds list entries must be numeric vectors of length 2.")
+      df <- data.frame(eleno1 = mat[, 1], eleno2 = mat[, 2], stringsAsFactors = FALSE)
+    } else {
+      # list of lists/data.frames (more flexible)
+      df <- dplyr::bind_rows(lapply(create_bonds, as.data.frame))
+      if (!all(c("eleno1", "eleno2") %in% names(df))) {
+        stop("create_bonds list form must contain eleno1 and eleno2 fields in each entry.")
+      }
+    }
+  } else {
+    stop("create_bonds must be NULL, a data.frame/matrix, or a list.")
+  }
+
+  # bond_type optional
+  if (!"bond_type" %in% names(df)) df$bond_type <- default_bond_type
+
+  # Coerce types
+  df$eleno1 <- as.numeric(df$eleno1)
+  df$eleno2 <- as.numeric(df$eleno2)
+  df$bond_type <- as.character(df$bond_type)
+
+  # Allow either SYBYL codes ("1","2","ar",...) or friendly names ("single","double",...)
+  bt_map <- valid_bond_types()
+  bt_codes <- unname(bt_map)
+  bt_names <- names(bt_map)
+
+  df$bond_type <- ifelse(df$bond_type %in% bt_names, unname(bt_map[df$bond_type]), df$bond_type)
+
+  # Validate bond_type values (optional but recommended)
+  bad_bt <- setdiff(unique(df$bond_type), bt_codes)
+  if (length(bad_bt) > 0) {
+    stop("Invalid bond_type in create_bonds: [", toString(bad_bt),
+         "]. Must be one of: [", toString(bt_codes), "] (or names: [", toString(bt_names), "]).")
+  }
+
+  # Basic shape checks
+  if (anyNA(df$eleno1) || anyNA(df$eleno2)) stop("create_bonds contains NA eleno1/eleno2 after coercion.")
+  if (nrow(df) == 0) return(NULL)
+
+  df
+}
+
+validate_create_bonds <- function(molecule1, molecule2, df_create_bonds) {
+  if (is.null(df_create_bonds)) return(invisible(TRUE))
+
+  missing1 <- setdiff(unique(df_create_bonds$eleno1), molecule1@atom_ids)
+  missing2 <- setdiff(unique(df_create_bonds$eleno2), molecule2@atom_ids)
+
+  if (length(missing1) > 0) {
+    stop("create_bonds references atom ids not in molecule1: [", toString(missing1), "]")
+  }
+  if (length(missing2) > 0) {
+    stop("create_bonds references atom ids not in molecule2: [", toString(missing2), "]")
+  }
+
+  invisible(TRUE)
+}
+
+
+# check_create_bonds <- function(molecule1, molecule2, create_bonds){
+#   ## Combine Bonds
+#   if(!is.null(create_bonds)) {
+#     assertions::assert_list(create_bonds)
+#     for (bond_vector in create_bonds){
+#       assertions::assert_numeric_vector(bond_vector)
+#       assertions::assert_length(bond_vector, length = 2)
+#       eleno1 = bond_vector[1]
+#       eleno2 = bond_vector[2]
+#       assertions::assert_one_of(eleno1, molecule1@atom_ids)
+#       assertions::assert_one_of(eleno2, molecule2@atom_ids)
+#     }
+#   }
+# }
 
 
 #' Add one or more bonds to a Molecule3D object
