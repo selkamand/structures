@@ -67,8 +67,14 @@ elena_to_element <- function(elena){
   return(element)
 }
 
+replace_by_value <- function(x, old, new){
+  if(length(old) != length(new)) stop("vector describing old values must be the same length as vector describing new values")
+  if(anyDuplicated(old)) stop("vector describing old values must not contain duplicates")
+  idx_to_replace <- x %in% old
 
-
+  x[idx_to_replace] <- new[match(x[idx_to_replace], old)]
+  return(x)
+}
 # --- ID utilities -------------------------------------------------------------
 
 # Safely extract names as character (may be NULL)

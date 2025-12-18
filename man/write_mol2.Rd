@@ -4,12 +4,18 @@
 \alias{write_mol2}
 \title{Write Mol2 file}
 \usage{
-write_mol2(molecule, path)
+write_mol2(molecule, path, renumber = TRUE)
 }
 \arguments{
 \item{molecule}{A \code{\link[=Molecule3D]{Molecule3D()}} object.}
 
 \item{path}{path to mol2 file.}
+
+\item{renumber}{Logical; if \code{TRUE} (default), renumbers atom IDs (\code{eleno}) and
+bond IDs (\code{bond_id}) to be contiguous (1..N) and updates bond endpoints
+(\code{origin_atom_id}, \code{target_atom_id}) to match. This improves compatibility
+with downstream MOL2 readers that assume sequential IDs. Set to \code{FALSE} to
+preserve existing IDs.}
 }
 \value{
 invisibly returns NULL. This function is run for its side effects. .

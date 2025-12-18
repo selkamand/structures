@@ -102,7 +102,12 @@ character_to_dataframe <- function(char, cols, header = FALSE){
 #'
 #' @param molecule A [Molecule3D()] object.
 #' @param path path to mol2 file.
-#'
+#' @param renumber Logical; if `TRUE` (default), renumbers atom IDs (`eleno`) and
+#'   bond IDs (`bond_id`) to be contiguous (1..N) and updates bond endpoints
+#'   (`origin_atom_id`, `target_atom_id`) to match. This improves compatibility
+#'   with downstream MOL2 readers that assume sequential IDs. Set to `FALSE` to
+#'   preserve existing IDs.
+
 #' @returns invisibly returns NULL. This function is run for its side effects. .
 #'
 #' @export
@@ -122,7 +127,13 @@ character_to_dataframe <- function(char, cols, header = FALSE){
 #' \dontshow{
 #' setwd(.old_wd)
 #' }
-write_mol2 <- function(molecule, path){
+write_mol2 <- function(molecule, path, renumber = TRUE){
+
+  # Ensure eleno & bond_id are contiguous and in order
+  if(renumber){
+    molecule <- renumber_atoms_and_bonds(molecule)
+  }
+
   name <- molecule@name
   n_atoms <- nrow(molecule@atoms)
   n_bonds <- nrow(molecule@bonds)

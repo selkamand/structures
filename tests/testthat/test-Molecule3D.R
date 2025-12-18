@@ -2119,3 +2119,122 @@ test_that("Molecule3D mol_type and charge_type are always members of valid_* hel
   expect_true(m@mol_type    %in% valid_molecule_types())
   expect_true(m@charge_type %in% valid_charge_types())
 })
+
+
+
+# Test Renumbering Atom/Bond IDs ------------------------------------------
+
+test_that("renumber_atoms_and_bonds() renumbers atoms to 1..N and updates bond endpoints", {
+  atoms <- data.frame(
+    eleno = c(2, 5, 10),
+    elena = c("C", "O", "H"),
+    x = 0:2, y = 0, z = 0
+  )
+  bonds <- data.frame(
+    bond_id = c(7, 20),
+    origin_atom_id = c(2, 5),
+    target_atom_id = c(5, 10),
+    bond_type = c("1", "1")
+  )
+  m <- Molecule3D("toy", atoms = atoms, bonds = bonds)
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  # atoms renumbered in row order
+  expect_equal(m2@atoms$eleno, 1:3)
+
+  # bond endpoints remapped consistently
+  expect_equal(m2@bonds$origin_atom_id, c(1, 2))
+  expect_equal(m2@bonds$target_atom_id, c(2, 3))
+})
+
+test_that("renumber_atoms_and_bonds() renumbers bond_id to 1..N", {
+  atoms <- data.frame(
+    eleno = 1:3,
+    elena = c("C", "O", "H"),
+    x = 0:2, y = 0, z = 0
+  )
+  bonds <- data.frame(
+    bond_id = c(10, 30, 50),
+    origin_atom_id = c(1, 1, 2),
+    target_atom_id = c(2, 3, 3),
+    bond_type = "1"
+  )
+  m <- Molecule3D("bonds", atoms = atoms, bonds = bonds)
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  expect_equal(m2@bonds$bond_id, 1:3)
+})
+
+test_that("renumber_atoms_and_bonds() works when no bonds are present", {
+  atoms <- data.frame(
+    eleno = c(10, 20),
+    elena = c("C", "O"),
+    x = 0:1, y = 0, z = 0
+  )
+  m <- Molecule3D("nobonds", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  expect_equal(m2@atoms$eleno, 1:2)
+  expect_true(is.data.frame(m2@bonds))
+  expect_equal(nrow(m2@bonds), 0)
+})
+
+test_that("renumber_atoms_and_bonds() preserves atom row order", {
+  atoms <- data.frame(
+    eleno = c(100, 5, 42),
+    elena = c("C", "O", "H"),
+    x = c(3, 1, 2), y = 0, z = 0
+  )
+  m <- Molecule3D("order", atoms = atoms, bonds = minimal_bonds())
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  expect_equal(m2@atoms$elena, atoms$elena)
+  expect_equal(m2@atoms$x, atoms$x)
+  expect_equal(m2@atoms$eleno, 1:3)
+})
+
+test_that("renumber_atoms_and_bonds() preserves non-ID molecule properties", {
+  atoms <- data.frame(
+    eleno = c(2, 4),
+    elena = c("C", "O"),
+    x = 0:1, y = 0, z = 0
+  )
+  bonds <- data.frame(
+    bond_id = 9,
+    origin_atom_id = 2,
+    target_atom_id = 4,
+    bond_type = "2"
+  )
+  m <- Molecule3D(
+    "props",
+    atoms = atoms,
+    bonds = bonds,
+    anchor = c(9, 9, 9)
+  )
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  expect_equal(m2@anchor, m@anchor)
+  expect_equal(m2@name, m@name)
+  expect_equal(m2@bonds$bond_type, "2")
+})
+
+test_that("renumber_atoms_and_bonds() returns new Molecule3D without mutating input", {
+  atoms <- data.frame(
+    eleno = c(3, 7),
+    elena = c("C", "O"),
+    x = 0:1, y = 0, z = 0
+  )
+  m <- Molecule3D("immut", atoms = atoms, bonds = minimal_bonds())
+
+  atoms_before <- m@atoms
+
+  m2 <- renumber_atoms_and_bonds(m)
+
+  expect_true(inherits(m2, "structures::Molecule3D"))
+  expect_identical(m@atoms, atoms_before)
+})

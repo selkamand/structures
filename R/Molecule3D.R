@@ -2275,3 +2275,63 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
   return(combined)
 }
 
+#'  Standardise Atom and Bond IDs
+#'
+#'  Deleting atoms and combining molecules can lead to non-contiguous atom or bond ids (eleno & bond_id).
+#'  This function updates both to ensure contiguity and order. It replaces atom & bond IDs with their corresponding rownumbers
+#'  and propogates the updates to other relevent parts of the datastructure.
+#'
+#'  Most users will not need this function. It is mainly used in [write_mol2()]
+#'  to guarantee contiguous, ordered IDs because some tools parse mol2 break without this assurance.
+#'
+#' @param molecule A [Molecule3D] object
+#'
+#' @returns A [Molecule3D] object with contiguous, ordered, atom IDs (eleno) and bond IDs (bond_id)
+#' @export
+#'
+#' @examples
+#' atoms <- data.frame(
+#'   eleno = c(2, 3, 10),
+#'   elena = c("C", "O", "H"),
+#'   x = c(0, 1, 0), y = c(0, 0, 1), z = c(0, 0, 0)
+#' )
+#' bonds <- data.frame(
+#'   bond_id = c(5, 9),
+#'   origin_atom_id = c(2, 3),
+#'   target_atom_id = c(3, 10),
+#'   bond_type = c("1", "1")
+#' )
+#' m <- Molecule3D("toy", atoms = atoms, bonds = bonds)
+#'
+#' # Fix to 1..N IDs (and update bond endpoints)
+#' m2 <- renumber_atoms_and_bonds(m)
+#' m2@atoms$eleno
+#' m2@bonds[, c("origin_atom_id", "target_atom_id", "bond_id")]
+renumber_atoms_and_bonds <- function(molecule){
+
+  # Assertions
+  assertions::assert_class(molecule, "structures::Molecule3D")
+
+  # Grab data.frames
+  df_atoms <- molecule@atoms
+  df_bonds <- molecule@bonds
+
+  # Grab Create new contiguous IDs
+  new_ids <- seq_along(df_atoms$eleno)
+  old_ids <- df_atoms$eleno
+
+  # Update atoms dataframe
+  df_atoms$eleno <- new_ids
+
+  # Update bonds dataframe with new atom IDs
+  df_bonds$origin_atom_id <- replace_by_value(df_bonds$origin_atom_id, old_ids, new_ids)
+  df_bonds$target_atom_id <- replace_by_value(df_bonds$target_atom_id, old_ids, new_ids)
+
+  # Update bonds IDs (not used elsewhere yet, so we can just update
+  df_bonds$bond_id <- seq_along(df_bonds$bond_id)
+
+  # Return new molecule
+  S7::set_props(molecule, atoms = df_atoms, bonds = df_bonds)
+}
+
+
