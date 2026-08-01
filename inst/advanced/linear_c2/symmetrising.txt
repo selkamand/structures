@@ -1,0 +1,19 @@
+Because of the type of symmetry this molecule has, there are infinite mirror planes which run through it. One mirror plane runs through the middle atom only and cuts it in half, and the rest of the planes run through all atoms at the same time.
+
+I expect that if you took the mirror plane of this molecule, you would probably output one of the latter (with each atom bisected by the mirror plane)
+
+With this being the case, symmetrising would work as follows:
+
+ - Find the plane of the whole molecule. This would return a plane that contains all the atoms as well as the symmetry axis.
+
+ - Take the vector of the plane
+
+ - Take the vector between the two dummy atoms
+
+ - Compute the cross product between the (plane vector) and the (dummy vector)
+	
+*this will return a new vector that is perpendicular to the two input vectors. Because the plane vector is orthogonal to the symmetry axis contained in the plane (by definition) and the vector between the dummy atoms is orthogonal to the symmetry axis (by symmetry), the output vector of the cross product must be parallel to the symmetry axis
+
+ - Run the cross product output vector through the centroid (molecule centroid or dummy centroid)
+
+If the output plane is the wrong one (which only cuts the middle atom in half), then the vector between dummy atoms could just be rotated 90 degrees in any direction then run through the centroid, but I don't expect that would happen.

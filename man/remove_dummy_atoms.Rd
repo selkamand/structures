@@ -9,10 +9,10 @@ remove_dummy_atoms(x, dummy_type = c("Du", "Du.C"))
 \arguments{
 \item{x}{a \code{\link[=Molecule3D]{Molecule3D()}} object}
 
-\item{dummy_type}{a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C"}
+\item{dummy_type}{a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C".}
 }
 \value{
-a \code{\link[=Molecule3D]{Molecule3D()}} object with dummy atoms (and any bonds involving dummy atoms) removed
+a \code{\link[=Molecule3D]{Molecule3D()}} object with dummy atoms (and any bonds involving dummy atoms) removed.
 }
 \description{
 Remove dummy atoms from a molecule.

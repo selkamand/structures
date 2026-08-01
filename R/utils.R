@@ -1,4 +1,3 @@
-
 enrich_bonds_with_xyz_position <- function(bonds, atoms,
                                            origin = "origin",
                                            target = "target",
@@ -9,9 +8,9 @@ enrich_bonds_with_xyz_position <- function(bonds, atoms,
 
   # build output
   out <- bonds
-  out$x    <- atoms[["x"]][io]
-  out$y    <- atoms[["y"]][io]
-  out$z    <- atoms[["z"]][io]
+  out$x <- atoms[["x"]][io]
+  out$y <- atoms[["y"]][io]
+  out$z <- atoms[["z"]][io]
   out$xend <- atoms[["x"]][it]
   out$yend <- atoms[["y"]][it]
   out$zend <- atoms[["z"]][it]
@@ -61,15 +60,15 @@ to_interleaved <- function(df, coord = c("x", "y", "z"), end_suffix = "end") {
 }
 
 # Convert elena to element
-elena_to_element <- function(elena){
-  element <- gsub(x=elena, pattern = "[0-9]", replacement = "")
-  element <- gsub(x=element, pattern = "(.)[A-Z]+", replacement = "\\1")
+elena_to_element <- function(elena) {
+  element <- gsub(x = elena, pattern = "[0-9]", replacement = "")
+  element <- gsub(x = element, pattern = "(.)[A-Z]+", replacement = "\\1")
   return(element)
 }
 
-replace_by_value <- function(x, old, new){
-  if(length(old) != length(new)) stop("vector describing old values must be the same length as vector describing new values")
-  if(anyDuplicated(old)) stop("vector describing old values must not contain duplicates")
+replace_by_value <- function(x, old, new) {
+  if (length(old) != length(new)) stop("vector describing old values must be the same length as vector describing new values")
+  if (anyDuplicated(old)) stop("vector describing old values must not contain duplicates")
   idx_to_replace <- x %in% old
 
   x[idx_to_replace] <- new[match(x[idx_to_replace], old)]
@@ -80,7 +79,9 @@ replace_by_value <- function(x, old, new){
 # Safely extract names as character (may be NULL)
 axis_ids <- function(x) {
   ids <- names(x)
-  if (is.null(ids)) return(rep("", length(x)))
+  if (is.null(ids)) {
+    return(rep("", length(x)))
+  }
   as.character(ids)
 }
 
@@ -111,7 +112,9 @@ fresh_numeric_ids <- function(k, existing_ids) {
 # --- Validation ---------------------------------------------------------------
 
 ensure_axes_are_ProperRotationAxis <- function(value) {
-  if (length(value) == 0L) return(invisible(TRUE))
+  if (length(value) == 0L) {
+    return(invisible(TRUE))
+  }
   for (axis in value) {
     if (!is_symmetry_axis(axis)) {
       stop(sprintf(
@@ -171,8 +174,10 @@ normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
   # Final uniqueness check (should be fine, but be strict)
   if (any(duplicated(ids))) {
     dupes <- unique(ids[duplicated(ids)])
-    stop(sprintf("Duplicate symmetry axis IDs after normalisation: %s",
-                 toString(dupes)), call. = FALSE)
+    stop(sprintf(
+      "Duplicate symmetry axis IDs after normalisation: %s",
+      toString(dupes)
+    ), call. = FALSE)
   }
 
   names(value) <- ids
@@ -181,27 +186,27 @@ normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
 
 
 # Vector Maths ------------------------------------------------------------
-create_vector_from_start_end <- function (start, end, unit = FALSE){
-  if (length(start) != length(end))
+create_vector_from_start_end <- function(start, end, unit = FALSE) {
+  if (length(start) != length(end)) {
     stop("Start and end positions need to be the same length")
+  }
   vec <- end - start
   if (unit) {
     vec <- normalise(vec)
   }
   return(vec)
-
 }
 
-normalise <- function(x){
-  x/sqrt(sum(x^2))
+normalise <- function(x) {
+  x / sqrt(sum(x^2))
 }
 
-magnitude <- function(x){
- sqrt(sum(x^2))
+magnitude <- function(x) {
+  sqrt(sum(x^2))
 }
 
-compute_distance <- function(a, b){
-  c=b-a
+compute_distance <- function(a, b) {
+  c <- b - a
   sqrt(sum(c^2))
 }
 
@@ -235,10 +240,9 @@ compute_distance <- function(a, b){
 #' @importFrom igraph graph_from_data_frame
 #' @export
 as_igraph <- function(molecule,
-                            vertex_attrs = c("elena", "element", "x", "y", "z"),
-                            edge_attrs   = c("bond_id", "bond_type"),
-                            include_isolated = TRUE) {
-
+                      vertex_attrs = c("elena", "element", "x", "y", "z"),
+                      edge_attrs = c("bond_id", "bond_type"),
+                      include_isolated = TRUE) {
   rlang::check_installed(pkg = "igraph", reason = "to convert molecular structure to igraph format")
   assertions::assert_class(molecule, "structures::Molecule3D")
 
@@ -269,7 +273,7 @@ as_igraph <- function(molecule,
   e_keep <- intersect(edge_attrs, colnames(bonds))
   edf <- data.frame(
     from = bonds$origin_atom_id,
-    to   = bonds$target_atom_id,
+    to = bonds$target_atom_id,
     stringsAsFactors = FALSE
   )
   if (length(e_keep)) {
@@ -278,7 +282,7 @@ as_igraph <- function(molecule,
 
   # Make sure endpoints are character if vertices use 'name' as character
   edf$from <- as.character(edf$from)
-  edf$to   <- as.character(edf$to)
+  edf$to <- as.character(edf$to)
 
   # Build graph; include all atoms as vertices when requested
   if (include_isolated) {
@@ -307,10 +311,16 @@ pmean <- function(..., na.rm = FALSE) {
 }
 
 
+#' @importFrom pracma cross
+#' @export
+pracma::cross
 
 # Operators ---------------------------------------------------------------
 
-`%||%` <- function(LHS, RHS){
-    if(is.null(LHS)) return(RHS)
-    else return(LHS)
+`%||%` <- function(LHS, RHS) {
+  if (is.null(LHS)) {
+    return(RHS)
+  } else {
+    return(LHS)
+  }
 }

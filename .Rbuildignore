@@ -3,3 +3,6 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^\.github$
+^\.positai$
+^\.claude$
+^vignettes/articles$

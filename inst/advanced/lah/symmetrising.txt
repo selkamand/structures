@@ -1,0 +1,9 @@
+For C3
+ - Find the plane through the dummies to get the axis direction.
+ - Find the centroid of the dummies.
+ - Place the symmetry axis so that it passes through the centroid.
+
+For C4
+ - Find the plane through the dummies to get the axis direction.
+ - Find the centroid of the dummies.
+ - Place the symmetry axis so that it passes through the centroid.
