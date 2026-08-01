@@ -668,6 +668,7 @@ valid_atom_types <- function(){
     "carbon aromatic" = "C.ar",
     "carbocation (C+) used only in a guadinium group" = "C.cat",
     "dummy atom" = "Du",
+    "dummy carbon" = "Du.C",
     "nitrogen sp3" = "N.3",
     "nitrogen sp2" = "N.2",
     "nitrogen sp" = "N.1",
@@ -679,7 +680,6 @@ valid_atom_types <- function(){
     "hydrogen in Single Point Charge (SPC) water model" = "H.spc",
     "hydrogen in Transferable intermolecular Potential (TIP3P) water model" = "H.t3p",
     "lone pair" = "LP",
-    "dummy carbon" = "Du.C",
     "any atom" = "Any",
     "halogen" = "Hal",
     "heteroatom = N, O, S, P" = "Het",
@@ -901,8 +901,8 @@ remove_atoms <- function(x, eleno) {
 #' Dummy are identified based on 'atom_type' (according to SYBYL mol2 specification should be set to 'Du' / 'Du.C' for dummy atoms).
 #'
 #' @param x a [Molecule3D()] object
-#' @param dummy_type a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C"
-#' @returns a [Molecule3D()] object with dummy atoms (and any bonds involving dummy atoms) removed
+#' @param dummy_type a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C".
+#' @returns a [Molecule3D()] object with dummy atoms (and any bonds involving dummy atoms) removed.
 #' @export
 #'
 #' @examples
@@ -1002,10 +1002,33 @@ filter_atoms_by_element <- function(x, element) {
   filter_atoms(x, eleno = eleno)
 }
 
+#' Filter molecule for dummy atoms
+#'
+#' Filters a molecule to include only dummy atoms. Orphaned bonds (i.e. bonds whose
+#' endpoints are not both retained) are automatically dropped, in the same way
+#' as [filter_atoms()].
+#'
+#' @param x a [Molecule3D()] object
+#' @param dummy_type a character vector describing SYBYL atom types to be considered dummy atoms. Defaults to "Du" and "Du.C".
+#'
+#' @return A [`structures::Molecule3D`] object containing only dummy atoms and the bonds between them.
+#'
+#' @examples
+#' path <- system.file(package = "structures", "fe_dummies.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Keep only the dummy atoms
+#' molecule_D <- filter_for_dummies(molecule)
+#'
+#' @export
+filter_for_dummies <- function(x, dummy_type = c("Du", "Du.C")) {
+  assertions::assert_class(x, class = "structures::Molecule3D")
+  # Reuse existing helper to find matching IDs
+  dummy_eleno <- x@atoms$eleno[x@atoms$atom_type %in% dummy_type]
+  filter_atoms(x, eleno = dummy_eleno)
+}
+
 ## Adding Symmetry Elements ---------------------------------------------------------
-
-
-
 #' Append a symmetry axis to a Molecule3D
 #'
 #' @description
@@ -1047,6 +1070,53 @@ add_symmetry_element_to_molecule <- function(molecule, symmetry_element){
 }
 
 ## Fetch -------------------------------------------------------------------
+
+#' Retrieve atom data.frame from molecule
+#'
+#' Equivalent to using the \code{molecule@atoms} getter
+#'
+#' @param x A [Molecule3D()] object.
+#'
+#' @returns A data.frame describing the atoms in the molecule.
+#' @export
+#'
+#' @examples
+#' # Read Data
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Get atom data
+#' atoms(molecule)
+#'
+#' @seealso [bonds()]
+atoms <- function(x){
+    assertions::assert_class(x, "structures::Molecule3D")
+    x@atoms
+}
+
+#' Retrieve atom data.frame from molecule
+#'
+#' Equivalent to using the \code{molecule@bonds} getter.
+#'
+#' @param x A [Molecule3D()] object.
+#'
+#' @returns A data.frame describing the bonds in the molecule.
+#' @export
+#'
+#' @examples
+#' # Read Data
+#' path <- system.file(package = "structures", "benzene.mol2")
+#' molecule <- read_mol2(path)
+#'
+#' # Get atom data
+#' bonds(molecule)
+#'
+#' @seealso [atoms()]
+bonds <- function(x){
+    assertions::assert_class(x, "structures::Molecule3D")
+    x@bonds
+}
+
 
 #' Fetch atom Cartesian coordinates
 #'
@@ -1399,7 +1469,36 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
 }
 
 
+
+
 ## Computations ------------------------------------------------------------
+
+#' Compute a direction vector
+#'
+#' @param x a Molecule3D object.
+#' @param eleno1,eleno2 atom IDs (eleno's) of the two atoms to compute direction between (eleno1 -> eleno2)
+#' @param unit return direction as a unit vector
+#' (by default magnitude of direction vector is based on distance between the two atoms)
+#' @param careful throw an error if the queried atoms are not present in the molecule.
+#' When false and either eleno's are missing from molecule returns a length-three vector of NA values)
+#'
+#' @returns a length-3 vector representing direction of eleno1 to eleno2.
+#' By default magnitude is based on distance between the two atoms, but when `unit=TRUE` direction
+#' vector will be normalised.
+#' @export
+#'
+#' @examples
+#' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
+#' compute_direction_from_one_atom_to_another(m, eleno1 = 1, eleno2 = 2)
+compute_direction_from_one_atom_to_another <- function(molecule, eleno1, eleno2, unit = FALSE, careful=TRUE){
+  assertions::assert_class(molecule, "structures::Molecule3D")
+  positions <- fetch_atom_position(molecule, c(eleno1, eleno2), careful = careful)
+
+  if(!careful) {
+    if(anyNa(positions)) return(NA_real_, NA_real_, NA_real_)
+  }
+  move::create_vector_from_start_end(start = positions[1,], end = positions[2,], unit = unit)
+}
 
 #' Compute a best-fit plane through all atoms of a Molecule3D
 #'
