@@ -1,0 +1,197 @@
+---
+title: "proper_rotation_axis_annotation_cheatsheet"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(structures)
+library(chemviewR)
+```
+
+## Rationale
+
+The README already contains examples of adding a proper rotation axis to simple molecules.
+
+### Simple Cases Cases
+
+If your proper rotation axis is simple to generate by generating a plane normal with `compute_plane_from_atoms()` or by drawing a line between atoms with `fetch_atom_position()` or the centroids of atom clusters with `locate_molecule_center()` they are very easy to add.
+
+## Challenging Cases
+
+Here we'll look at some more awkward molecule to annotate:
+
+### A truly challenging case
+
+Below we show a molecule with a C2 proper rotation axis.
+
+
+```{r}
+# Read in molecule 
+filepath <- system.file("challenging.mol2", package = "structures")
+challenging <- read_mol2(filepath)
+
+# Plot the molecule (two versions, right side describes element numbers)
+plot_molecule_alongside_labelled_version(challenging, label = "eleno")
+```
+
+This molecule has a symmetry axis, but expressing it as a direction vector + a position it passes through involves several steps:
+
+**Getting the symmetry axis `direction`**
+
+1. Find the vector between atoms 3 and 5
+2. Find the vector between our two nitrogen atoms (36 and 42)
+3. Symmetry axis points at a right angle from both the above vectors (compute the cross product). 
+
+**Getting a point that the symmetry axis goes through (posA) **
+1. Just use the centroid of the molecule
+
+```{r}
+# Atom centroid 
+centroid <- challenging |>
+  filter_atoms(c(3,5)) |>
+  locate_molecule_center()
+
+# Print the table describing the nitrogens in the atom
+challenging |>
+  filter_atoms_by_element(element = "N") |>
+  atoms() 
+
+# Vector between our two nitogens
+vector_between_nitrogens <- challenging |> 
+  compute_direction_from_one_atom_to_another(36, 42)
+
+# Find the vector between atoms 3 & 5 (see bonds)
+vector_35 <- challenging |>
+  compute_direction_from_one_atom_to_another(3, 5)
+
+# Find direction of proper rotation axis
+pra_direction <- cross(vector_between_nitrogens, vector_35)
+
+# Define the proper rotation axis
+PRA <- ProperRotationAxis(n=2, posA = centroid, dir = pra_direction)
+
+# Annotate the molecule
+challenging_annotated <- challenging |>
+  add_symmetry_element_to_molecule(symmetry_element = PRA)
+
+# Plot the result
+plot_molecule(challenging_annotated, widget = TRUE)
+```
+
+### A deceptively easy example 
+
+Below is an demonstrataton of another molecule that with a c2 proper rotation axis, this time we will explore two equivalent, but different approaches
+to express the symmetry axis an easy and a hard way.
+
+```{r}
+
+# Read in molecule 
+filepath <- system.file("advanced/tricky_c2_example/tricky_c2.mol2", package = "structures")
+molecule2 <- read_mol2(filepath)
+
+# Plot the molecule (Highlighting dummy atoms in green and nitrogens in blue)
+plot_molecule(molecule2,colour_map_atom = c(Du = "green", N="#3050F8"))
+```
+
+This molecule has a symmetry axis, but expressing it as a direction vector + a position it passes through seems to involve several steps:
+
+**Getting the symmetry axis `direction`**
+
+1. Find the plane that best fits the whole molecule.
+2. Extract the normal vector of this plane.
+3. Compute the vector between the two dummy atoms.
+4. Compute the symmetry axis direction vector as the cross product between the (plane vector) and the (dummy vector).
+
+**Finding a point the symmetry axis passes through**
+5. Compute the centroid of the whole molecule
+
+**Create the proper rotation axis**
+6. Create the proper rotation from the direction and the point it goes through.
+7. Annotate the original molecule with it.
+
+How can we express this in code?
+
+```{r}
+# 1. Find the 'plane of best fit' for all atoms in the molecule
+plane <- molecule2 |> 
+  compute_plane_from_atoms() 
+
+# 2. Extract the normal vector ($ sign lets you access fields)
+plane_normal <- plane$normal
+
+# 3. Create a vector representing the direction of one dummy atom to another 
+# 3a) Get element IDs of dummy atoms
+molecule2 |>
+  filter_for_dummies() |> 
+  atoms() # Get atom data.frame
+
+# Here we can see we have 2 dummy atoms, with 'eleno' 45 and 46. 
+# 3b) Now we just compute the direction between them. Orientation shouldn't matter
+direction_between_dummies <- molecule2 |>
+  compute_direction_from_one_atom_to_another(eleno1 = 45, eleno2 = 46)
+
+# 4) compute the cross product to get our final symmetry element direction 
+c2_direction <- cross(direction_between_dummies, plane_normal)
+
+# 5) Compute the centroid of the whole molecule
+centroid <- molecule2 |>
+  locate_molecule_center()
+
+# 6) Create the final proper rotation axis
+RotationAxis <- ProperRotationAxis(
+  n = 2, # Its a C2 rotation axis
+  posA = centroid,
+  direction = c2_direction
+)
+
+# 7) Annotate molecule with it
+molecule2_annotated <- molecule2 |>
+  add_symmetry_element_to_molecule(RotationAxis)
+
+# Plot annotated molecule
+plot_molecule(molecule2_annotated)
+```
+
+### Easier solution
+
+It is actually much simpler to just define the axis based on two positions it passes through.
+
+1. the centroid of atoms 1 & 22
+2. the centroid of atoms 10 & 14 (see below plot for how we get these numbers)
+
+```{r}
+# Plot molecule alongside its labelled version
+plot_molecule(molecule2, label = "eleno", label_mode = "transparent")
+```
+
+Lets calculate that now:
+
+```{r}
+# Get first position the axis passes through
+posA <- molecule2 |>
+  filter_atoms(eleno = c(1, 22)) |>
+  locate_molecule_center()
+
+# Get second position the axis passes through
+posB <- molecule2 |>
+  filter_atoms(eleno = c(10, 14)) |>
+  locate_molecule_center()
+
+# Create a C2 proper rotation axis from 2 positions
+molecule2_PRA <- ProperRotationAxis(n = 2, posA = posA, posB = posB)
+
+# Annotate molecule with this rotation axis
+molecule2_annotated_easily <- molecule2 |>
+  add_symmetry_element_to_molecule(molecule2_PRA)
+
+# Plot annotated molecule
+plot_molecule(molecule2_annotated_easily)
+```
+
+This example demonstrates there can be many different ways to express the same symmetry axis, some will be easier than others.
