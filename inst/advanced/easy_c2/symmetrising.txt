@@ -1,0 +1,2 @@
+ - Take the plane of the whole molecule
+ - Run the plane vector through the centroid (molecule or dummies)

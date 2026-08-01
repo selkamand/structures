@@ -1,0 +1,11 @@
+ - Find the plane of the whole molecule. This would return a plane that pretty much contains all the atoms as well as the symmetry axis.
+
+ - Take the vector of the plane
+
+ - Take the vector between the two dummy atoms
+
+ - Compute the cross product between the (plane vector) and the (dummy vector)
+	
+*this will return a new vector that is perpendicular to the two input vectors. Because the plane vector is orthogonal to the symmetry axis contained in the plane (by definition) and the vector between the dummy atoms is orthogonal to the symmetry axis (by symmetry), the output vector of the cross product must be parallel to the symmetry axis
+
+ - Run the cross product output vector through the centroid of (molecule centroid) or (dummy centroid).

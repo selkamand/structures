@@ -1,0 +1,13 @@
+This example should be a decent test of the search algorithm as both subunits have the lowest required symmetry.
+
+Running C3 and C2 should give a pretty much perfect solution for edge-capped cube. Running inverted C3 and C2 should give a poorer fit for edge-capped cube and may find another shape class is better. Will be interesting to see...
+
+For C3
+ - Take the plane of the dummy atoms to get the plane vector
+ - Align the plane vector with the centroid of the dummies (or centroid of the molecule)
+
+For C2
+ - Take the plane of all atoms to get the plane vector
+ - Find the vector between the dummy atoms
+ - Take the cross product of (dummy atom vector) and (plane vector)
+ - Align the cross product output with the centroid (molecule or dummies)
