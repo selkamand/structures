@@ -1475,7 +1475,7 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
 
 #' Compute a direction vector
 #'
-#' @param x a Molecule3D object.
+#' @param molecule a Molecule3D object.
 #' @param eleno1,eleno2 atom IDs (eleno's) of the two atoms to compute direction between (eleno1 -> eleno2)
 #' @param unit return direction as a unit vector
 #' (by default magnitude of direction vector is based on distance between the two atoms)

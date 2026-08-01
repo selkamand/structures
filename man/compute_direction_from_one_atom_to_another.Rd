@@ -13,6 +13,8 @@ compute_direction_from_one_atom_to_another(
 )
 }
 \arguments{
+\item{molecule}{a Molecule3D object.}
+
 \item{eleno1, eleno2}{atom IDs (eleno's) of the two atoms to compute direction between (eleno1 -> eleno2)}
 
 \item{unit}{return direction as a unit vector
@@ -20,8 +22,6 @@ compute_direction_from_one_atom_to_another(
 
 \item{careful}{throw an error if the queried atoms are not present in the molecule.
 When false and either eleno's are missing from molecule returns a length-three vector of NA values)}
-
-\item{x}{a Molecule3D object.}
 }
 \value{
 a length-3 vector representing direction of eleno1 to eleno2.
