@@ -29,6 +29,7 @@ Imports:
     dplyr,
     igraph,
     move (>= 0.0.0.9000),
+    pracma,
     readr,
     rlang,
     S7,
