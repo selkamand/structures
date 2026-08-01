@@ -1495,7 +1495,7 @@ compute_direction_from_one_atom_to_another <- function(molecule, eleno1, eleno2,
   positions <- fetch_atom_position(molecule, c(eleno1, eleno2), careful = careful)
 
   if(!careful) {
-    if(anyNa(positions)) return(NA_real_, NA_real_, NA_real_)
+    if(anyNA(positions)) return(NA_real_, NA_real_, NA_real_)
   }
   move::create_vector_from_start_end(start = positions[1,], end = positions[2,], unit = unit)
 }
