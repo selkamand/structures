@@ -1,7 +1,10 @@
-enrich_bonds_with_xyz_position <- function(bonds, atoms,
-                                           origin = "origin",
-                                           target = "target",
-                                           atom_id = "eleno") {
+enrich_bonds_with_xyz_position <- function(
+  bonds,
+  atoms,
+  origin = "origin",
+  target = "target",
+  atom_id = "eleno"
+) {
   # indices of the origin/target atoms in `atoms`
   io <- match(bonds[[origin]], atoms[[atom_id]])
   it <- match(bonds[[target]], atoms[[atom_id]])
@@ -67,8 +70,14 @@ elena_to_element <- function(elena) {
 }
 
 replace_by_value <- function(x, old, new) {
-  if (length(old) != length(new)) stop("vector describing old values must be the same length as vector describing new values")
-  if (anyDuplicated(old)) stop("vector describing old values must not contain duplicates")
+  if (length(old) != length(new)) {
+    stop(
+      "vector describing old values must be the same length as vector describing new values"
+    )
+  }
+  if (anyDuplicated(old)) {
+    stop("vector describing old values must not contain duplicates")
+  }
   idx_to_replace <- x %in% old
 
   x[idx_to_replace] <- new[match(x[idx_to_replace], old)]
@@ -117,10 +126,13 @@ ensure_axes_are_ProperRotationAxis <- function(value) {
   }
   for (axis in value) {
     if (!is_symmetry_axis(axis)) {
-      stop(sprintf(
-        "All symmetry_axes must be `structures::ProperRotationAxis`. Invalid: [%s]",
-        toString(class(axis))
-      ), call. = FALSE)
+      stop(
+        sprintf(
+          "All symmetry_axes must be `structures::ProperRotationAxis`. Invalid: [%s]",
+          toString(class(axis))
+        ),
+        call. = FALSE
+      )
     }
   }
   invisible(TRUE)
@@ -136,11 +148,17 @@ validate_symmetry_axes_list <- function(value) {
     stop("symmetry_axes must be a named list with unique IDs.", call. = FALSE)
   }
   if (any(!nzchar(ids))) {
-    stop(sprintf("Found %d empty symmetry axis IDs.", sum(!nzchar(ids))), call. = FALSE)
+    stop(
+      sprintf("Found %d empty symmetry axis IDs.", sum(!nzchar(ids))),
+      call. = FALSE
+    )
   }
   if (any(duplicated(ids))) {
     dupes <- unique(ids[duplicated(ids)])
-    stop(sprintf("Duplicate symmetry axis IDs: %s", toString(dupes)), call. = FALSE)
+    stop(
+      sprintf("Duplicate symmetry axis IDs: %s", toString(dupes)),
+      call. = FALSE
+    )
   }
   invisible(TRUE)
 }
@@ -152,7 +170,9 @@ validate_symmetry_axes_list <- function(value) {
 #  - ensure names exist
 #  - fill any empty names with fresh numeric IDs that don't collide
 normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
-  if (!is.list(value)) stop("symmetry_axes must be a list.", call. = FALSE)
+  if (!is.list(value)) {
+    stop("symmetry_axes must be a list.", call. = FALSE)
+  }
   ensure_axes_are_ProperRotationAxis(value)
 
   ids <- axis_ids(value)
@@ -174,10 +194,13 @@ normalize_symmetry_axes_list <- function(value, existing_ids = character()) {
   # Final uniqueness check (should be fine, but be strict)
   if (any(duplicated(ids))) {
     dupes <- unique(ids[duplicated(ids)])
-    stop(sprintf(
-      "Duplicate symmetry axis IDs after normalisation: %s",
-      toString(dupes)
-    ), call. = FALSE)
+    stop(
+      sprintf(
+        "Duplicate symmetry axis IDs after normalisation: %s",
+        toString(dupes)
+      ),
+      call. = FALSE
+    )
   }
 
   names(value) <- ids
@@ -212,7 +235,6 @@ compute_distance <- function(a, b) {
 
 # Exported ----------------------------------------------------------------
 
-
 #' Convert a Molecule3D's bonds to an igraph graph
 #'
 #' Builds an undirected \pkg{igraph} graph from a \code{Molecule3D}'s bond table.
@@ -239,11 +261,16 @@ compute_distance <- function(a, b) {
 #'
 #' @importFrom igraph graph_from_data_frame
 #' @export
-as_igraph <- function(molecule,
-                      vertex_attrs = c("elena", "element", "x", "y", "z"),
-                      edge_attrs = c("bond_id", "bond_type"),
-                      include_isolated = TRUE) {
-  rlang::check_installed(pkg = "igraph", reason = "to convert molecular structure to igraph format")
+as_igraph <- function(
+  molecule,
+  vertex_attrs = c("elena", "element", "x", "y", "z"),
+  edge_attrs = c("bond_id", "bond_type"),
+  include_isolated = TRUE
+) {
+  rlang::check_installed(
+    pkg = "igraph",
+    reason = "to convert molecular structure to igraph format"
+  )
   assertions::assert_class(molecule, "structures::Molecule3D")
 
   # --- Vertices (atoms) ---
@@ -265,7 +292,11 @@ as_igraph <- function(molecule,
   bonds <- molecule@bonds
   if (is.null(bonds) || !is.data.frame(bonds) || nrow(bonds) == 0) {
     # Vertex-only graph (all atoms as isolated vertices)
-    g <- igraph::graph_from_data_frame(d = NULL, directed = FALSE, vertices = vdf)
+    g <- igraph::graph_from_data_frame(
+      d = NULL,
+      directed = FALSE,
+      vertices = vdf
+    )
     return(g)
   }
 
@@ -286,7 +317,11 @@ as_igraph <- function(molecule,
 
   # Build graph; include all atoms as vertices when requested
   if (include_isolated) {
-    g <- igraph::graph_from_data_frame(d = edf, directed = FALSE, vertices = vdf)
+    g <- igraph::graph_from_data_frame(
+      d = edf,
+      directed = FALSE,
+      vertices = vdf
+    )
   } else {
     g <- igraph::graph_from_data_frame(d = edf, directed = FALSE)
   }

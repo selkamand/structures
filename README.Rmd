@@ -286,3 +286,9 @@ If you use **structures** in research or publications, please cite the package u
 ```{r warning=FALSE}
 citation("structures")
 ```
+
+## Contributions
+
+Contributions of any size are welcome. 
+Before submitting a pull request please create an issue describing the bug / feature.
+Do not stress about style guidelines in your pull requests, the will be automatically formatted with air when submitted.

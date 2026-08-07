@@ -14,24 +14,39 @@ PointGroup3D <- S7::new_class(
   properties = list(
     name = S7::new_property(
       class = S7::class_character,
-      validator = function(value){
-        if(length(value) != 1) return(sprintf("Point Group @name must be a string (character vector with length 1: Not [%s]", length(value)))
-        if(!value %in% crystallographic_pointgroup_names()) warning(sprintf("Point group name ['%s'] is not a valid Schoenflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]", value, toString(crystallographic_pointgroup_names())))
+      validator = function(value) {
+        if (length(value) != 1) {
+          return(sprintf(
+            "Point Group @name must be a string (character vector with length 1: Not [%s]",
+            length(value)
+          ))
+        }
+        if (!value %in% crystallographic_pointgroup_names()) {
+          warning(sprintf(
+            "Point group name ['%s'] is not a valid Schoenflies symbol. If you are creating a Crystallographic point group, we recommend setting the name to one of [%s]",
+            value,
+            toString(crystallographic_pointgroup_names())
+          ))
+        }
         return(NULL)
       }
     ),
     symmetry_elements = S7::new_property(
       class = S7::class_list,
-      validator = function(value){
-        for (element in value){
-          if(!inherits(element, "SymmetryElement")) return(sprintf("All @symmetry_elements must inherit from: structures::SymmetryElement"))
+      validator = function(value) {
+        for (element in value) {
+          if (!inherits(element, "SymmetryElement")) {
+            return(sprintf(
+              "All @symmetry_elements must inherit from: structures::SymmetryElement"
+            ))
+          }
         }
         return(NULL)
       }
     )
     # Add computed properties to pull out all of a specific type of symmetry axis ()
   ),
-  constructor = function(name= "", symmetry_elements = list()){
+  constructor = function(name = "", symmetry_elements = list()) {
     S7::new_object(
       S7::S7_object(),
       name = name,
@@ -42,8 +57,6 @@ PointGroup3D <- S7::new_class(
 
 
 # Helpers -----------------------------------------------------------------
-
-
 
 #' Schönflies notation of the 32 crystallographic point groups
 #'
@@ -60,7 +73,7 @@ PointGroup3D <- S7::new_class(
 #'
 #' @examples
 #' crystallographic_pointgroup_names()
-crystallographic_pointgroup_names <- function(as_list=FALSE){
+crystallographic_pointgroup_names <- function(as_list = FALSE) {
   point_groups_3d <- c(
     # Triclinic (2)
     triclinic = "C1",
@@ -109,7 +122,7 @@ crystallographic_pointgroup_names <- function(as_list=FALSE){
     cubic = "Oh"
   )
 
-  if(as_list){
+  if (as_list) {
     point_groups_3d <- split(point_groups_3d, names(point_groups_3d))
     point_groups_3d <- lapply(point_groups_3d, unname)
   }

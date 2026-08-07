@@ -1,5 +1,3 @@
-
-
 # Test Add Bonds ----------------------------------------------------------------
 
 test_that("add_bonds() adds a single bond and increments bond_id", {
@@ -16,7 +14,7 @@ test_that("add_bonds() adds a single bond and increments bond_id", {
     target_atom_id = 2,
     bond_type = "1"
   )
-  m <- Molecule3D("COH", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+  m <- Molecule3D("COH", atoms = atoms, bonds = bonds, anchor = c(0, 0, 0))
 
   before_anchor <- m@anchor
   m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = 3, bond_type = "2")
@@ -37,10 +35,10 @@ test_that("add_bonds() adds a single bond and increments bond_id", {
 test_that("add_bonds() with multiple targets creates multiple rows with sequential IDs", {
   atoms <- data.frame(
     eleno = 1:4,
-    elena = c("C","H","H","H"),
-    x = c(0,1,0,-1),
-    y = c(0,0,1,0),
-    z = c(0,0,0,1)
+    elena = c("C", "H", "H", "H"),
+    x = c(0, 1, 0, -1),
+    y = c(0, 0, 1, 0),
+    z = c(0, 0, 0, 1)
   )
   # start with empty bonds to ensure IDs start at 1
   bonds <- data.frame(
@@ -51,7 +49,12 @@ test_that("add_bonds() with multiple targets creates multiple rows with sequenti
   )
   m <- Molecule3D("Methane-ish", atoms = atoms, bonds = bonds)
 
-  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3,4), bond_type = "1")
+  m2 <- add_bonds(
+    m,
+    origin_atom_id = 1,
+    target_atom_ids = c(2, 3, 4),
+    bond_type = "1"
+  )
 
   expect_equal(nrow(m2@bonds), 3)
   # IDs should be 1,2,3
@@ -59,7 +62,7 @@ test_that("add_bonds() with multiple targets creates multiple rows with sequenti
   # All origin IDs should be 1
   expect_true(all(m2@bonds$origin_atom_id == 1))
   # Targets should match
-  expect_setequal(m2@bonds$target_atom_id, c(2,3,4))
+  expect_setequal(m2@bonds$target_atom_id, c(2, 3, 4))
   # bond_type recycled properly
   expect_true(all(m2@bonds$bond_type == "1"))
 })
@@ -67,7 +70,7 @@ test_that("add_bonds() with multiple targets creates multiple rows with sequenti
 test_that("add_bonds() errors for missing origin or target IDs", {
   atoms <- data.frame(
     eleno = c(10, 20),
-    elena = c("C","O"),
+    elena = c("C", "O"),
     x = c(0, 1),
     y = c(0, 0),
     z = c(0, 0)
@@ -90,18 +93,18 @@ test_that("add_bonds() errors for missing origin or target IDs", {
 
 test_that("add_bonds() respects existing maximum_bond_id even with gaps", {
   atoms <- data.frame(
-    eleno = c(1,2,3),
-    elena = c("C","O","H"),
-    x = c(0,1,0),
-    y = c(0,0,1),
-    z = c(0,0,0)
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, 1, 0),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   # bond IDs are non-contiguous; max is 10
   bonds <- data.frame(
     bond_id = c(5, 10),
     origin_atom_id = c(1, 1),
     target_atom_id = c(2, 3),
-    bond_type = c("1","1")
+    bond_type = c("1", "1")
   )
   m <- Molecule3D("GappyIDs", atoms = atoms, bonds = bonds)
 
@@ -115,13 +118,20 @@ test_that("add_bonds() respects existing maximum_bond_id even with gaps", {
 test_that("add_bonds() allows vector bond_type of same length as targets", {
   atoms <- data.frame(
     eleno = 1:4,
-    elena = c("C","H","H","H"),
-    x = 0:3, y = 0:3, z = 0:3
+    elena = c("C", "H", "H", "H"),
+    x = 0:3,
+    y = 0:3,
+    z = 0:3
   )
   m <- Molecule3D("VecType", atoms = atoms, bonds = minimal_bonds())
 
-  types <- c("1","2","am")
-  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3,4), bond_type = types)
+  types <- c("1", "2", "am")
+  m2 <- add_bonds(
+    m,
+    origin_atom_id = 1,
+    target_atom_ids = c(2, 3, 4),
+    bond_type = types
+  )
 
   # Expect types to appear exactly once each
   expect_setequal(m2@bonds$bond_type, types)
@@ -130,12 +140,19 @@ test_that("add_bonds() allows vector bond_type of same length as targets", {
 
 test_that("add_bonds() coerces ids to numeric and preserves atoms/anchor", {
   atoms <- data.frame(
-    eleno = c(1,2),
-    elena = c("C","O"),
-    x = c(0,1), y = c(0,0), z = c(0,0)
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
-  m <- Molecule3D("Coerce", atoms = atoms, bonds = minimal_bonds(), anchor = c(9,9,9))
-  before_atoms  <- m@atoms
+  m <- Molecule3D(
+    "Coerce",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = c(9, 9, 9)
+  )
+  before_atoms <- m@atoms
   before_anchor <- m@anchor
 
   # pass ids as character; function coerces to numeric internally
@@ -150,34 +167,46 @@ test_that("add_bonds() coerces ids to numeric and preserves atoms/anchor", {
 
 test_that("add_bonds() works when starting with completely empty bonds table", {
   atoms <- data.frame(
-    eleno = c(1,2,3),
-    elena = c("C","O","H"),
-    x = c(0,1,0), y = c(0,0,1), z = c(0,0,0)
+    eleno = c(1, 2, 3),
+    elena = c("C", "O", "H"),
+    x = c(0, 1, 0),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("EmptyBonds", atoms = atoms, bonds = minimal_bonds())
 
-  m2 <- add_bonds(m, origin_atom_id = 1, target_atom_ids = c(2,3), bond_type = "1")
+  m2 <- add_bonds(
+    m,
+    origin_atom_id = 1,
+    target_atom_ids = c(2, 3),
+    bond_type = "1"
+  )
 
   expect_equal(nrow(m2@bonds), 2)
-  expect_true(all(m2@bonds$bond_id %in% c(1,2)))
-  expect_setequal(m2@bonds$target_atom_id, c(2,3))
+  expect_true(all(m2@bonds$bond_id %in% c(1, 2)))
+  expect_setequal(m2@bonds$target_atom_id, c(2, 3))
   expect_true(all(m2@bonds$origin_atom_id == 1))
 })
 
 test_that("add_bonds() with one origin and multiple targets adds multiple bonds", {
   atoms <- data.frame(
     eleno = 1:5,
-    elena = c("C","H","H","H","O"),
+    elena = c("C", "H", "H", "H", "O"),
     x = c(0, 1, -1, 0, 0.5),
-    y = c(0, 0,  0, 1, 0.5),
-    z = c(0, 0,  0, 0, -0.5)
+    y = c(0, 0, 0, 1, 0.5),
+    z = c(0, 0, 0, 0, -0.5)
   )
   # start with an empty bonds table
   m <- Molecule3D("MultiTargets", atoms = atoms, bonds = minimal_bonds())
 
   origin <- 1
   targets <- c(2, 3, 4, 5)
-  m2 <- add_bonds(m, origin_atom_id = origin, target_atom_ids = targets, bond_type = "1")
+  m2 <- add_bonds(
+    m,
+    origin_atom_id = origin,
+    target_atom_ids = targets,
+    bond_type = "1"
+  )
 
   # number of new rows equals number of targets
   expect_equal(nrow(m2@bonds), length(targets))
@@ -193,32 +222,45 @@ test_that("add_bonds() with one origin and multiple targets adds multiple bonds"
 # Test Combine ------------------------------------------------------------
 
 test_that("combine_molecules reindexes IDs and keeps references consistent", {
-
   # Molecule 1: two atoms, one bond (1-2)
   atoms1 <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds1 <- data.frame(
     bond_id = 1,
     origin_atom_id = "1",
     target_atom_id = "2"
   )
-  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, anchor = c(1,2,3))
+  m1 <- Molecule3D(
+    name = "A",
+    atoms = atoms1,
+    bonds = bonds1,
+    anchor = c(1, 2, 3)
+  )
 
   # Molecule 2: two atoms, one bond (1-2) — IDs overlap with m1 on purpose
   atoms2 <- data.frame(
     eleno = c(1, 2),
     elena = c("H", "H"),
-    x = c(2, 3), y = c(0, 0), z = c(0, 0)
+    x = c(2, 3),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds2 <- data.frame(
     bond_id = 1,
     origin_atom_id = "1",
     target_atom_id = "2"
   )
-  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2, anchor = c(9,9,9))
+  m2 <- Molecule3D(
+    name = "B",
+    atoms = atoms2,
+    bonds = bonds2,
+    anchor = c(9, 9, 9)
+  )
 
   # Combine with reindexing (update_ids = TRUE)
   cmb <- combine_molecules(m1, m2, update_ids = TRUE)
@@ -254,8 +296,10 @@ test_that("combine_molecules reindexes IDs and keeps references consistent", {
   # --- CRITICAL: bond endpoints for the reindexed m2 must reference shifted eleno
   # (origin_atom_id/target_atom_id are character; compare against atoms$eleno as character)
   atoms_eleno_chr <- as.character(cmb@atoms$eleno)
-  endpoints_B <- unique(c(cmb@bonds$origin_atom_id[cmb@bonds$source == "B"],
-                          cmb@bonds$target_atom_id[cmb@bonds$source == "B"]))
+  endpoints_B <- unique(c(
+    cmb@bonds$origin_atom_id[cmb@bonds$source == "B"],
+    cmb@bonds$target_atom_id[cmb@bonds$source == "B"]
+  ))
   expect_true(all(endpoints_B %in% atoms_eleno_chr))
 
   # Anchor should be preserved from m1 (the base object)
@@ -269,7 +313,9 @@ test_that("combine_molecules without reindexing can leave duplicates", {
   atoms1 <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds1 <- data.frame(
     bond_id = 1,
@@ -281,7 +327,9 @@ test_that("combine_molecules without reindexing can leave duplicates", {
   atoms2 <- data.frame(
     eleno = c(1, 2),
     elena = c("H", "H"),
-    x = c(2, 3), y = c(0, 0), z = c(0, 0)
+    x = c(2, 3),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds2 <- data.frame(
     bond_id = 1,
@@ -291,34 +339,52 @@ test_that("combine_molecules without reindexing can leave duplicates", {
   m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2)
 
   # No reindexing leads to error because of duplicated eleno eleno present (since both had 1,2)
-  expect_error(combine_molecules(m1, m2, update_ids = FALSE), regexp = "duplicates")
-
+  expect_error(
+    combine_molecules(m1, m2, update_ids = FALSE),
+    regexp = "duplicates"
+  )
 })
 
 test_that("combine_molecules preserves non-tabular columns and adds sources", {
   atoms1 <- data.frame(
     eleno = c(10),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
   bonds1 <- data.frame(
     bond_id = 10,
     origin_atom_id = "10",
     target_atom_id = "10"
   )
-  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, misc = list(foo = 1), anchor = c(1,1,1))
+  m1 <- Molecule3D(
+    name = "A",
+    atoms = atoms1,
+    bonds = bonds1,
+    misc = list(foo = 1),
+    anchor = c(1, 1, 1)
+  )
 
   atoms2 <- data.frame(
     eleno = c(1),
     elena = c("H"),
-    x = 1, y = 0, z = 0
+    x = 1,
+    y = 0,
+    z = 0
   )
   bonds2 <- data.frame(
     bond_id = 1,
     origin_atom_id = "1",
     target_atom_id = "1"
   )
-  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2, misc = list(bar = 2), anchor = c(9,9,9))
+  m2 <- Molecule3D(
+    name = "B",
+    atoms = atoms2,
+    bonds = bonds2,
+    misc = list(bar = 2),
+    anchor = c(9, 9, 9)
+  )
 
   cmb <- combine_molecules(m1, m2, update_ids = TRUE)
 
@@ -329,7 +395,7 @@ test_that("combine_molecules preserves non-tabular columns and adds sources", {
   expect_setequal(unique(cmb@bonds$source), c("A", "B"))
 
   # anchor and name preserved from m1
-  expect_equal(cmb@anchor, c(x=1,y=1,z=1))
+  expect_equal(cmb@anchor, c(x = 1, y = 1, z = 1))
   expect_equal(cmb@name, "A")
 
   # maximum_* derived from combined tables
@@ -343,7 +409,9 @@ test_that("combine_molecules keeps bonds aligned with atoms after reindex", {
   atoms1 <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("C", "O", "N"),
-    x = c(0, 1, 2), y = 0, z = 0
+    x = c(0, 1, 2),
+    y = 0,
+    z = 0
   )
   bonds1 <- data.frame(
     bond_id = c(1, 2),
@@ -355,7 +423,9 @@ test_that("combine_molecules keeps bonds aligned with atoms after reindex", {
   atoms2 <- data.frame(
     eleno = c(1, 2),
     elena = c("H", "H"),
-    x = c(3, 4), y = 0, z = 0
+    x = c(3, 4),
+    y = 0,
+    z = 0
   )
   bonds2 <- data.frame(
     bond_id = c(1),
@@ -378,16 +448,25 @@ test_that("combine_molecules works when m1 has no bonds", {
   atoms1 <- data.frame(
     eleno = 1,
     elena = "C",
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
   bonds1 <- minimal_bonds()
-  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, anchor = c(1,2,3))
+  m1 <- Molecule3D(
+    name = "A",
+    atoms = atoms1,
+    bonds = bonds1,
+    anchor = c(1, 2, 3)
+  )
 
   # m2: two atoms, one bond (1-2)
   atoms2 <- data.frame(
     eleno = c(1, 2),
     elena = c("H", "H"),
-    x = c(1, 2), y = 0, z = 0
+    x = c(1, 2),
+    y = 0,
+    z = 0
   )
   bonds2 <- data.frame(
     bond_id = 1,
@@ -424,20 +503,29 @@ test_that("combine_molecules works when m2 has no bonds", {
   atoms1 <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
-    x = c(0, 1), y = 0, z = 0
+    x = c(0, 1),
+    y = 0,
+    z = 0
   )
   bonds1 <- data.frame(
     bond_id = 1,
     origin_atom_id = "1",
     target_atom_id = "2"
   )
-  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = bonds1, anchor = c(4,5,6))
+  m1 <- Molecule3D(
+    name = "A",
+    atoms = atoms1,
+    bonds = bonds1,
+    anchor = c(4, 5, 6)
+  )
 
   # m2: one atom, no bonds
   atoms2 <- data.frame(
     eleno = 1,
     elena = "H",
-    x = 2, y = 0, z = 0
+    x = 2,
+    y = 0,
+    z = 0
   )
   bonds2 <- minimal_bonds()
   m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = bonds2)
@@ -467,17 +555,31 @@ test_that("combine_molecules works when both molecules have no bonds", {
   atoms1 <- data.frame(
     eleno = 10,
     elena = "C",
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
-  m1 <- Molecule3D(name = "A", atoms = atoms1, bonds = minimal_bonds(), anchor = c(1,1,1))
+  m1 <- Molecule3D(
+    name = "A",
+    atoms = atoms1,
+    bonds = minimal_bonds(),
+    anchor = c(1, 1, 1)
+  )
 
   # m2: one atom, no bonds
   atoms2 <- data.frame(
     eleno = 1,
     elena = "H",
-    x = 1, y = 0, z = 0
+    x = 1,
+    y = 0,
+    z = 0
   )
-  m2 <- Molecule3D(name = "B", atoms = atoms2, bonds = minimal_bonds(), anchor = c(9,9,9))
+  m2 <- Molecule3D(
+    name = "B",
+    atoms = atoms2,
+    bonds = minimal_bonds(),
+    anchor = c(9, 9, 9)
+  )
 
   cmb <- combine_molecules(m1, m2, update_ids = TRUE)
 
@@ -486,7 +588,10 @@ test_that("combine_molecules works when both molecules have no bonds", {
   expect_equal(nrow(cmb@bonds), 0)
 
   # Columns should include the canonical set (and 'source' added by combine)
-  expect_true(all(c("bond_id","origin_atom_id","target_atom_id","bond_type","source") %in% names(cmb@bonds)))
+  expect_true(all(
+    c("bond_id", "origin_atom_id", "target_atom_id", "bond_type", "source") %in%
+      names(cmb@bonds)
+  ))
 
   # Atoms are combined and 'source' present
   expect_equal(nrow(cmb@atoms), 2)
@@ -494,7 +599,7 @@ test_that("combine_molecules works when both molecules have no bonds", {
   expect_setequal(unique(cmb@atoms$source), c("A", "B"))
 
   # Anchor/name preserved from m1
-  expect_equal(cmb@anchor, c(x=1,y=1,z=1))
+  expect_equal(cmb@anchor, c(x = 1, y = 1, z = 1))
   expect_equal(cmb@name, "A")
 })
 
@@ -503,7 +608,9 @@ test_that("combine_molecules adds inter-molecule bonds (update_ids=TRUE) and map
   atoms1 <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
-    x = c(0, 1), y = 0, z = 0
+    x = c(0, 1),
+    y = 0,
+    z = 0
   )
   bonds1 <- minimal_bonds()
   m1 <- Molecule3D("A", atoms = atoms1, bonds = bonds1)
@@ -512,7 +619,9 @@ test_that("combine_molecules adds inter-molecule bonds (update_ids=TRUE) and map
   atoms2 <- data.frame(
     eleno = c(1, 2),
     elena = c("H", "H"),
-    x = c(2, 3), y = 0, z = 0
+    x = c(2, 3),
+    y = 0,
+    z = 0
   )
   bonds2 <- minimal_bonds()
   m2 <- Molecule3D("B", atoms = atoms2, bonds = bonds2)
@@ -520,7 +629,12 @@ test_that("combine_molecules adds inter-molecule bonds (update_ids=TRUE) and map
   # create bond from m1 atom 2 -> m2 atom 1 (original id in m2)
   create_bonds <- data.frame(eleno1 = 2, eleno2 = 1, bond_type = "1")
 
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = TRUE
+  )
 
   # One new bond row added
   expect_equal(nrow(cmb@bonds), 1)
@@ -539,10 +653,22 @@ test_that("combine_molecules adds inter-molecule bonds (update_ids=TRUE) and map
 })
 
 test_that("combine_molecules adds multiple inter-molecule bonds with sequential bond_id", {
-  atoms1 <- data.frame(eleno = 1:3, elena = c("C","C","O"), x = 0:2, y = 0, z = 0)
+  atoms1 <- data.frame(
+    eleno = 1:3,
+    elena = c("C", "C", "O"),
+    x = 0:2,
+    y = 0,
+    z = 0
+  )
   m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
 
-  atoms2 <- data.frame(eleno = 1:3, elena = c("H","H","H"), x = 3:5, y = 0, z = 0)
+  atoms2 <- data.frame(
+    eleno = 1:3,
+    elena = c("H", "H", "H"),
+    x = 3:5,
+    y = 0,
+    z = 0
+  )
   m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
 
   create_bonds <- data.frame(
@@ -551,7 +677,12 @@ test_that("combine_molecules adds multiple inter-molecule bonds with sequential 
     bond_type = c("1", "2", "ar")
   )
 
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = TRUE
+  )
 
   expect_equal(nrow(cmb@bonds), 3)
   expect_equal(sort(cmb@bonds$bond_id), 1:3)
@@ -559,16 +690,22 @@ test_that("combine_molecules adds multiple inter-molecule bonds with sequential 
   # Targets mapped by + max atom id in m1 (=3)
   expect_setequal(cmb@bonds$target_atom_id, (1:3) + m1@maximum_atom_id)
   expect_setequal(cmb@bonds$origin_atom_id, 1:3)
-  expect_setequal(cmb@bonds$bond_type, c("1","2","ar"))
+  expect_setequal(cmb@bonds$bond_type, c("1", "2", "ar"))
 })
 
 test_that("combine_molecules inter-bond addition respects existing bonds and continues bond_id", {
-  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = 0:1,
+    y = 0,
+    z = 0
+  )
   bonds1 <- data.frame(
     bond_id = c(5, 10),
-    origin_atom_id = c("1","1"),
-    target_atom_id = c("2","2"),
-    bond_type = c("1","1")
+    origin_atom_id = c("1", "1"),
+    target_atom_id = c("2", "2"),
+    bond_type = c("1", "1")
   )
   m1 <- Molecule3D("A", atoms = atoms1, bonds = bonds1)
 
@@ -577,7 +714,12 @@ test_that("combine_molecules inter-bond addition respects existing bonds and con
 
   create_bonds <- data.frame(eleno1 = 2, eleno2 = 1, bond_type = "2")
 
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = TRUE
+  )
 
   # Existing 2 + new 1
   expect_equal(nrow(cmb@bonds), 3)
@@ -592,15 +734,32 @@ test_that("combine_molecules inter-bond addition respects existing bonds and con
 })
 
 test_that("combine_molecules accepts shorthand list-of-pairs create_bonds and defaults bond_type", {
-  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = 0:1,
+    y = 0,
+    z = 0
+  )
   m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
 
-  atoms2 <- data.frame(eleno = c(1,2), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  atoms2 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("H", "H"),
+    x = 2:3,
+    y = 0,
+    z = 0
+  )
   m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
 
   create_bonds <- list(c(1, 1), c(2, 2))
 
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = TRUE
+  )
 
   expect_equal(nrow(cmb@bonds), 2)
   # If your default is "un", assert that; otherwise change expected value.
@@ -610,22 +769,44 @@ test_that("combine_molecules accepts shorthand list-of-pairs create_bonds and de
 })
 
 test_that("combine_molecules errors when create_bonds references missing atoms", {
-  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = 0:1,
+    y = 0,
+    z = 0
+  )
   m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
 
-  atoms2 <- data.frame(eleno = c(1,2), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  atoms2 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("H", "H"),
+    x = 2:3,
+    y = 0,
+    z = 0
+  )
   m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
 
   # bad eleno1 (m1)
   expect_error(
-    combine_molecules(m1, m2, create_bonds = data.frame(eleno1 = 999, eleno2 = 1), update_ids = TRUE),
+    combine_molecules(
+      m1,
+      m2,
+      create_bonds = data.frame(eleno1 = 999, eleno2 = 1),
+      update_ids = TRUE
+    ),
     regexp = "molecule1|eleno1|not.*in|missing|present",
     ignore.case = TRUE
   )
 
   # bad eleno2 (m2)
   expect_error(
-    combine_molecules(m1, m2, create_bonds = data.frame(eleno1 = 1, eleno2 = 999), update_ids = TRUE),
+    combine_molecules(
+      m1,
+      m2,
+      create_bonds = data.frame(eleno1 = 1, eleno2 = 999),
+      update_ids = TRUE
+    ),
     regexp = "molecule2|eleno2|not.*in|missing|present",
     ignore.case = TRUE
   )
@@ -633,16 +814,33 @@ test_that("combine_molecules errors when create_bonds references missing atoms",
 
 test_that("combine_molecules inter-bonds still work with update_ids=FALSE when no duplicates", {
   # Use non-overlapping atom ids so update_ids=FALSE is allowed
-  atoms1 <- data.frame(eleno = c(1,2), elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  atoms1 <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = 0:1,
+    y = 0,
+    z = 0
+  )
   m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
 
-  atoms2 <- data.frame(eleno = c(10,11), elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  atoms2 <- data.frame(
+    eleno = c(10, 11),
+    elena = c("H", "H"),
+    x = 2:3,
+    y = 0,
+    z = 0
+  )
   m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
 
   # Since update_ids=FALSE, m2 ids are not shifted; create_bonds uses original ids
   create_bonds <- data.frame(eleno1 = 2, eleno2 = 10, bond_type = "1")
 
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = FALSE)
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = FALSE
+  )
 
   expect_equal(nrow(cmb@bonds), 1)
   expect_equal(cmb@bonds$origin_atom_id[1], 2)
@@ -651,14 +849,23 @@ test_that("combine_molecules inter-bonds still work with update_ids=FALSE when n
 })
 
 test_that("combine_molecules inter-bonds endpoints always exist in combined atoms", {
-  atoms1 <- data.frame(eleno = 1:2, elena = c("C","O"), x = 0:1, y = 0, z = 0)
+  atoms1 <- data.frame(eleno = 1:2, elena = c("C", "O"), x = 0:1, y = 0, z = 0)
   m1 <- Molecule3D("A", atoms = atoms1, bonds = minimal_bonds())
 
-  atoms2 <- data.frame(eleno = 1:2, elena = c("H","H"), x = 2:3, y = 0, z = 0)
+  atoms2 <- data.frame(eleno = 1:2, elena = c("H", "H"), x = 2:3, y = 0, z = 0)
   m2 <- Molecule3D("B", atoms = atoms2, bonds = minimal_bonds())
 
-  create_bonds <- data.frame(eleno1 = c(1,2), eleno2 = c(1,2), bond_type = "1")
-  cmb <- combine_molecules(m1, m2, create_bonds = create_bonds, update_ids = TRUE)
+  create_bonds <- data.frame(
+    eleno1 = c(1, 2),
+    eleno2 = c(1, 2),
+    bond_type = "1"
+  )
+  cmb <- combine_molecules(
+    m1,
+    m2,
+    create_bonds = create_bonds,
+    update_ids = TRUE
+  )
 
   eleno_chr <- as.character(cmb@atoms$eleno)
   expect_true(all(as.character(cmb@bonds$origin_atom_id) %in% eleno_chr))
@@ -695,15 +902,15 @@ test_that("center is invariant to atom row order", {
     eleno = c(10, 2, 7, 5),
     elena = c("C", "O", "H", "N"),
     x = c(1, 5, 9, -3),
-    y = c(0, 2, 4,  6),
-    z = c(3, 3, 3,  3)
+    y = c(0, 2, 4, 6),
+    z = c(3, 3, 3, 3)
   )
   bonds <- minimal_bonds()
 
   set.seed(1)
   idx <- sample(seq_len(nrow(atoms)))
-  mol1 <- Molecule3D("m1", atoms = atoms,         bonds = bonds)
-  mol2 <- Molecule3D("m2", atoms = atoms[idx, ],  bonds = bonds)
+  mol1 <- Molecule3D("m1", atoms = atoms, bonds = bonds)
+  mol2 <- Molecule3D("m2", atoms = atoms[idx, ], bonds = bonds)
 
   expect_equal(mol1@center, mol2@center, tolerance = 1e-12)
 })
@@ -717,7 +924,7 @@ test_that("center does not depend on bonds table", {
     z = c(0, 2)
   )
   bonds_empty <- minimal_bonds()
-  bonds_one   <- data.frame(
+  bonds_one <- data.frame(
     bond_id = 1,
     origin_atom_id = "1",
     target_atom_id = "2",
@@ -735,10 +942,15 @@ test_that("changing anchor alone does not change center", {
     eleno = c(1, 2),
     elena = c("C", "O"),
     x = c(10, 12),
-    y = c(-2,  2),
-    z = c( 5,  7)
+    y = c(-2, 2),
+    z = c(5, 7)
   )
-  mol <- Molecule3D("anchor-test", atoms = atoms, bonds = minimal_bonds(), anchor = c(0,0,0))
+  mol <- Molecule3D(
+    "anchor-test",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = c(0, 0, 0)
+  )
   c0 <- mol@center
 
   mol <- set_anchor_by_position(mol, c(100, 200, 300))
@@ -756,7 +968,12 @@ test_that("center translates by the same vector as the molecule", {
     y = c(0, 1, 2),
     z = c(0, 1, 2)
   )
-  mol <- Molecule3D("shift", atoms = atoms, bonds = minimal_bonds(), anchor = c(0,0,0))
+  mol <- Molecule3D(
+    "shift",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = c(0, 0, 0)
+  )
   c0 <- mol@center
 
   v <- c(5, -3, 10)
@@ -801,8 +1018,13 @@ test_that("constructor defaults anchor to atom center when anchor is NULL", {
 })
 
 test_that("constructor anchor falls back to 0,0,0 when atoms are empty", {
-  m <- Molecule3D(name = "empty", atoms = minimal_atoms(), bonds = minimal_bonds(), anchor = NULL)
-  expect_equal(m@anchor, c(x=0, y=0, z=0))
+  m <- Molecule3D(
+    name = "empty",
+    atoms = minimal_atoms(),
+    bonds = minimal_bonds(),
+    anchor = NULL
+  )
+  expect_equal(m@anchor, c(x = 0, y = 0, z = 0))
 })
 
 test_that("explicit anchor is respected (no override)", {
@@ -814,14 +1036,19 @@ test_that("explicit anchor is respected (no override)", {
     z = c(-5, 5)
   )
 
-  a <- c(x=1, y=2, z=3)
-  m <- Molecule3D(name = "explicit", atoms = atoms, bonds = minimal_bonds(), anchor = a)
+  a <- c(x = 1, y = 2, z = 3)
+  m <- Molecule3D(
+    name = "explicit",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = a
+  )
   expect_equal(m@anchor, a)
 })
 
 test_that("transform_molecule preserves original atom and bond IDs (non-contiguous) and moves anchor", {
   atoms <- data.frame(
-    eleno = c(1, 2, 5, 8),           # non-contiguous IDs
+    eleno = c(1, 2, 5, 8), # non-contiguous IDs
     elena = c("C", "O", "H", "H"),
     x = c(0, 1, 2, 3),
     y = c(0, 0, 0, 0),
@@ -843,7 +1070,9 @@ test_that("transform_molecule preserves original atom and bond IDs (non-contiguo
 
   # Simple translation
   shift <- c(10, -2, 7)
-  tfn <- function(p) c(x = p["x"] + shift[1], y = p["y"] + shift[2], z = p["z"] + shift[3])
+  tfn <- function(p) {
+    c(x = p["x"] + shift[1], y = p["y"] + shift[2], z = p["z"] + shift[3])
+  }
 
   m2 <- transform_molecule(m, tfn)
 
@@ -863,9 +1092,14 @@ test_that("anchor defaulting uses z coordinate (regression guard)", {
     y = c(0, 0),
     z = c(5, 7)
   )
-  m <- Molecule3D(name = "reg", atoms = atoms, bonds = minimal_bonds(), anchor = NULL)
+  m <- Molecule3D(
+    name = "reg",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = NULL
+  )
   # If z is mistakenly computed from y, this would be 0 instead of 6
-  expect_equal(m@anchor, c(x=0, y=0, z=6))
+  expect_equal(m@anchor, c(x = 0, y = 0, z = 6))
 })
 
 test_that("anchor default handles NA coordinates by ignoring them (if any present)", {
@@ -877,10 +1111,19 @@ test_that("anchor default handles NA coordinates by ignoring them (if any presen
     z = c(1, 3, NA)
   )
   # When NA present and na.rm=TRUE, means are computed from available values
-  m <- Molecule3D(name = "na", atoms = atoms, bonds = minimal_bonds(), anchor = NULL)
+  m <- Molecule3D(
+    name = "na",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = NULL
+  )
   expect_equal(
     m@anchor,
-    c(x=mean(c(0, 2), na.rm = TRUE), y=mean(c(4, 6), na.rm = TRUE), z=mean(c(1, 3), na.rm = TRUE))
+    c(
+      x = mean(c(0, 2), na.rm = TRUE),
+      y = mean(c(4, 6), na.rm = TRUE),
+      z = mean(c(1, 3), na.rm = TRUE)
+    )
   )
 })
 
@@ -892,9 +1135,9 @@ test_that("add_dummy_atom: adds 1 atom with next ID and a single bond to C", {
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   bonds <- data.frame(
     bond_id = numeric(0),
@@ -902,15 +1145,20 @@ test_that("add_dummy_atom: adds 1 atom with next ID and a single bond to C", {
     target_atom_id = numeric(0),
     bond_type = character(0)
   )
-  m <- Molecule3D("triad", atoms = atoms, bonds = bonds, anchor = c(0,0,0))
+  m <- Molecule3D("triad", atoms = atoms, bonds = bonds, anchor = c(0, 0, 0))
   max_atom <- m@maximum_atom_id
   max_bond <- m@maximum_bond_id
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = 1.5, torsion_angle = 60, bond_angle = 109.5,
-    bond_type = "1", elena = "Du"
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = 1.5,
+    torsion_angle = 60,
+    bond_angle = 109.5,
+    bond_type = "1",
+    elena = "Du"
   )
 
   # Atom count increases by 1
@@ -938,9 +1186,9 @@ test_that("add_dummy_atom: works when molecule already has bonds (bond_id increm
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   bonds <- data.frame(
     bond_id = c(1L, 2L),
@@ -952,9 +1200,14 @@ test_that("add_dummy_atom: works when molecule already has bonds (bond_id increm
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = 1.0, torsion_angle = 0, bond_angle = 90,
-    bond_type = "ar", elena = "Du"
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = 1.0,
+    torsion_angle = 0,
+    bond_angle = 90,
+    bond_type = "ar",
+    elena = "Du"
   )
 
   # Bond table got one extra row
@@ -965,24 +1218,32 @@ test_that("add_dummy_atom: works when molecule already has bonds (bond_id increm
 
   # New bond connects (new_id -> 3) and has the specified type
   new_id <- max(m2@atoms$eleno)
-  expect_true(any(with(m2@bonds, origin_atom_id == new_id & target_atom_id == 3 & bond_type == "ar")))
+  expect_true(any(with(
+    m2@bonds,
+    origin_atom_id == new_id & target_atom_id == 3 & bond_type == "ar"
+  )))
 })
 
 test_that("add_dummy_atom: default elena can be overridden", {
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = 1.2, torsion_angle = 30, bond_angle = 100,
-    bond_type = "2", elena = "Xx"
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = 1.2,
+    torsion_angle = 30,
+    bond_angle = 100,
+    bond_type = "2",
+    elena = "Xx"
   )
 
   new_id <- max(m2@atoms$eleno)
@@ -993,17 +1254,21 @@ test_that("add_dummy_atom: errors when reference atoms are missing", {
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
 
   expect_error(
     add_dummy_atom(
       molecule = m,
-      atom_id_a = 1, atom_id_b = 2, atom_id_c = 999,   # <-- missing
-      bond_length = 1.0, torsion_angle = 0, bond_angle = 90
+      atom_id_a = 1,
+      atom_id_b = 2,
+      atom_id_c = 999, # <-- missing
+      bond_length = 1.0,
+      torsion_angle = 0,
+      bond_angle = 90
     ),
     regexp = "could not be found|not.*found",
     ignore.case = TRUE
@@ -1014,20 +1279,24 @@ test_that("add_dummy_atom: creates a bond when no bonds existed before (bond_id 
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = 1.0, torsion_angle = 0, bond_angle = 90
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = 1.0,
+    torsion_angle = 0,
+    bond_angle = 90
   )
 
   expect_equal(nrow(m2@bonds), 1)
-  expect_identical(m2@bonds$bond_id, 1)  # starts at 1 when previously empty
+  expect_identical(m2@bonds$bond_id, 1) # starts at 1 when previously empty
 })
 
 test_that("add_dummy_atom: geometry matches compas::calCo (if available)", {
@@ -1036,23 +1305,34 @@ test_that("add_dummy_atom: geometry matches compas::calCo (if available)", {
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
 
   # Reference positions for A, B, C
   ref_pos <- fetch_atom_position(m, c(1, 2, 3))
   # Choose simple internal coordinates
-  L <- 1.5; tau <- 60; ang <- 109.5
+  L <- 1.5
+  tau <- 60
+  ang <- 109.5
 
-  expected <- compas::calCo(prev_atoms = ref_pos, length = L, bAngle = ang, tAngle = tau)
+  expected <- compas::calCo(
+    prev_atoms = ref_pos,
+    length = L,
+    bAngle = ang,
+    tAngle = tau
+  )
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = L, torsion_angle = tau, bond_angle = ang
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = L,
+    torsion_angle = tau,
+    bond_angle = ang
   )
 
   new_id <- max(m2@atoms$eleno)
@@ -1065,16 +1345,20 @@ test_that("add_dummy_atom: types are correct (numeric IDs, character bond_type)"
   atoms <- data.frame(
     eleno = c(1, 2, 3),
     elena = c("A", "B", "C"),
-    x = c(0,  1,  1),
-    y = c(0,  0,  1),
-    z = c(0,  0,  0)
+    x = c(0, 1, 1),
+    y = c(0, 0, 1),
+    z = c(0, 0, 0)
   )
   m <- Molecule3D("triad", atoms = atoms, bonds = minimal_bonds())
 
   m2 <- add_dummy_atom(
     molecule = m,
-    atom_id_a = 1, atom_id_b = 2, atom_id_c = 3,
-    bond_length = 1.3, torsion_angle = 10, bond_angle = 100,
+    atom_id_a = 1,
+    atom_id_b = 2,
+    atom_id_c = 3,
+    bond_length = 1.3,
+    torsion_angle = 10,
+    bond_angle = 100,
     bond_type = "am"
   )
 
@@ -1088,7 +1372,6 @@ test_that("add_dummy_atom: types are correct (numeric IDs, character bond_type)"
 
 # Test eleno by bond network ----------------------------------------------
 
-
 # Helper to make a simple Molecule3D from an undirected edge list
 .make_mol_from_edges <- function(edges, n_atoms = NULL, name = "testmol") {
   if (is.null(n_atoms)) {
@@ -1097,7 +1380,9 @@ test_that("add_dummy_atom: types are correct (numeric IDs, character bond_type)"
   atoms <- data.frame(
     eleno = seq_len(n_atoms),
     elena = rep("C", n_atoms),
-    x = seq_len(n_atoms), y = 0, z = 0
+    x = seq_len(n_atoms),
+    y = 0,
+    z = 0
   )
   if (is.null(edges) || nrow(edges) == 0) {
     bonds <- minimal_bonds()
@@ -1122,20 +1407,28 @@ testthat::test_that("Linear chain splits correctly and honors direction", {
   m <- .make_mol_from_edges(edges, n_atoms = 4)
 
   # Direction toward atom 2 => cluster should be {1,2}
-  ids_left <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 2)
+  ids_left <- fetch_eleno_downstream_of_bond(
+    m,
+    bond_id = 2,
+    direction_atom_id = 2
+  )
   testthat::expect_setequal(ids_left, c(1, 2))
   testthat::expect_true(2 %in% ids_left)
   testthat::expect_type(ids_left, "double")
 
   # Direction toward atom 3 => cluster should be {3,4}
-  ids_right <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 3)
+  ids_right <- fetch_eleno_downstream_of_bond(
+    m,
+    bond_id = 2,
+    direction_atom_id = 3
+  )
   testthat::expect_setequal(ids_right, c(3, 4))
   testthat::expect_true(3 %in% ids_right)
 })
 
 testthat::test_that("Errors when direction atom not on the bond", {
   # Chain 1-2-3-4; ask for bond (2) but direction atom 4 (not an endpoint of bond 2)
-  edges <- rbind(c(1,2), c(2,3), c(3,4))
+  edges <- rbind(c(1, 2), c(2, 3), c(3, 4))
   m <- .make_mol_from_edges(edges, n_atoms = 4)
 
   testthat::expect_error(
@@ -1145,7 +1438,7 @@ testthat::test_that("Errors when direction atom not on the bond", {
 })
 
 testthat::test_that("Errors when bond_id is invalid", {
-  edges <- rbind(c(1,2), c(2,3))
+  edges <- rbind(c(1, 2), c(2, 3))
   m <- .make_mol_from_edges(edges, n_atoms = 3)
 
   testthat::expect_error(
@@ -1170,14 +1463,13 @@ testthat::test_that("Non-splitting break (cycle) raises 'All points remain conne
 })
 
 testthat::test_that("Return includes the direction atom and is numeric", {
-  edges <- rbind(c(1,2), c(2,3), c(3,4))
+  edges <- rbind(c(1, 2), c(2, 3), c(3, 4))
   m <- .make_mol_from_edges(edges, n_atoms = 4)
 
   res <- fetch_eleno_downstream_of_bond(m, bond_id = 2, direction_atom_id = 3)
   testthat::expect_true(3 %in% res)
   testthat::expect_true(is.numeric(res))
 })
-
 
 
 # Test eleno connected by class -------------------------------------------
@@ -1256,7 +1548,9 @@ test_that("is_molecule returns TRUE for Molecule3D objects", {
   atoms <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(
     bond_id = 1,
@@ -1274,22 +1568,28 @@ test_that("is_molecule returns FALSE for non-molecule inputs", {
   expect_false(is_molecule(1:3))
 
   # Also FALSE for other structures classes
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
   expect_false(is_molecule(ax))
 })
-
 
 
 # Test Symmetry Axes -----------------------------------------------------------
 test_that("Molecule3D initializes with empty symmetry axes", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
-  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection())
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection()
+  )
 
   expect_false(m@contains_symmetry_elements)
   expect_length(m@symmetry_elements@unique_proper_axis_orders, n = 0)
@@ -1299,15 +1599,17 @@ test_that("Molecule3D initializes with empty symmetry axes", {
 test_that("add_symmetry_element_to_molecule appends a valid ProperRotationAxis and updates derived properties", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax3 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax3 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- add_symmetry_element_to_molecule(m, ax2)
   expect_true(m@contains_symmetry_elements)
@@ -1322,16 +1624,18 @@ test_that("add_symmetry_element_to_molecule appends a valid ProperRotationAxis a
 test_that("fetch_all_proper_rotation_axes_with_order returns only matching axes", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2a <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2b <- ProperRotationAxis(n = 2L, posA = c(0,1,0), posB = c(0,1,1))
-  ax3  <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2a <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2b <- ProperRotationAxis(n = 2L, posA = c(0, 1, 0), posB = c(0, 1, 1))
+  ax3 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- add_symmetry_element_to_molecule(m, ax2a)
   m <- add_symmetry_element_to_molecule(m, ax2b)
@@ -1353,27 +1657,42 @@ test_that("fetch_all_proper_rotation_axes_with_order returns only matching axes"
 test_that("constructor rejects non-ProperRotationAxis entries in symmetry_axes", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
   # symmetry_axes contains an invalid element (numeric 1)
   expect_error(
-    Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_axes = list(1)),
-    "ProperRotationAxis|symmetry_axes", ignore.case = TRUE
+    Molecule3D(
+      name = "CO",
+      atoms = atoms,
+      bonds = bonds,
+      symmetry_axes = list(1)
+    ),
+    "ProperRotationAxis|symmetry_axes",
+    ignore.case = TRUE
   )
 })
 
 test_that("returns NULL when no symmetry axes are present", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
-  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection())
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection()
+  )
   out <- fetch_all_proper_rotation_axes_with_order(m, 2L)
   expect_null(out)
 })
@@ -1381,15 +1700,17 @@ test_that("returns NULL when no symmetry axes are present", {
 test_that("returns only axes with matching Cn and preserves multiplicity", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax2a <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2b <- ProperRotationAxis(n = 2L, posA = c(0,1,0), posB = c(0,1,1))
-  ax3  <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax2a <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2b <- ProperRotationAxis(n = 2L, posA = c(0, 1, 0), posB = c(0, 1, 1))
+  ax3 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- add_symmetry_element_to_molecule(m, ax2a)
   m <- add_symmetry_element_to_molecule(m, ax2b)
@@ -1408,16 +1729,21 @@ test_that("returns only axes with matching Cn and preserves multiplicity", {
 test_that("numeric vs integer Cn inputs behave equivalently", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  m <- add_symmetry_element_to_molecule(m, ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1)))
+  m <- add_symmetry_element_to_molecule(
+    m,
+    ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  )
 
   out_int <- fetch_all_proper_rotation_axes_with_order(m, 2L)
-  out_num <- fetch_all_proper_rotation_axes_with_order(m, 2)    # double
+  out_num <- fetch_all_proper_rotation_axes_with_order(m, 2) # double
   out_num0 <- fetch_all_proper_rotation_axes_with_order(m, 2.0) # double
 
   expect_equal(length(out_int), 1L)
@@ -1428,13 +1754,18 @@ test_that("numeric vs integer Cn inputs behave equivalently", {
 test_that("returns empty list (not NULL) when axes exist but none match n", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  m <- add_symmetry_element_to_molecule(m, ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1)))
+  m <- add_symmetry_element_to_molecule(
+    m,
+    ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  )
 
   out <- fetch_all_proper_rotation_axes_with_order(m, 2L)
   expect_true(is.list(out))
@@ -1445,27 +1776,36 @@ test_that("returns empty list (not NULL) when axes exist but none match n", {
 test_that("add_symmetry_element_to_molecule rejects wrong classes", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
-    x = c(0, 1), y = c(0, 0), z = c(0, 0)
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
 
   m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
   # wrong: symmetry_axis not a ProperRotationAxis
-  expect_error(add_symmetry_element_to_molecule(m, 123), "SymmetryElement", ignore.case = TRUE)
+  expect_error(
+    add_symmetry_element_to_molecule(m, 123),
+    "SymmetryElement",
+    ignore.case = TRUE
+  )
 
   # wrong: molecule not a Molecule3D
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  expect_error(add_symmetry_element_to_molecule(list(), ax), "Molecule3D", ignore.case = TRUE)
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  expect_error(
+    add_symmetry_element_to_molecule(list(), ax),
+    "Molecule3D",
+    ignore.case = TRUE
+  )
 })
-
 
 
 # Test Symmetry Axes IDs ---------------------------------------------------------------------
 test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
-  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- Molecule3D(
     name = "X",
@@ -1480,15 +1820,20 @@ test_that("unnamed symmetry_axes get sequential numeric IDs via constructor", {
 })
 
 test_that("setting symmetry_axes with duplicate IDs errors (validator)", {
-  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
 
   m@symmetry_elements <- SymmetryElementCollection(list(ax1), ids = 1)
 
   expect_error(
-    { m@symmetry_elements <-SymmetryElementCollection(list(ax1, ax1), ids = c(1, 1)) },
+    {
+      m@symmetry_elements <- SymmetryElementCollection(
+        list(ax1, ax1),
+        ids = c(1, 1)
+      )
+    },
     regexp = "unique|duplicate|ID|identifier",
     ignore.case = TRUE
   )
@@ -1496,7 +1841,7 @@ test_that("setting symmetry_axes with duplicate IDs errors (validator)", {
 
 test_that("add_symmetry_element_to_molecule appends with next numeric ID when none exist", {
   m <- Molecule3D(name = "X", atoms = minimal_atoms(), bonds = minimal_bonds())
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- add_symmetry_element_to_molecule(m, ax)
   expect_identical(m@symmetry_elements@ids, 1)
@@ -1506,7 +1851,7 @@ test_that("add_symmetry_element_to_molecule appends with next numeric ID when no
 })
 
 test_that("add_symmetry_element_to_molecule uses max numeric among existing IDs", {
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- Molecule3D(
     name = "X",
@@ -1516,7 +1861,7 @@ test_that("add_symmetry_element_to_molecule uses max numeric among existing IDs"
   )
 
   m <- add_symmetry_element_to_molecule(m, ax)
-  ids <-m@symmetry_elements@ids
+  ids <- m@symmetry_elements@ids
 
   expect_true(3 %in% ids)
   expect_true(all(nzchar(ids)))
@@ -1524,7 +1869,7 @@ test_that("add_symmetry_element_to_molecule uses max numeric among existing IDs"
 })
 
 test_that("add_symmetry_element_to_molecule starts at '1' if none are supplied", {
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- Molecule3D(
     name = "X",
@@ -1539,8 +1884,8 @@ test_that("add_symmetry_element_to_molecule starts at '1' if none are supplied",
 
 
 test_that("transform_molecule keeps the symmetry axis IDs intact", {
-  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1))
+  ax1 <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  ax2 <- ProperRotationAxis(n = 3L, posA = c(1, 0, 0), posB = c(1, 0, 1))
 
   m <- Molecule3D(
     name = "X",
@@ -1557,13 +1902,27 @@ test_that("transform_molecule keeps the symmetry axis IDs intact", {
 })
 
 
-
 # Test Symmetry Axes Dataframe --------------------------------------------
 
 test_that("symmetry_axes_dataframe returns zero-row df with expected columns when no axes", {
-  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
-  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
-  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection())
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0)
+  )
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection()
+  )
 
   df <- m@symmetry_elements@summary
 
@@ -1576,11 +1935,31 @@ test_that("symmetry_axes_dataframe returns zero-row df with expected columns whe
 })
 
 test_that("symmetry_element summary returns one row with correct values and id", {
-  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
-  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0)
+  )
 
-  ax <- ProperRotationAxis(n = 3L, posA = c(0,0,0), posB = c(0,0,1), label = "axis-A")
-  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection(list(ax), ids = 5))
+  ax <- ProperRotationAxis(
+    n = 3L,
+    posA = c(0, 0, 0),
+    posB = c(0, 0, 1),
+    label = "axis-A"
+  )
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection(list(ax), ids = 5)
+  )
 
   df <- m@symmetry_elements@summary
 
@@ -1590,35 +1969,83 @@ test_that("symmetry_element summary returns one row with correct values and id",
 })
 
 test_that("symmetry_axes_dataframe preserves order and IDs for multiple axes", {
-  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
-  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0)
+  )
 
-  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
-  ax2 <- ProperRotationAxis(n = 3L, posA = c(1,0,0), posB = c(1,0,1), label = "B")
-  ax3 <- ProperRotationAxis(n = 4L, posA = c(2,0,0), posB = c(2,0,1), label = "C")
+  ax1 <- ProperRotationAxis(
+    n = 2L,
+    posA = c(0, 0, 0),
+    posB = c(0, 0, 1),
+    label = "A"
+  )
+  ax2 <- ProperRotationAxis(
+    n = 3L,
+    posA = c(1, 0, 0),
+    posB = c(1, 0, 1),
+    label = "B"
+  )
+  ax3 <- ProperRotationAxis(
+    n = 4L,
+    posA = c(2, 0, 0),
+    posB = c(2, 0, 1),
+    label = "C"
+  )
 
   m <- Molecule3D(
     name = "CO",
     atoms = atoms,
     bonds = bonds,
-    symmetry_elements = SymmetryElementCollection(list(ax1,ax2, ax3), ids = c(10, 20, 30))
+    symmetry_elements = SymmetryElementCollection(
+      list(ax1, ax2, ax3),
+      ids = c(10, 20, 30)
+    )
   )
 
   df <- m@symmetry_elements@summary
   expect_equal(nrow(df), 3L)
   expect_identical(df$id, c(10, 20, 30))
-  expect_identical(df$label, c("A","B","C"))
+  expect_identical(df$label, c("A", "B", "C"))
   expect_identical(m@symmetry_elements@unique_proper_axis_orders, c(2, 3, 4))
 })
 
 test_that("symmetry_axes_dataframe updates after transform_molecule and preserves IDs", {
-  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
-  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(1,0,0), label = "A")
-  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection(list(ax), ids = 7))
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0)
+  )
+  ax <- ProperRotationAxis(
+    n = 2L,
+    posA = c(0, 0, 0),
+    posB = c(1, 0, 0),
+    label = "A"
+  )
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection(list(ax), ids = 7)
+  )
 
   # Translate by (+1, +2, +3)
-  translate <- function(p, dx=0, dy=0, dz=0) {
+  translate <- function(p, dx = 0, dy = 0, dz = 0) {
     c(x = p["x"] + dx, y = p["y"] + dy, z = p["z"] + dz)
   }
   m2 <- transform_molecule(m, translate, dx = 1, dy = 2, dz = 3)
@@ -1628,17 +2055,37 @@ test_that("symmetry_axes_dataframe updates after transform_molecule and preserve
 
   expect_equal(df$ids, 7)
   symaxis <- m2@symmetry_elements@elements[[1]]
-  expect_equal(unname(symaxis@posA), c(1,2,3))
-  expect_equal(unname(symaxis@posB), c(2,2,3))
+  expect_equal(unname(symaxis@posA), c(1, 2, 3))
+  expect_equal(unname(symaxis@posB), c(2, 2, 3))
 })
 
 test_that("symmetry_axes_dataframe cooperates with add_proper_rotation_axis auto-ID generation", {
-  atoms <- data.frame(eleno = c(1,2), elena = c("C","O"), x = c(0,1), y = c(0,0), z = c(0,0))
-  bonds <- data.frame(bond_id = numeric(0), origin_atom_id = numeric(0), target_atom_id = numeric(0))
-  m  <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
+  atoms <- data.frame(
+    eleno = c(1, 2),
+    elena = c("C", "O"),
+    x = c(0, 1),
+    y = c(0, 0),
+    z = c(0, 0)
+  )
+  bonds <- data.frame(
+    bond_id = numeric(0),
+    origin_atom_id = numeric(0),
+    target_atom_id = numeric(0)
+  )
+  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds)
 
-  ax1 <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1), label = "A")
-  ax2 <- ProperRotationAxis(n = 3L, posA = c(0,1,0), posB = c(0,1,1), label = "B")
+  ax1 <- ProperRotationAxis(
+    n = 2L,
+    posA = c(0, 0, 0),
+    posB = c(0, 0, 1),
+    label = "A"
+  )
+  ax2 <- ProperRotationAxis(
+    n = 3L,
+    posA = c(0, 1, 0),
+    posB = c(0, 1, 1),
+    label = "B"
+  )
 
   m <- add_symmetry_element_to_molecule(m, ax1)
   m <- add_symmetry_element_to_molecule(m, ax2)
@@ -1654,9 +2101,7 @@ test_that("symmetry_axes_dataframe cooperates with add_proper_rotation_axis auto
 
 # Test Print Generic ------------------------------------------------------
 
-
 test_that("print.Molecule3D runs without error and returns invisible Molecule3D", {
-
   atoms <- data.frame(
     eleno = c(1, 2),
     elena = c("C", "O"),
@@ -1682,14 +2127,19 @@ test_that("print.Molecule3D runs without error and returns invisible Molecule3D"
 test_that("print.Molecule3D works even with symmetry axes present", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
+    elena = c("C", "O"),
     x = c(0, 1),
     y = c(0, 0),
     z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
-  ax <- ProperRotationAxis(n = 2L, posA = c(0,0,0), posB = c(0,0,1))
-  m <- Molecule3D(name = "CO", atoms = atoms, bonds = bonds, symmetry_elements = SymmetryElementCollection(list(ax)))
+  ax <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  m <- Molecule3D(
+    name = "CO",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection(list(ax))
+  )
 
   out <- NULL
   invisible(capture.output({
@@ -1713,7 +2163,7 @@ test_that("transform_molecule() translates atoms, anchor, and symmetry axes", {
     z = c(0, 0)
   )
   bonds <- data.frame(bond_id = 1, origin_atom_id = 1, target_atom_id = 2)
-  axis  <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  axis <- ProperRotationAxis(n = 2L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
   m <- Molecule3D(
     name = "CO",
@@ -1765,17 +2215,23 @@ test_that("transform_molecule() preserves Cn and rotates correctly about Z", {
   atoms <- data.frame(
     eleno = 1,
     elena = "C",
-    x = 1, y = 0, z = 0
+    x = 1,
+    y = 0,
+    z = 0
   )
   bonds <- minimal_bonds()
-  axis  <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
+  axis <- ProperRotationAxis(n = 3L, posA = c(0, 0, 0), posB = c(0, 0, 1))
 
-  m <- Molecule3D("Rot", atoms = atoms, bonds = bonds,
-                  symmetry_elements = SymmetryElementCollection(list(axis)),
-                  anchor = c(0, 0, 0))
+  m <- Molecule3D(
+    "Rot",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection(list(axis)),
+    anchor = c(0, 0, 0)
+  )
 
   rotate90_z <- function(p) {
-    a <- pi/2
+    a <- pi / 2
     c(
       x = p[1] * cos(a) - p[2] * sin(a),
       y = p[1] * sin(a) + p[2] * cos(a),
@@ -1786,12 +2242,23 @@ test_that("transform_molecule() preserves Cn and rotates correctly about Z", {
   m2 <- transform_molecule(m, rotate90_z)
 
   # atom moved (1,0,0) -> (0,1,0)
-  expect_equal(unname(unlist(m2@atoms[1, c("x", "y", "z")])),
-               c(0, 1, 0), tolerance = 1e-8)
+  expect_equal(
+    unname(unlist(m2@atoms[1, c("x", "y", "z")])),
+    c(0, 1, 0),
+    tolerance = 1e-8
+  )
 
   # axis along Z unchanged by rotation about Z
-  expect_equal(m2@symmetry_elements@elements[[1]]@posA, axis@posA, tolerance = 1e-12)
-  expect_equal(m2@symmetry_elements@elements[[1]]@posB, axis@posB, tolerance = 1e-12)
+  expect_equal(
+    m2@symmetry_elements@elements[[1]]@posA,
+    axis@posA,
+    tolerance = 1e-12
+  )
+  expect_equal(
+    m2@symmetry_elements@elements[[1]]@posB,
+    axis@posB,
+    tolerance = 1e-12
+  )
   expect_equal(m2@symmetry_elements@elements[[1]]@n, axis@n)
 })
 
@@ -1800,8 +2267,8 @@ test_that("transform_molecule() handles multiple symmetry axes and preserves ord
     eleno = c(1, 2, 3),
     elena = c("C", "O", "H"),
     x = c(0, 1, -1),
-    y = c(0, 0,  0),
-    z = c(0, 0,  0)
+    y = c(0, 0, 0),
+    z = c(0, 0, 0)
   )
   bonds <- data.frame(
     bond_id = c(1, 2),
@@ -1828,8 +2295,11 @@ test_that("transform_molecule() handles multiple symmetry axes and preserves ord
   m2 <- transform_molecule(m, translate_vec)
 
   # atoms translated
-  expect_equal(m2@atoms[, c("x", "y", "z")], m@atoms[, c("x", "y", "z")] +
-                 matrix(rep(v, each = nrow(m@atoms)), ncol = 3, byrow = FALSE))
+  expect_equal(
+    m2@atoms[, c("x", "y", "z")],
+    m@atoms[, c("x", "y", "z")] +
+      matrix(rep(v, each = nrow(m@atoms)), ncol = 3, byrow = FALSE)
+  )
 
   # axes translated
   expect_equal(m2@symmetry_elements@elements[[1]]@posA, ax1@posA + v)
@@ -1860,8 +2330,13 @@ test_that("transform_molecule() forwards ... arguments to transformation functio
   bonds <- minimal_bonds()
   ax <- ProperRotationAxis(n = 2L, posA = c(1, 1, 1), posB = c(2, 2, 2))
 
-  m <- Molecule3D("scale", atoms = atoms, bonds = bonds,
-                  symmetry_elements = SymmetryElementCollection(list(ax)), anchor = c(1, 1, 1))
+  m <- Molecule3D(
+    "scale",
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = SymmetryElementCollection(list(ax)),
+    anchor = c(1, 1, 1)
+  )
 
   # scale by factor passed through ...
   scale_by <- function(p, k) p * k
@@ -1898,10 +2373,14 @@ test_that("transform_molecule() keeps bond_positions coherent with atoms after t
   bp <- m2@bond_positions
 
   # Expect bond start equals translated atom 1, end equals translated atom 2
-  expect_equal(unname(unlist(bp[1, c("x", "y", "z")])),
-               unname(unlist(m2@atoms[m2@atoms$eleno == 1, c("x", "y", "z")])))
-  expect_equal(unname(unlist(bp[1, c("xend", "yend", "zend")])),
-               unname(unlist(m2@atoms[m2@atoms$eleno == 2, c("x", "y", "z")])))
+  expect_equal(
+    unname(unlist(bp[1, c("x", "y", "z")])),
+    unname(unlist(m2@atoms[m2@atoms$eleno == 1, c("x", "y", "z")]))
+  )
+  expect_equal(
+    unname(unlist(bp[1, c("xend", "yend", "zend")])),
+    unname(unlist(m2@atoms[m2@atoms$eleno == 2, c("x", "y", "z")]))
+  )
 })
 
 test_that("transform_molecule() returns a Molecule3D and mutates as expected", {
@@ -1930,7 +2409,11 @@ test_that("transform_molecule() returns a Molecule3D and mutates as expected", {
 
 test_that("transform_molecule() errors on wrong inputs", {
   atoms <- data.frame(
-    eleno = 1, elena = "C", x = 0, y = 0, z = 0
+    eleno = 1,
+    elena = "C",
+    x = 0,
+    y = 0,
+    z = 0
   )
   m <- Molecule3D("bad", atoms = atoms, bonds = minimal_bonds())
 
@@ -1949,7 +2432,12 @@ test_that("transform_molecule() surfaces errors from malformed transformation re
     y = c(0, 0),
     z = c(0, 0)
   )
-  m <- Molecule3D("CO", atoms = atoms, bonds = minimal_bonds(), anchor = c(0, 0, 0))
+  m <- Molecule3D(
+    "CO",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    anchor = c(0, 0, 0)
+  )
   # Return wrong length -> vapply should error
   bad_transform <- function(p) c(99, 100) # length 2 instead of 3
   expect_error(transform_molecule(m, bad_transform))
@@ -1961,17 +2449,17 @@ test_that("transform_molecule() surfaces errors from malformed transformation re
 test_that("Molecule3D defaults mol_type and charge_type when NULL", {
   atoms <- data.frame(
     eleno = c(1, 2),
-    elena = c("C","O"),
+    elena = c("C", "O"),
     x = c(0, 1),
     y = c(0, 0),
     z = c(0, 0)
   )
 
   m <- Molecule3D(
-    name   = "default-types",
-    atoms  = atoms,
-    bonds  = minimal_bonds(),
-    mol_type    = NULL,
+    name = "default-types",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    mol_type = NULL,
     charge_type = NULL
   )
 
@@ -1983,14 +2471,16 @@ test_that("Molecule3D accepts valid mol_type and charge_type values", {
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
 
   m <- Molecule3D(
-    name   = "explicit-types",
-    atoms  = atoms,
-    bonds  = minimal_bonds(),
-    mol_type    = "BIOPOLYMER",
+    name = "explicit-types",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    mol_type = "BIOPOLYMER",
     charge_type = "MMFF94_CHARGES"
   )
 
@@ -2002,15 +2492,17 @@ test_that("Molecule3D rejects invalid mol_type values", {
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
 
   expect_error(
     Molecule3D(
-      name   = "bad-mol-type",
-      atoms  = atoms,
-      bonds  = minimal_bonds(),
-      mol_type    = "BANANA",
+      name = "bad-mol-type",
+      atoms = atoms,
+      bonds = minimal_bonds(),
+      mol_type = "BANANA",
       charge_type = "NO_CHARGES"
     ),
     regexp = "mol_type.*valid SYBYL molecule types",
@@ -2020,10 +2512,10 @@ test_that("Molecule3D rejects invalid mol_type values", {
   # length > 1
   expect_error(
     Molecule3D(
-      name   = "bad-mol-type-length",
-      atoms  = atoms,
-      bonds  = minimal_bonds(),
-      mol_type    = c("SMALL", "PROTEIN"),
+      name = "bad-mol-type-length",
+      atoms = atoms,
+      bonds = minimal_bonds(),
+      mol_type = c("SMALL", "PROTEIN"),
       charge_type = "NO_CHARGES"
     ),
     regexp = "length of @mol_type must be 1",
@@ -2035,15 +2527,17 @@ test_that("Molecule3D rejects invalid charge_type values", {
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
 
   expect_error(
     Molecule3D(
-      name   = "bad-charge-type",
-      atoms  = atoms,
-      bonds  = minimal_bonds(),
-      mol_type    = "SMALL",
+      name = "bad-charge-type",
+      atoms = atoms,
+      bonds = minimal_bonds(),
+      mol_type = "SMALL",
       charge_type = "ELECTRIC_EEL"
     ),
     regexp = "charge_type.*valid SYBYL molecule types",
@@ -2052,10 +2546,10 @@ test_that("Molecule3D rejects invalid charge_type values", {
 
   expect_error(
     Molecule3D(
-      name   = "bad-charge-type-length",
-      atoms  = atoms,
-      bonds  = minimal_bonds(),
-      mol_type    = "SMALL",
+      name = "bad-charge-type-length",
+      atoms = atoms,
+      bonds = minimal_bonds(),
+      mol_type = "SMALL",
       charge_type = c("NO_CHARGES", "MMFF94_CHARGES")
     ),
     regexp = "length of @charge_type must be 1",
@@ -2067,13 +2561,20 @@ test_that("mol_type and charge_type setters normalise NULL to defaults", {
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
-  m <- Molecule3D("setter-test", atoms = atoms, bonds = minimal_bonds(),
-                  mol_type = "PROTEIN", charge_type = "MMFF94_CHARGES")
+  m <- Molecule3D(
+    "setter-test",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    mol_type = "PROTEIN",
+    charge_type = "MMFF94_CHARGES"
+  )
 
   # Explicitly setting to NULL goes back to defaults via setter
-  m@mol_type    <- NULL
+  m@mol_type <- NULL
   m@charge_type <- NULL
 
   expect_equal(m@mol_type, "SMALL")
@@ -2087,7 +2588,9 @@ test_that("valid_molecule_types() returns the expected SYBYL molecule types", {
   types <- valid_molecule_types()
 
   expect_true(is.character(types))
-  expect_true(all(c("SMALL", "BIOPOLYMER", "PROTEIN", "NUCLEIC_ACID", "SACCHARIDE") %in% types))
+  expect_true(all(
+    c("SMALL", "BIOPOLYMER", "PROTEIN", "NUCLEIC_ACID", "SACCHARIDE") %in% types
+  ))
 
   # No obvious junk values
   expect_false(any(types == ""))
@@ -2097,7 +2600,9 @@ test_that("valid_charge_types() returns the expected SYBYL charge types", {
   types <- valid_charge_types()
 
   expect_true(is.character(types))
-  expect_true(all(c("NO_CHARGES", "GASTEIGER", "MMFF94_CHARGES", "USER_CHARGES") %in% types))
+  expect_true(all(
+    c("NO_CHARGES", "GASTEIGER", "MMFF94_CHARGES", "USER_CHARGES") %in% types
+  ))
   expect_false(any(types == ""))
 })
 
@@ -2105,21 +2610,22 @@ test_that("Molecule3D mol_type and charge_type are always members of valid_* hel
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 0, y = 0, z = 0
+    x = 0,
+    y = 0,
+    z = 0
   )
 
   m <- Molecule3D(
-    name   = "consistency",
-    atoms  = atoms,
-    bonds  = minimal_bonds(),
-    mol_type    = "PROTEIN",
+    name = "consistency",
+    atoms = atoms,
+    bonds = minimal_bonds(),
+    mol_type = "PROTEIN",
     charge_type = "DEL_RE"
   )
 
-  expect_true(m@mol_type    %in% valid_molecule_types())
+  expect_true(m@mol_type %in% valid_molecule_types())
   expect_true(m@charge_type %in% valid_charge_types())
 })
-
 
 
 # Test Renumbering Atom/Bond IDs ------------------------------------------
@@ -2128,7 +2634,9 @@ test_that("renumber_atoms_and_bonds() renumbers atoms to 1..N and updates bond e
   atoms <- data.frame(
     eleno = c(2, 5, 10),
     elena = c("C", "O", "H"),
-    x = 0:2, y = 0, z = 0
+    x = 0:2,
+    y = 0,
+    z = 0
   )
   bonds <- data.frame(
     bond_id = c(7, 20),
@@ -2152,7 +2660,9 @@ test_that("renumber_atoms_and_bonds() renumbers bond_id to 1..N", {
   atoms <- data.frame(
     eleno = 1:3,
     elena = c("C", "O", "H"),
-    x = 0:2, y = 0, z = 0
+    x = 0:2,
+    y = 0,
+    z = 0
   )
   bonds <- data.frame(
     bond_id = c(10, 30, 50),
@@ -2171,7 +2681,9 @@ test_that("renumber_atoms_and_bonds() works when no bonds are present", {
   atoms <- data.frame(
     eleno = c(10, 20),
     elena = c("C", "O"),
-    x = 0:1, y = 0, z = 0
+    x = 0:1,
+    y = 0,
+    z = 0
   )
   m <- Molecule3D("nobonds", atoms = atoms, bonds = minimal_bonds())
 
@@ -2186,7 +2698,9 @@ test_that("renumber_atoms_and_bonds() preserves atom row order", {
   atoms <- data.frame(
     eleno = c(100, 5, 42),
     elena = c("C", "O", "H"),
-    x = c(3, 1, 2), y = 0, z = 0
+    x = c(3, 1, 2),
+    y = 0,
+    z = 0
   )
   m <- Molecule3D("order", atoms = atoms, bonds = minimal_bonds())
 
@@ -2201,7 +2715,9 @@ test_that("renumber_atoms_and_bonds() preserves non-ID molecule properties", {
   atoms <- data.frame(
     eleno = c(2, 4),
     elena = c("C", "O"),
-    x = 0:1, y = 0, z = 0
+    x = 0:1,
+    y = 0,
+    z = 0
   )
   bonds <- data.frame(
     bond_id = 9,
@@ -2227,7 +2743,9 @@ test_that("renumber_atoms_and_bonds() returns new Molecule3D without mutating in
   atoms <- data.frame(
     eleno = c(3, 7),
     elena = c("C", "O"),
-    x = 0:1, y = 0, z = 0
+    x = 0:1,
+    y = 0,
+    z = 0
   )
   m <- Molecule3D("immut", atoms = atoms, bonds = minimal_bonds())
 
