@@ -59,10 +59,12 @@ print(molecule)
 #> Name: benzene
 #> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Molecule type: SMALL
+#> Charge type: GASTEIGER
+#> -------------------
 #> Symmetry Elements: 0
 #> Symmetry Axes: 0
 #> Symmetry Orders (Cn): 
-#> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
@@ -261,10 +263,12 @@ print(molecule)
 #> Name: benzene
 #> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Molecule type: SMALL
+#> Charge type: GASTEIGER
+#> -------------------
 #> Symmetry Elements: 1
 #> Symmetry Axes: 1
 #> Symmetry Orders (Cn): 6
-#> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
@@ -330,10 +334,12 @@ rotate_molecule_so_symmetry_axis_aligns_with_vector(
 #> Name: benzene
 #> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Molecule type: SMALL
+#> Charge type: GASTEIGER
+#> -------------------
 #> Symmetry Elements: 1
 #> Symmetry Axes: 1
 #> Symmetry Orders (Cn): 6
-#> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
@@ -351,10 +357,12 @@ rotate_molecule_around_symmetry_axis(
 #> Name: benzene
 #> Atoms: 12 (0 dummy atoms)
 #> Bonds: 12
+#> Molecule type: SMALL
+#> Charge type: GASTEIGER
+#> -------------------
 #> Symmetry Elements: 1
 #> Symmetry Axes: 1
 #> Symmetry Orders (Cn): 6
-#> 
 #> -------------------
 #> See @atoms paramater for atom positions
 #> See @bonds paramater for bond positions
@@ -416,3 +424,10 @@ citation("structures")
 #>     url = {https://github.com/selkamand/structures},
 #>   }
 ```
+
+## Contributions
+
+Contributions of any size are welcome. Before submitting a pull request
+please create an issue describing the bug / feature. Do not stress about
+style guidelines in your pull requests, the will be automatically
+formatted with air when submitted.
