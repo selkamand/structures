@@ -6,3 +6,5 @@
 ^\.positai$
 ^\.claude$
 ^vignettes/articles$
+^[.]?air[.]toml$
+^\.vscode$
