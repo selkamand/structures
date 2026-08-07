@@ -29,7 +29,10 @@ SymmetryElement <- S7::new_class(
       class = S7::class_character,
       validator = function(value) {
         if (length(value) != 1) {
-          return(sprintf("Symmetry element @label must be a string, not a character vector of length [%s]", length(value)))
+          return(sprintf(
+            "Symmetry element @label must be a string, not a character vector of length [%s]",
+            length(value)
+          ))
         }
         if (is.na(value)) {
           return("Symmetry element @label must NOT be a missing (NA) value")
@@ -49,14 +52,18 @@ SymmetryElement <- S7::new_class(
       },
       validator = function(value) {
         if (length(value) != 1) {
-          return(sprintf("Symmetry element @type must be a string, not a character vector of length [%s]. If you're seeing this message there is probably an error in the identify_symmetry_type function. Please alert package authors", length(value)))
+          return(sprintf(
+            "Symmetry element @type must be a string, not a character vector of length [%s]. If you're seeing this message there is probably an error in the identify_symmetry_type function. Please alert package authors",
+            length(value)
+          ))
         }
 
         valid_symmetry_element_types <- valid_symmetry_element_types()
         if (!value %in% valid_symmetry_element_types) {
           return(sprintf(
             "Symmetry element @type must be one of [%s], not [%s]. If you're seeing this message there is probably an error in the identify_symmetry_type function. Please alert package authors",
-            toString(valid_symmetry_element_types), toString(value)
+            toString(valid_symmetry_element_types),
+            toString(value)
           ))
         }
 
@@ -91,20 +98,24 @@ SymmetryElement <- S7::new_class(
 #'
 #' @export
 transform_symmetry_element <- S7::new_generic(
-  name = "transform_symmetry_element", "x"
+  name = "transform_symmetry_element",
+  "x"
 )
 
 # If we end up adding more SymmetryElement subclasses later and forget to define a transform_symmetry_element methods
 # the code below will force a loud error
 #' @export
-S7::method(transform_symmetry_element, SymmetryElement) <- function(x, transformation, ...) {
+S7::method(transform_symmetry_element, SymmetryElement) <- function(
+  x,
+  transformation,
+  ...
+) {
   stop(
     "No transform_symmetry_element() method implemented for symmetry element of class: ",
     paste(class(x), collapse = " / ")
   )
 }
 # Symmetry Element Collection -------------------------------------------------------
-
 
 #' SymmetryElementCollection: a container for symmetry elements
 #'
@@ -185,7 +196,6 @@ S7::method(transform_symmetry_element, SymmetryElement) <- function(x, transform
 SymmetryElementCollection <- S7::new_class(
   name = "SymmetryElementCollection",
   properties = list(
-
     ### Writable --------------------------------------------------------------
     elements = S7::class_list,
     ids = S7::class_numeric,
@@ -202,8 +212,12 @@ SymmetryElementCollection <- S7::new_class(
     ),
     summary = S7::new_property(
       class = S7::class_data.frame,
-      setter = function(self, value) { stop("@summary is a read only property") },
-      getter =  function(self){ as.data.frame(self) }
+      setter = function(self, value) {
+        stop("@summary is a read only property")
+      },
+      getter = function(self) {
+        as.data.frame(self)
+      }
     ),
     mirror_planes = S7::new_property(
       class = S7::S7_object,
@@ -211,7 +225,12 @@ SymmetryElementCollection <- S7::new_class(
         stop("@mirror_planes is a read only property")
       },
       getter = function(self) {
-          Filter(function(el) { el@type == "Mirror Plane" }, self@elements)
+        Filter(
+          function(el) {
+            el@type == "Mirror Plane"
+          },
+          self@elements
+        )
       }
     ),
     proper_rotation_axes = S7::new_property(
@@ -220,7 +239,12 @@ SymmetryElementCollection <- S7::new_class(
         stop("@proper_rotation_axes is a read only property")
       },
       getter = function(self) {
-        Filter(function(el) { el@type == "Proper Rotation Axis" }, self@elements)
+        Filter(
+          function(el) {
+            el@type == "Proper Rotation Axis"
+          },
+          self@elements
+        )
       }
     ),
     improper_rotation_axes = S7::new_property(
@@ -229,7 +253,12 @@ SymmetryElementCollection <- S7::new_class(
         stop("@improper_rotation_axes is a read only property")
       },
       getter = function(self) {
-        Filter(function(el) { el@type == "Improper Rotation Axis" }, self@elements)
+        Filter(
+          function(el) {
+            el@type == "Improper Rotation Axis"
+          },
+          self@elements
+        )
       }
     ),
     centres_of_inversion = S7::new_property(
@@ -238,13 +267,22 @@ SymmetryElementCollection <- S7::new_class(
         stop("@centres_of_inversion is a read only property")
       },
       getter = function(self) {
-        Filter(function(el) { el@type == "Centre of Inversion" }, self@elements)
+        Filter(
+          function(el) {
+            el@type == "Centre of Inversion"
+          },
+          self@elements
+        )
       }
     ),
     collections_split = S7::new_property(
       class = S7::class_list,
-      getter = function(self) { split_collections_by_type(self) },
-      setter = function(self, value) { stop("@collection_split is a read only property") }
+      getter = function(self) {
+        split_collections_by_type(self)
+      },
+      setter = function(self, value) {
+        stop("@collection_split is a read only property")
+      }
     ),
     unique_proper_axis_orders = S7::new_property(
       class = S7::class_integer,
@@ -252,9 +290,13 @@ SymmetryElementCollection <- S7::new_class(
         stop("@unique_proper_axis_orders is a read only property")
       },
       getter = function(self) {
-        orders <- vapply(self@proper_rotation_axes, function(element) {
-          element@n
-        }, FUN.VALUE = numeric(1))
+        orders <- vapply(
+          self@proper_rotation_axes,
+          function(element) {
+            element@n
+          },
+          FUN.VALUE = numeric(1)
+        )
         orders <- unique(orders)
         orders <- sort(orders, decreasing = FALSE)
         return(orders)
@@ -266,24 +308,36 @@ SymmetryElementCollection <- S7::new_class(
     elements <- self@elements
 
     if (length(ids) != length(elements)) {
-      return(sprintf("@ids must have one entry for each of the @elements. Found [%s] IDs and [%s] elements", length(ids), length(elements)))
+      return(sprintf(
+        "@ids must have one entry for each of the @elements. Found [%s] IDs and [%s] elements",
+        length(ids),
+        length(elements)
+      ))
     }
 
     if (any(duplicated(ids))) {
-      return(sprintf("Duplicate @ids are not allowed. Found [%s] duplicates", sum(duplicated(ids))))
+      return(sprintf(
+        "Duplicate @ids are not allowed. Found [%s] duplicates",
+        sum(duplicated(ids))
+      ))
     }
 
     if (anyNA(ids)) {
-      return(sprintf("Missing (NA) @ids are not allowed. Found [%s].", sum(is.na(ids))))
+      return(sprintf(
+        "Missing (NA) @ids are not allowed. Found [%s].",
+        sum(is.na(ids))
+      ))
     }
 
-    if(is.null(elements)){
+    if (is.null(elements)) {
       return(sprintf("@elements of SymmetryElementColleciton must not be NULL"))
     }
 
     for (element in elements) {
       if (!inherits(element, "structures::SymmetryElement")) {
-        return(sprintf("All @elements must inherit from: structures::SymmetryElement"))
+        return(sprintf(
+          "All @elements must inherit from: structures::SymmetryElement"
+        ))
       }
     }
 
@@ -304,18 +358,24 @@ SymmetryElementCollection <- S7::new_class(
 
 ## Generics ----------------------------------------------------------------
 S7::method(print, SymmetryElementCollection) <- function(x, ...) {
-
   collections <- x@collections_split
   collection_types <- names(collections)
-  string_counts <- vapply(X = seq_along(collections), function(i) {
-    coll = collections[[i]]
-    name = collection_types[[i]]
-     sprintf("%s: %s\n", name, coll@n_elements)
-  }, character(1))
+  string_counts <- vapply(
+    X = seq_along(collections),
+    function(i) {
+      coll <- collections[[i]]
+      name <- collection_types[[i]]
+      sprintf("%s: %s\n", name, coll@n_elements)
+    },
+    character(1)
+  )
 
-
-  unique_proper_axis_orders = x@unique_proper_axis_orders
-  unique_proper_axis_orders <- if(length(unique_proper_axis_orders) > 0) unique_proper_axis_orders else "No proper rotation axes"
+  unique_proper_axis_orders <- x@unique_proper_axis_orders
+  unique_proper_axis_orders <- if (length(unique_proper_axis_orders) > 0) {
+    unique_proper_axis_orders
+  } else {
+    "No proper rotation axes"
+  }
 
   cat(
     sep = "",
@@ -324,7 +384,10 @@ S7::method(print, SymmetryElementCollection) <- function(x, ...) {
     "===================\n",
     sprintf("Number of Elements: %s\n", x@n_elements),
     string_counts,
-    sprintf("\nUnique Proper Axis Orders: %s", toString(unique_proper_axis_orders)),
+    sprintf(
+      "\nUnique Proper Axis Orders: %s",
+      toString(unique_proper_axis_orders)
+    ),
     # sprintf("Proper Rotation Axes: %s\n", x@proper_rotation_axes@n_elements),
     # sprintf("Improper Rotation Axes: %s\n", x@improper_rotation_axes@n_elements),
     # sprintf("Mirror Planes: %s\n", x@mirror_planes@n_elements),
@@ -339,9 +402,8 @@ S7::method(print, SymmetryElementCollection) <- function(x, ...) {
 
 #' @export
 S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
-
   # When empty
-  if(length(x@elements) == 0){
+  if (length(x@elements) == 0) {
     return(
       data.frame(
         ids = numeric(0),
@@ -362,16 +424,10 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
   df_data$ids <- x@ids
   df_data <- df_data[c("ids", setdiff(colnames(df_data), "ids"))]
 
-
-
   return(df_data)
 }
 
 ## Generic ------------------------------------------------------------------
-
-
-
-
 
 ## Non-Generic Methods -----------------------------------------------------
 
@@ -399,9 +455,16 @@ S7::method(as.data.frame, SymmetryElementCollection) <- function(x, ...) {
 #' filter_symmetry_element_collection_by_type(coll, "Mirror Plane")
 #'
 #' @export
-filter_symmetry_element_collection_by_type <- function(collection, types = valid_symmetry_element_types()) {
+filter_symmetry_element_collection_by_type <- function(
+  collection,
+  types = valid_symmetry_element_types()
+) {
   if (!all(types %in% valid_symmetry_element_types())) {
-    stop(sprintf("Tried to filter symmetry collection by an invalid type. Types must only include the values [%s]. Unexpected values: [%s]", toString(valid_symmetry_element_types()), toString(setdiff(types, valid_symmetry_element_types()))))
+    stop(sprintf(
+      "Tried to filter symmetry collection by an invalid type. Types must only include the values [%s]. Unexpected values: [%s]",
+      toString(valid_symmetry_element_types()),
+      toString(setdiff(types, valid_symmetry_element_types()))
+    ))
   }
 
   keep <- vapply(
@@ -411,12 +474,15 @@ filter_symmetry_element_collection_by_type <- function(collection, types = valid
     },
     FUN.VALUE = logical(1)
   )
-  S7::set_props(collection, elements = collection@elements[keep], ids = collection@ids[keep])
+  S7::set_props(
+    collection,
+    elements = collection@elements[keep],
+    ids = collection@ids[keep]
+  )
 }
 
 # Split a collection to a list of collections named by type
-split_collections_by_type <- function(collection){
-
+split_collections_by_type <- function(collection) {
   ls_collections <- lapply(valid_symmetry_element_types(), function(type) {
     filter_symmetry_element_collection_by_type(collection, types = type)
   })
@@ -445,7 +511,10 @@ split_collections_by_type <- function(collection){
 #' @export
 add_symmetry_element_to_collection <- function(collection, new) {
   # Check input types are appropriate
-  assertions::assert_class(collection, class = "structures::SymmetryElementCollection")
+  assertions::assert_class(
+    collection,
+    class = "structures::SymmetryElementCollection"
+  )
   assertions::assert_class(new, class = "structures::SymmetryElement")
 
   # Figure out what the new ID should be
@@ -486,8 +555,14 @@ add_symmetry_element_to_collection <- function(collection, new) {
 #' @export
 combine_symmetry_element_collections <- function(collection1, collection2) {
   # Assertions
-  assertions::assert_class(collection1, class = "structures::SymmetryElementCollection")
-  assertions::assert_class(collection2, class = "structures::SymmetryElementCollection")
+  assertions::assert_class(
+    collection1,
+    class = "structures::SymmetryElementCollection"
+  )
+  assertions::assert_class(
+    collection2,
+    class = "structures::SymmetryElementCollection"
+  )
 
   # Ids
   ids_1 <- collection1@ids
@@ -545,12 +620,19 @@ combine_symmetry_element_collections <- function(collection1, collection2) {
 #' )
 #'
 #' @export
-fetch_symmetry_element_from_collection <- function(collection, id, error_if_missing = TRUE){
+fetch_symmetry_element_from_collection <- function(
+  collection,
+  id,
+  error_if_missing = TRUE
+) {
   assertions::assert_class(collection, "structures::SymmetryElementCollection")
   assertions::assert_number(id)
   if (error_if_missing && !id %in% collection@ids) {
-    stop("Failed to fetch element with [id=", id,
-         "]. ID not found in collection. If you would prefer to return NULL when id is missing, set error_if_missing = FALSE")
+    stop(
+      "Failed to fetch element with [id=",
+      id,
+      "]. ID not found in collection. If you would prefer to return NULL when id is missing, set error_if_missing = FALSE"
+    )
   }
   idx <- match(id, collection@ids)
   collection@elements[[idx]]
@@ -594,7 +676,10 @@ fetch_symmetry_element_from_collection <- function(collection, id, error_if_miss
 #' fetch_all_proper_rotation_axes_with_order_from_collection(coll, Cn = 6L) # empty list
 #'
 #' @export
-fetch_all_proper_rotation_axes_with_order_from_collection <- function(collection, Cn) {
+fetch_all_proper_rotation_axes_with_order_from_collection <- function(
+  collection,
+  Cn
+) {
   assertions::assert_class(collection, "structures::SymmetryElementCollection")
 
   # No symmetry elements at all → NULL, to match older behaviour
@@ -625,10 +710,7 @@ fetch_all_proper_rotation_axes_with_order_from_collection <- function(collection
 }
 
 
-
-
 # Create an Class for each symmetry element that inherits from 'SymmetryElement'
-
 
 # [Symmetry Element] ProperRotationAxis  -------------------------------------
 
@@ -703,17 +785,25 @@ ProperRotationAxis <- S7::new_class(
           )
         }
         if (is.na(value) || value < 1L) {
-          return(sprintf("ProperRotationAxis fold symmetry (@n) must be >= 1. Not [%s]", value))
+          return(sprintf(
+            "ProperRotationAxis fold symmetry (@n) must be >= 1. Not [%s]",
+            value
+          ))
         }
 
         if (is.infinite(value)) {
-          return(sprintf("ProperRotationAxis fold symmetry (@n) can not be an infinite value"))
+          return(sprintf(
+            "ProperRotationAxis fold symmetry (@n) can not be an infinite value"
+          ))
         }
 
         if (!is_integerlike(value)) {
-          return(sprintf("ProperRotationAxis fold symmetry (@n) must be a whole number, not [%g]", value))
+          return(sprintf(
+            "ProperRotationAxis fold symmetry (@n) must be a whole number, not [%g]",
+            value
+          ))
         }
-      },
+      }
     ),
     posA = S7::new_property(
       class = S7::class_numeric,
@@ -749,8 +839,6 @@ ProperRotationAxis <- S7::new_class(
         return(out)
       },
     ),
-
-
 
     # A unit direction vector representing the axis (computed as direction from posA to posB)
     direction = S7::new_property(
@@ -805,30 +893,64 @@ ProperRotationAxis <- S7::new_class(
     # browser()
     NULL
   },
-  constructor = function(n, posA, posB = NULL, direction = NULL, L = NULL, label = "unnamed") {
-    if (is.null(posB) && is.null(direction)) stop("Supply either `posB` or `direction`")
-    if (!is.null(posB) && !is.null(direction)) stop("Supply only one of `posB` or `direction`")
-    assertions::assert_length(posA, length = 3, msg = "posA must be a numeric vector of length 3: c(x, y, z)")
+  constructor = function(
+    n,
+    posA,
+    posB = NULL,
+    direction = NULL,
+    L = NULL,
+    label = "unnamed"
+  ) {
+    if (is.null(posB) && is.null(direction)) {
+      stop("Supply either `posB` or `direction`")
+    }
+    if (!is.null(posB) && !is.null(direction)) {
+      stop("Supply only one of `posB` or `direction`")
+    }
+    assertions::assert_length(
+      posA,
+      length = 3,
+      msg = "posA must be a numeric vector of length 3: c(x, y, z)"
+    )
     assertions::assert_no_missing(posA)
-    assertions::assert(all(is.finite(posA)), msg = "posA must have no infinite values")
+    assertions::assert(
+      all(is.finite(posA)),
+      msg = "posA must have no infinite values"
+    )
 
     names(posA) <- c("x", "y", "z")[seq_along(posA)]
 
     if (!is.null(posB)) {
-      assertions::assert_length(posB, length = 3, msg = "posB must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_length(
+        posB,
+        length = 3,
+        msg = "posB must be a numeric vector of length 3: c(x, y, z)"
+      )
       assertions::assert_no_missing(posB)
-      assertions::assert(all(is.finite(posB)), msg = "posB must have no infinite values")
+      assertions::assert(
+        all(is.finite(posB)),
+        msg = "posB must have no infinite values"
+      )
 
       names(posB) <- c("x", "y", "z")[seq_along(posB)]
       vec <- posB - posA
       len <- sqrt(sum(vec^2))
-      if (len <= 0) stop("posA and posB must be distinct points")
+      if (len <= 0) {
+        stop("posA and posB must be distinct points")
+      }
       direction <- vec / len
       L <- len
     } else {
-      assertions::assert_length(direction, length = 3, msg = "direction must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_length(
+        direction,
+        length = 3,
+        msg = "direction must be a numeric vector of length 3: c(x, y, z)"
+      )
       assertions::assert_no_missing(direction)
-      assertions::assert(all(is.finite(direction)), msg = "direction must have no infinite values")
+      assertions::assert(
+        all(is.finite(direction)),
+        msg = "direction must have no infinite values"
+      )
       # direction provided
       direction <- normalise(direction)
       L <- if (is.null(L)) 1 else L
@@ -887,12 +1009,13 @@ S7::method(as.data.frame, ProperRotationAxis) <- function(x, ...) {
 
 #'
 #' @export
-S7::method(transform_symmetry_element, ProperRotationAxis) <- function(x, transformation, ...) {
+S7::method(transform_symmetry_element, ProperRotationAxis) <- function(
+  x,
+  transformation,
+  ...
+) {
   transform_symmetry_axis(x, transformation = transformation, ...)
 }
-
-
-
 
 
 ## Helpers -----------------------------------------------------------------
@@ -905,7 +1028,6 @@ is_integerlike <- function(x, tol = .Machine$double.eps^0.5) {
   }
   all(abs(x - round(x)) <= tol)
 }
-
 
 
 ## Non-Generic Methods -----------------------------------------------------
@@ -975,22 +1097,26 @@ transform_symmetry_axis <- function(x, transformation, ...) {
   posAnew <- transformation(posA, ...)
   posBnew <- transformation(posB, ...)
 
-  if (is.list(posAnew)) posAnew <- unlist(posAnew)
-  if (is.list(posBnew)) posBnew <- unlist(posBnew)
+  if (is.list(posAnew)) {
+    posAnew <- unlist(posAnew)
+  }
+  if (is.list(posBnew)) {
+    posBnew <- unlist(posBnew)
+  }
 
   direction <- create_vector_from_start_end(
     start = posAnew,
-    end   = posBnew,
-    unit  = TRUE
+    end = posBnew,
+    unit = TRUE
   )
   L <- compute_distance(posAnew, posBnew)
 
   # --- Base update (works for ProperRotationAxis) ---
   new_axis <- S7::set_props(
     x,
-    posA     = posAnew,
+    posA = posAnew,
     direction = direction,
-    L        = L
+    L = L
   )
 
   # --- Extra step for ImproperRotationAxis: transform plane_point too ---
@@ -998,7 +1124,9 @@ transform_symmetry_axis <- function(x, transformation, ...) {
     plane_point <- new_axis@plane_point
     plane_point_new <- transformation(plane_point, ...)
 
-    if (is.list(plane_point_new)) plane_point_new <- unlist(plane_point_new)
+    if (is.list(plane_point_new)) {
+      plane_point_new <- unlist(plane_point_new)
+    }
 
     # Optional: you could assert that plane_point_new lies on the new axis,
     # but that may be too strict for arbitrary transformations.
@@ -1083,7 +1211,9 @@ ImproperRotationAxis <- S7::new_class(
           )
         }
         if (any(!is.finite(value)) || any(is.na(value))) {
-          return("ImproperRotationAxis @plane_point must contain only finite, non-NA values.")
+          return(
+            "ImproperRotationAxis @plane_point must contain only finite, non-NA values."
+          )
         }
         NULL
       },
@@ -1094,13 +1224,15 @@ ImproperRotationAxis <- S7::new_class(
       }
     )
   ),
-  constructor = function(n,
-                         posA,
-                         plane_point = posA,
-                         posB = NULL,
-                         direction = NULL,
-                         L = NULL,
-                         label = "unnamed") {
+  constructor = function(
+    n,
+    posA,
+    plane_point = posA,
+    posB = NULL,
+    direction = NULL,
+    L = NULL,
+    label = "unnamed"
+  ) {
     if (is.null(posB) && is.null(direction)) {
       stop("Supply either `posB` or `direction`")
     }
@@ -1109,38 +1241,63 @@ ImproperRotationAxis <- S7::new_class(
     }
 
     # --- Axis definition (as in ProperRotationAxis) ---
-    assertions::assert_length(posA, length = 3, msg = "posA must be a numeric vector of length 3: c(x, y, z)")
+    assertions::assert_length(
+      posA,
+      length = 3,
+      msg = "posA must be a numeric vector of length 3: c(x, y, z)"
+    )
     assertions::assert_no_missing(posA)
-    assertions::assert(all(is.finite(posA)), msg = "posA must have no infinite values")
+    assertions::assert(
+      all(is.finite(posA)),
+      msg = "posA must have no infinite values"
+    )
     names(posA) <- c("x", "y", "z")[seq_along(posA)]
 
     if (!is.null(posB)) {
-      assertions::assert_length(posB, length = 3, msg = "posB must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_length(
+        posB,
+        length = 3,
+        msg = "posB must be a numeric vector of length 3: c(x, y, z)"
+      )
       assertions::assert_no_missing(posB)
-      assertions::assert(all(is.finite(posB)), msg = "posB must have no infinite values")
+      assertions::assert(
+        all(is.finite(posB)),
+        msg = "posB must have no infinite values"
+      )
 
       names(posB) <- c("x", "y", "z")[seq_along(posB)]
       vec <- posB - posA
       len <- sqrt(sum(vec^2))
-      if (len <= 0) stop("posA and posB must be distinct points")
+      if (len <= 0) {
+        stop("posA and posB must be distinct points")
+      }
       direction <- vec / len
       L <- len
     } else {
-      assertions::assert_length(direction, length = 3, msg = "direction must be a numeric vector of length 3: c(x, y, z)")
+      assertions::assert_length(
+        direction,
+        length = 3,
+        msg = "direction must be a numeric vector of length 3: c(x, y, z)"
+      )
       assertions::assert_no_missing(direction)
-      assertions::assert(all(is.finite(direction)), msg = "direction must have no infinite values")
+      assertions::assert(
+        all(is.finite(direction)),
+        msg = "direction must have no infinite values"
+      )
       direction <- normalise(direction)
       L <- if (is.null(L)) 1 else L
     }
     names(direction) <- c("x", "y", "z")
 
     # --- Mirror plane anchor ---
-    assertions::assert_length(plane_point,
+    assertions::assert_length(
+      plane_point,
       length = 3,
       msg = "plane_point must be a numeric vector of length 3: c(x, y, z)"
     )
     assertions::assert_no_missing(plane_point)
-    assertions::assert(all(is.finite(plane_point)),
+    assertions::assert(
+      all(is.finite(plane_point)),
       msg = "plane_point must have no infinite values"
     )
     names(plane_point) <- c("x", "y", "z")[seq_along(plane_point)]
@@ -1149,7 +1306,9 @@ ImproperRotationAxis <- S7::new_class(
     v <- plane_point - posA
     if (magnitude(v) > 0) {
       if (max(abs(normalise(v) - direction)) > 1e-6) {
-        stop("plane_point must lie on the rotation axis (collinear with direction from posA).")
+        stop(
+          "plane_point must lie on the rotation axis (collinear with direction from posA)."
+        )
       }
     }
 
@@ -1185,7 +1344,11 @@ S7::method(print, ImproperRotationAxis) <- function(x, ...) {
 }
 
 #' @export
-S7::method(transform_symmetry_element, ImproperRotationAxis) <- function(x, transformation, ...) {
+S7::method(transform_symmetry_element, ImproperRotationAxis) <- function(
+  x,
+  transformation,
+  ...
+) {
   transform_symmetry_axis(x, transformation = transformation, ...)
 }
 
@@ -1227,13 +1390,22 @@ MirrorPlane <- S7::new_class(
       validator = function(value) {
         tol <- 1e-18
         if (magnitude(value) <= tol) {
-          return(sprintf("Mirror plane @normal must be a vector with magnitude > 0, not [%d]", magnitude(value)))
+          return(sprintf(
+            "Mirror plane @normal must be a vector with magnitude > 0, not [%d]",
+            magnitude(value)
+          ))
         }
         if (length(value) != 3) {
-          return(sprintf("Mirror plane @normal must be a numeric vector with length 3: Not [%s]", length(value)))
+          return(sprintf(
+            "Mirror plane @normal must be a numeric vector with length 3: Not [%s]",
+            length(value)
+          ))
         }
         if (length(value) != 3) {
-          return(sprintf("Mirror plane @normal must be a numeric vector with length 3: Not [%s]", length(value)))
+          return(sprintf(
+            "Mirror plane @normal must be a numeric vector with length 3: Not [%s]",
+            length(value)
+          ))
         }
         return(NULL)
       }
@@ -1242,7 +1414,10 @@ MirrorPlane <- S7::new_class(
       class = S7::class_numeric,
       validator = function(value) {
         if (length(value) != 3) {
-          return(sprintf("Mirror plane @position must be a numeric vector with length 3: Not [%s]", length(value)))
+          return(sprintf(
+            "Mirror plane @position must be a numeric vector with length 3: Not [%s]",
+            length(value)
+          ))
         }
         return(NULL)
       }
@@ -1275,35 +1450,42 @@ S7::method(print, MirrorPlane) <- function(x, ...) {
 }
 
 #' @export
-S7::method(transform_symmetry_element, MirrorPlane) <- function(x, transformation, ...) {
+S7::method(transform_symmetry_element, MirrorPlane) <- function(
+  x,
+  transformation,
+  ...
+) {
   assertions::assert_function(transformation)
 
   # A point on the plane and a second point offset along the normal
-  pos        <- x@position
+  pos <- x@position
   pos_normal <- pos + x@normal
 
-  pos_new        <- transformation(pos,        ...)
+  pos_new <- transformation(pos, ...)
   pos_normal_new <- transformation(pos_normal, ...)
 
   # Allow transforms that return lists
-  if (is.list(pos_new))        pos_new        <- unlist(pos_new)
-  if (is.list(pos_normal_new)) pos_normal_new <- unlist(pos_normal_new)
+  if (is.list(pos_new)) {
+    pos_new <- unlist(pos_new)
+  }
+  if (is.list(pos_normal_new)) {
+    pos_normal_new <- unlist(pos_normal_new)
+  }
 
   # Recompute unit normal from the transformed points
   new_normal <- create_vector_from_start_end(
     start = pos_new,
-    end   = pos_normal_new,
-    unit  = TRUE
+    end = pos_normal_new,
+    unit = TRUE
   )
 
   x <- S7::set_props(
     x,
     position = pos_new,
-    normal   = new_normal
+    normal = new_normal
   )
   x
 }
-
 
 
 # [Symmetry Element] CentreOfInversion -------------------------------------------------------
@@ -1341,7 +1523,10 @@ CentreOfInversion <- S7::new_class(
       class = S7::class_numeric,
       validator = function(value) {
         if (length(value) != 3) {
-          return(sprintf("Center of Inversion @position must be a numeric vector with length 3: Not [%s]", length(value)))
+          return(sprintf(
+            "Center of Inversion @position must be a numeric vector with length 3: Not [%s]",
+            length(value)
+          ))
         }
         return(NULL)
       }
@@ -1372,11 +1557,17 @@ S7::method(print, CentreOfInversion) <- function(x, ...) {
 }
 
 #' @export
-S7::method(transform_symmetry_element, CentreOfInversion) <- function(x, transformation, ...) {
+S7::method(transform_symmetry_element, CentreOfInversion) <- function(
+  x,
+  transformation,
+  ...
+) {
   assertions::assert_function(transformation)
 
   pos_new <- transformation(x@position, ...)
-  if (is.list(pos_new)) pos_new <- unlist(pos_new)
+  if (is.list(pos_new)) {
+    pos_new <- unlist(pos_new)
+  }
 
   x <- S7::set_props(x, position = pos_new)
   x
@@ -1456,7 +1647,8 @@ is_improper_rotation_axis <- function(x) {
 #'
 #' @export
 is_proper_rotation_axis <- function(x) {
-  inherits(x, "structures::ProperRotationAxis") & !inherits(x, "structures::ImproperRotationAxis")
+  inherits(x, "structures::ProperRotationAxis") &
+    !inherits(x, "structures::ImproperRotationAxis")
 }
 
 
@@ -1475,7 +1667,8 @@ is_proper_rotation_axis <- function(x) {
 #'
 #' @export
 is_symmetry_axis <- function(x) {
-  inherits(x, "structures::ProperRotationAxis") | inherits(x, "structures::ImproperRotationAxis")
+  inherits(x, "structures::ProperRotationAxis") |
+    inherits(x, "structures::ImproperRotationAxis")
 }
 
 is_symmetry_element <- function(x) {
@@ -1496,7 +1689,10 @@ identify_symmetry_type <- function(x, strict = TRUE) {
   # else if(is_symmetry_element(x))
   #   return("Other Symmetry element")
 
-  warn_message <- sprintf("Object is not a known symmetry element. Class is: [%s]", toString(class(x)))
+  warn_message <- sprintf(
+    "Object is not a known symmetry element. Class is: [%s]",
+    toString(class(x))
+  )
   if (strict) {
     stop(warn_message)
   } else {
@@ -1528,8 +1724,10 @@ symmetry_element_abbreviations <- function() {
 #'
 #' @export
 valid_symmetry_element_types <- function() {
-  c("Proper Rotation Axis",  "Improper Rotation Axis", "Mirror Plane", "Centre of Inversion")
+  c(
+    "Proper Rotation Axis",
+    "Improper Rotation Axis",
+    "Mirror Plane",
+    "Centre of Inversion"
+  )
 }
-
-
-

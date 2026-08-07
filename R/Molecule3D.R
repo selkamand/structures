@@ -1,6 +1,5 @@
 # Molecule3D Class -------------------------------------------------------------------
 
-
 #' Create a Molecule3D object
 #'
 #' Constructs an S7 object representing a single molecule with 3D coordinates.
@@ -153,42 +152,62 @@
 Molecule3D <- S7::new_class(
   name = "Molecule3D",
 
-
   ## Properties --------------------------------------------------------------
   properties = list(
-
     ### Core Configurable Properties   ---------------------------------------------
     name = S7::class_character,
     atoms = S7::class_data.frame,
     bonds = S7::class_data.frame,
     mol_type = S7::new_property(
       class = S7::class_character,
-      setter = function(self, value){
-        if(is.null(value)) value <- "SMALL"
+      setter = function(self, value) {
+        if (is.null(value)) {
+          value <- "SMALL"
+        }
         self@mol_type <- value
         return(self)
       },
-      validator = function(value){
-        if(length(value) != 1) {return(sprintf("length of @mol_type must be 1, not [%d]", length(value)))}
+      validator = function(value) {
+        if (length(value) != 1) {
+          return(sprintf(
+            "length of @mol_type must be 1, not [%d]",
+            length(value)
+          ))
+        }
         valid_cols <- valid_molecule_types()
-        if(!value %in% valid_cols) {
-          return(sprintf("@mol_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])", value, toString(valid_cols)))
+        if (!value %in% valid_cols) {
+          return(sprintf(
+            "@mol_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])",
+            value,
+            toString(valid_cols)
+          ))
         }
         return(NULL)
       }
     ),
     charge_type = S7::new_property(
       class = S7::class_character,
-      setter = function(self, value){
-        if(is.null(value)) value <- "NO_CHARGES"
+      setter = function(self, value) {
+        if (is.null(value)) {
+          value <- "NO_CHARGES"
+        }
         self@charge_type <- value
         return(self)
       },
-      validator = function(value){
-        if(length(value) != 1) {return(sprintf("length of @charge_type must be 1, not [%d]", length(value)))}
+      validator = function(value) {
+        if (length(value) != 1) {
+          return(sprintf(
+            "length of @charge_type must be 1, not [%d]",
+            length(value)
+          ))
+        }
         valid_cols <- valid_charge_types()
-        if(!value %in% valid_cols) {
-          return(sprintf("@charge_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])", value, toString(valid_cols)))
+        if (!value %in% valid_cols) {
+          return(sprintf(
+            "@charge_type must only contain valid SYBYL molecule types. Invalid value: [%s]. Must be one of [%s])",
+            value,
+            toString(valid_cols)
+          ))
         }
         return(NULL)
       }
@@ -201,9 +220,8 @@ Molecule3D <- S7::new_class(
         current_names <- names(value)
         if (all(c("x", "y", "z") %in% current_names)) {
           value <- value[c("x", "y", "z")]
-        }
-        # Otherwise set the names to x,y,z
-        else {
+        } else {
+          # Otherwise set the names to x,y,z
           names(value) <- c("x", "y", "z")[seq_along(value)]
         }
 
@@ -235,7 +253,6 @@ Molecule3D <- S7::new_class(
         stop("@bond_ids is a read only property")
       }
     ),
-
 
     # Maximum atom id (useful to know when combining two different molecules together or adding new atoms)
     maximum_atom_id = S7::new_property(
@@ -272,7 +289,8 @@ Molecule3D <- S7::new_class(
       }
     ),
     bond_positions = S7::new_property(
-      class = S7::class_numeric, getter = function(self) {
+      class = S7::class_numeric,
+      getter = function(self) {
         bonds <- self@bonds
         atoms <- self@atoms
 
@@ -312,23 +330,29 @@ Molecule3D <- S7::new_class(
     ),
 
     # Center position of all atoms
-    center = S7::new_property(class = S7::class_numeric, getter = function(self) {
-      mx_positions <- self@atom_positions
-      center <- c(
-        x = mean(mx_positions[, 1], na.rm = TRUE),
-        y = mean(mx_positions[, 2], na.rm = TRUE),
-        z = mean(mx_positions[, 3], na.rm = TRUE)
-      )
-      return(center)
-    }),
+    center = S7::new_property(
+      class = S7::class_numeric,
+      getter = function(self) {
+        mx_positions <- self@atom_positions
+        center <- c(
+          x = mean(mx_positions[, 1], na.rm = TRUE),
+          y = mean(mx_positions[, 2], na.rm = TRUE),
+          z = mean(mx_positions[, 3], na.rm = TRUE)
+        )
+        return(center)
+      }
+    ),
 
     # Center position of all atoms
     n_dummy_atoms = S7::new_property(
       class = S7::class_numeric,
-      setter = function(self, value) { stop("@n_dummy_atoms is a read only property") },
+      setter = function(self, value) {
+        stop("@n_dummy_atoms is a read only property")
+      },
       getter = function(self) {
         sum(self@atoms[["atom_type"]] %in% c("Du", "Du.C"))
-      }),
+      }
+    ),
 
     #### Connectivity ---------------------------------------------
     # Returns a list of connected clusters, each containing a numeric vector of eleno representing members of each cluster.
@@ -338,13 +362,15 @@ Molecule3D <- S7::new_class(
       getter = function(self) {
         graph <- as_igraph(self)
         components <- igraph::components(graph, mode = "weak")
-        lapply(split(names(components$membership), components$membership), as.numeric)
+        lapply(
+          split(names(components$membership), components$membership),
+          as.numeric
+        )
       },
       setter = function(self, value) {
         stop("@components is a read only property")
       }
     ),
-
 
     ### Symmetry Related Properties ---------------------------------------------
     # Symmetry elements
@@ -368,18 +394,28 @@ Molecule3D <- S7::new_class(
   validator = function(self) {
     ## ---- Validate Chemical Name ----
     if (!is.character(self@name)) {
-      return(sprintf("@name must be a string (length 1 chacter vector), not a %s", toString(class(self@name))))
+      return(sprintf(
+        "@name must be a string (length 1 chacter vector), not a %s",
+        toString(class(self@name))
+      ))
     }
     if (length(self@name) > 1) {
-      return(sprintf("@name must be a string, not a character vector of length %d", length(self@name)))
+      return(sprintf(
+        "@name must be a string, not a character vector of length %d",
+        length(self@name)
+      ))
     }
     if (nchar(self@name) == 0) {
       return(sprintf("@name cannot be an empty string"))
     }
 
-
     ## ---- Validate Bond Columns ----
-    required_bond_cols <- c("bond_id", "origin_atom_id", "target_atom_id", "bond_type")
+    required_bond_cols <- c(
+      "bond_id",
+      "origin_atom_id",
+      "target_atom_id",
+      "bond_type"
+    )
     observed_bond_cols <- colnames(self@bonds)
 
     if (!all(required_bond_cols %in% observed_bond_cols)) {
@@ -392,23 +428,46 @@ Molecule3D <- S7::new_class(
 
     bond_ids <- self@bonds$bond_id
     if (!is.numeric(bond_ids)) {
-      return(sprintf("@bonds data.frame bond_id column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))
+      return(sprintf(
+        "@bonds data.frame bond_id column must be a numeric vector, not a [%s]",
+        toString(class(self@bonds$bond_id))
+      ))
     }
     if (anyNA(bond_ids)) {
-      return(sprintf("@bonds column 'bond_id' must NOT contain any missing values. Found: [%d]", sum(is.na(bond_ids))))
+      return(sprintf(
+        "@bonds column 'bond_id' must NOT contain any missing values. Found: [%d]",
+        sum(is.na(bond_ids))
+      ))
     }
     if (any(bond_ids < 1)) {
-      return(sprintf("@bonds column 'bond_id' must NOT contain any values < 1. Problematic values found: [%s]", toString(unique(bond_ids[bond_ids < 1]))))
+      return(sprintf(
+        "@bonds column 'bond_id' must NOT contain any values < 1. Problematic values found: [%s]",
+        toString(unique(bond_ids[bond_ids < 1]))
+      ))
     }
     if (any(duplicated(bond_ids))) {
-      return(sprintf("@bonds column 'bond_id' can NOT contain duplicates. Duplicates found: [%s]", toString(bond_ids[duplicated(bond_ids)])))
+      return(sprintf(
+        "@bonds column 'bond_id' can NOT contain duplicates. Duplicates found: [%s]",
+        toString(bond_ids[duplicated(bond_ids)])
+      ))
     }
     if (!is.numeric(bond_ids)) {
-      return(sprintf("@bonds data.frame 'bond_id' column must be a numeric vector, not a [%s]", toString(class(self@bonds$bond_id))))
+      return(sprintf(
+        "@bonds data.frame 'bond_id' column must be a numeric vector, not a [%s]",
+        toString(class(self@bonds$bond_id))
+      ))
     }
 
     ## ---- Validate Atom Columns ----
-    required_atom_cols <- c("eleno", "elena", "element", "x", "y", "z", "atom_type")
+    required_atom_cols <- c(
+      "eleno",
+      "elena",
+      "element",
+      "x",
+      "y",
+      "z",
+      "atom_type"
+    )
     observed_atom_cols <- colnames(self@atoms)
 
     if (!all(required_atom_cols %in% observed_atom_cols)) {
@@ -421,46 +480,79 @@ Molecule3D <- S7::new_class(
 
     eleno <- self@atoms[["eleno"]]
     if (!is.numeric(eleno)) {
-      return(sprintf("@atoms column 'eleno' must be a numeric vector, not [%s]", toString(class(eleno))))
+      return(sprintf(
+        "@atoms column 'eleno' must be a numeric vector, not [%s]",
+        toString(class(eleno))
+      ))
     }
     if (anyNA(eleno)) {
-      return(sprintf("@atoms column 'eleno' must NOT contain any missing values. Found: [%d]", sum(is.na(eleno))))
+      return(sprintf(
+        "@atoms column 'eleno' must NOT contain any missing values. Found: [%d]",
+        sum(is.na(eleno))
+      ))
     }
     if (any(eleno < 1)) {
-      return(sprintf("@atoms column 'eleno' must NOT contain any values < 1. Problematic values found: [%s]", toString(unique(eleno[eleno < 1]))))
+      return(sprintf(
+        "@atoms column 'eleno' must NOT contain any values < 1. Problematic values found: [%s]",
+        toString(unique(eleno[eleno < 1]))
+      ))
     }
     if (any(duplicated(eleno))) {
-      return(sprintf("@atoms column 'eleno' can NOT contain duplicates. Duplicates found: [%s]", toString(eleno[duplicated(eleno)])))
+      return(sprintf(
+        "@atoms column 'eleno' can NOT contain duplicates. Duplicates found: [%s]",
+        toString(eleno[duplicated(eleno)])
+      ))
     }
 
     elena <- self@atoms[["elena"]]
     if (!is.character(elena)) {
-      return(sprintf("@atoms column 'elena' must be a character vector, not [%s]", toString(class(elena))))
+      return(sprintf(
+        "@atoms column 'elena' must be a character vector, not [%s]",
+        toString(class(elena))
+      ))
     }
     if (anyNA(elena)) {
-      return(sprintf("@atoms column 'elena' must NOT contain any missing values. Found: [%d]", sum(is.na(elena))))
+      return(sprintf(
+        "@atoms column 'elena' must NOT contain any missing values. Found: [%d]",
+        sum(is.na(elena))
+      ))
     }
 
     atom_type <- self@atoms[["atom_type"]]
-    if(!all(atom_type %in% valid_atom_types())) {
-      return(sprintf("@atoms column 'atom_type' must only contain valid SYBYL atom types. Invalid values: [%s]. See `valid_atom_types()` for a valid list)", toString(setdiff(atom_type, valid_atom_types()))))
+    if (!all(atom_type %in% valid_atom_types())) {
+      return(sprintf(
+        "@atoms column 'atom_type' must only contain valid SYBYL atom types. Invalid values: [%s]. See `valid_atom_types()` for a valid list)",
+        toString(setdiff(atom_type, valid_atom_types()))
+      ))
     }
 
     ## ---- Ensure all origin/target atom Ids in bonds dataframe are in atom dataframe  ----
     atom_ids <- self@atoms$eleno
-    atom_ids_in_bonds_data <- unique(c(self@bonds$origin_atom_id, self@bonds$target_atom_id))
+    atom_ids_in_bonds_data <- unique(c(
+      self@bonds$origin_atom_id,
+      self@bonds$target_atom_id
+    ))
     if (!all(atom_ids_in_bonds_data %in% atom_ids)) {
       return(
-        sprintf("@bonds describes atoms not present in @atoms dataframe. Missing eleno's: %s", toString(setdiff(atom_ids_in_bonds_data, atom_ids)))
+        sprintf(
+          "@bonds describes atoms not present in @atoms dataframe. Missing eleno's: %s",
+          toString(setdiff(atom_ids_in_bonds_data, atom_ids))
+        )
       )
     }
 
     ## ---- Validate Anchor  ----
     if (!is.numeric(self@anchor)) {
-      return(sprintf("@anchor must be a numeric vector, not a [%s]", class(self@anchor)))
+      return(sprintf(
+        "@anchor must be a numeric vector, not a [%s]",
+        class(self@anchor)
+      ))
     }
     if (length(self@anchor) != 3) {
-      return(sprintf("@anchor must be a length 3 vector with values corresponding to x, y, and z. Supplied anchor only has [%d] dimensions", length(self@anchor)))
+      return(sprintf(
+        "@anchor must be a length 3 vector with values corresponding to x, y, and z. Supplied anchor only has [%d] dimensions",
+        length(self@anchor)
+      ))
     }
 
     ## If no problems:
@@ -470,7 +562,16 @@ Molecule3D <- S7::new_class(
   ## Constructor ---------------------------------------------
 
   # Add/normalize columns as the object is being created
-  constructor = function(name = "MyChemical", atoms = minimal_atoms(), bonds = minimal_bonds(), mol_type = NULL, charge_type = NULL, symmetry_elements = SymmetryElementCollection(), misc = list(), anchor = NULL) {
+  constructor = function(
+    name = "MyChemical",
+    atoms = minimal_atoms(),
+    bonds = minimal_bonds(),
+    mol_type = NULL,
+    charge_type = NULL,
+    symmetry_elements = SymmetryElementCollection(),
+    misc = list(),
+    anchor = NULL
+  ) {
     # Add bond_type if not present (with all bond types set to 'unknown') and fix column types
     bonds <- format_bonds(bonds)
 
@@ -506,7 +607,6 @@ Molecule3D <- S7::new_class(
 
 
 # Constructor helpers -----------------------------------------------------
-
 
 #' Create a Minimal Atoms Data Frame
 #'
@@ -587,24 +687,35 @@ format_atoms <- function(atoms) {
   }
 
   # If atom_type column is not present, make one (and set all values to 'Any' - a valid SYBYL atom type)
-  if(!"atom_type" %in% cols){
+  if (!"atom_type" %in% cols) {
     atoms["atom_type"] <- rep("Any", times = nrow(atoms))
-  }
-  # Otherise, cast as character
-  else{
-   atoms[["atom_type"]] <- as.character(atoms[["atom_type"]])
+  } else {
+    # Otherise, cast as character
+    atoms[["atom_type"]] <- as.character(atoms[["atom_type"]])
 
-   # Fix some commonly variable / off-spec atom types seen in the wild
-   # (e.g. capitalise oxygen in sulfur type
-   atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o", "S.O", atoms[["atom_type"]])
-   atoms[["atom_type"]] <- ifelse(atoms[["atom_type"]] == "S.o2", "S.O2", atoms[["atom_type"]])
+    # Fix some commonly variable / off-spec atom types seen in the wild
+    # (e.g. capitalise oxygen in sulfur type
+    atoms[["atom_type"]] <- ifelse(
+      atoms[["atom_type"]] == "S.o",
+      "S.O",
+      atoms[["atom_type"]]
+    )
+    atoms[["atom_type"]] <- ifelse(
+      atoms[["atom_type"]] == "S.o2",
+      "S.O2",
+      atoms[["atom_type"]]
+    )
 
-   # Unexpected Atom Types
-   unexpected_types <- setdiff(atoms[["atom_type"]], valid_atom_types())
-   if(length(unexpected_types) > 0){
-     warning("Unexpected atom types found: [", toString(unexpected_types), "]. Replacing these with 'Any'")
-     atoms[["atom_type"]][atoms[["atom_type"]] %in% unexpected_types] <- "Any"
-   }
+    # Unexpected Atom Types
+    unexpected_types <- setdiff(atoms[["atom_type"]], valid_atom_types())
+    if (length(unexpected_types) > 0) {
+      warning(
+        "Unexpected atom types found: [",
+        toString(unexpected_types),
+        "]. Replacing these with 'Any'"
+      )
+      atoms[["atom_type"]][atoms[["atom_type"]] %in% unexpected_types] <- "Any"
+    }
   }
 
   # Add element column
@@ -650,7 +761,16 @@ format_bonds <- function(bonds) {
 #' @examples
 #' valid_bond_types()
 valid_bond_types <- function() {
-  c("single" = "1", "double" = "2", "triple" = "3", "amide" = "am", "aromatic" = "ar", "dummy" = "du", "unknown" = "un", "not connected" = "nc")
+  c(
+    "single" = "1",
+    "double" = "2",
+    "triple" = "3",
+    "amide" = "am",
+    "aromatic" = "ar",
+    "dummy" = "du",
+    "unknown" = "un",
+    "not connected" = "nc"
+  )
 }
 
 #' SYBYL bond types
@@ -660,7 +780,7 @@ valid_bond_types <- function() {
 #'
 #' @examples
 #' valid_atom_types()
-valid_atom_types <- function(){
+valid_atom_types <- function() {
   c(
     "carbon sp3" = "C.3",
     "carbon sp2" = "C.2",
@@ -745,10 +865,13 @@ valid_atom_types <- function(){
 #' valid_molecule_types()
 #'
 #' @export
-valid_molecule_types <- function(){
+valid_molecule_types <- function() {
   c(
-    "SMALL", "BIOPOLYMER",
-    "PROTEIN", "NUCLEIC_ACID", "SACCHARIDE"
+    "SMALL",
+    "BIOPOLYMER",
+    "PROTEIN",
+    "NUCLEIC_ACID",
+    "SACCHARIDE"
   )
 }
 
@@ -785,11 +908,19 @@ valid_molecule_types <- function(){
 #' valid_charge_types()
 #'
 #' @export
-valid_charge_types <- function(){
+valid_charge_types <- function() {
   c(
-    "NO_CHARGES", "DEL_RE", "GASTEIGER", "GAST_HUCK", "HUCKEL",
-    "PULLMAN", "GAUSS80_CHARGES", "AMPAC_CHARGES",
-    "MULLIKEN_CHARGES", "DICT_CHARGES", "MMFF94_CHARGES",
+    "NO_CHARGES",
+    "DEL_RE",
+    "GASTEIGER",
+    "GAST_HUCK",
+    "HUCKEL",
+    "PULLMAN",
+    "GAUSS80_CHARGES",
+    "AMPAC_CHARGES",
+    "MULLIKEN_CHARGES",
+    "DICT_CHARGES",
+    "MMFF94_CHARGES",
     "USER_CHARGES"
   )
 }
@@ -814,14 +945,19 @@ S7::method(print, Molecule3D) <- function(x, ...) {
     sprintf("Charge type: %s\n", x@charge_type),
     "-------------------\n",
     sprintf("Symmetry Elements: %d\n", length(x@symmetry_elements@elements)),
-    sprintf("Symmetry Axes: %d\n", length(x@symmetry_elements@proper_rotation_axes)),
-    sprintf("Symmetry Orders (Cn): %s\n", toString(symmetry_collection@unique_proper_axis_orders)),
+    sprintf(
+      "Symmetry Axes: %d\n",
+      length(x@symmetry_elements@proper_rotation_axes)
+    ),
+    sprintf(
+      "Symmetry Orders (Cn): %s\n",
+      toString(symmetry_collection@unique_proper_axis_orders)
+    ),
     "-------------------\n",
     "See @atoms paramater for atom positions\n",
     "See @bonds paramater for bond positions\n",
     "See @symmetry_elements for symmetry elements\n"
   )
-
 
   return(invisible(x))
 }
@@ -837,8 +973,6 @@ S7::method(as.matrix, Molecule3D) <- function(x, ...) {
   rownames(mx) <- as.character(x@atoms[["eleno"]])
   return(mx)
 }
-
-
 
 
 # Non Generic Methods ---------------------------------------------------
@@ -865,7 +999,6 @@ is_molecule <- function(x) {
 }
 
 
-
 ## Modifying Atoms ---------------------------------------------------------
 
 #' Delete atoms from molecule
@@ -887,7 +1020,13 @@ remove_atoms <- function(x, eleno) {
   assertions::assert_class(x, class = "structures::Molecule3D")
   in_eleno <- x@atoms$eleno %in% eleno
   new_atom_data <- x@atoms[!in_eleno, , drop = FALSE]
-  new_bond_data <- x@bonds[x@bonds$origin_atom_id %in% new_atom_data$eleno & x@bonds$target_atom_id %in% new_atom_data$eleno, , drop = FALSE]
+  new_bond_data <- x@bonds[
+    x@bonds$origin_atom_id %in%
+      new_atom_data$eleno &
+      x@bonds$target_atom_id %in% new_atom_data$eleno,
+    ,
+    drop = FALSE
+  ]
 
   # Modify existing object by setting multiple properties simultaneously
   x <- S7::set_props(x, atoms = new_atom_data, bonds = new_bond_data)
@@ -909,7 +1048,7 @@ remove_atoms <- function(x, eleno) {
 #' path <- system.file(package = "structures", "fe_dummies.mol2")
 #' molecule_with_dummies <- read_mol2(path)
 #' remove_dummy_atoms(molecule_with_dummies)
-remove_dummy_atoms <- function(x, dummy_type = c("Du", "Du.C")){
+remove_dummy_atoms <- function(x, dummy_type = c("Du", "Du.C")) {
   assertions::assert_class(x, class = "structures::Molecule3D")
   dummy_eleno <- x@atoms$eleno[x@atoms$atom_type %in% dummy_type]
   remove_atoms(x, dummy_eleno)
@@ -934,7 +1073,13 @@ filter_atoms <- function(x, eleno) {
   assertions::assert_class(x, class = "structures::Molecule3D")
   in_eleno <- x@atoms$eleno %in% eleno
   new_atom_data <- x@atoms[in_eleno, , drop = FALSE]
-  new_bond_data <- x@bonds[x@bonds$origin_atom_id %in% new_atom_data$eleno & x@bonds$target_atom_id %in% new_atom_data$eleno, , drop = FALSE]
+  new_bond_data <- x@bonds[
+    x@bonds$origin_atom_id %in%
+      new_atom_data$eleno &
+      x@bonds$target_atom_id %in% new_atom_data$eleno,
+    ,
+    drop = FALSE
+  ]
 
   # Update Properties
   x <- S7::set_props(x, atoms = new_atom_data, bonds = new_bond_data)
@@ -1056,8 +1201,7 @@ filter_for_dummies <- function(x, dummy_type = c("Du", "Du.C")) {
 #' m@symmetry_elements@unique_proper_axis_orders # 2
 #'
 #' @export
-add_symmetry_element_to_molecule <- function(molecule, symmetry_element){
-
+add_symmetry_element_to_molecule <- function(molecule, symmetry_element) {
   assertions::assert_class(molecule, "structures::Molecule3D")
   assertions::assert_class(symmetry_element, "structures::SymmetryElement")
 
@@ -1089,9 +1233,9 @@ add_symmetry_element_to_molecule <- function(molecule, symmetry_element){
 #' atoms(molecule)
 #'
 #' @seealso [bonds()]
-atoms <- function(x){
-    assertions::assert_class(x, "structures::Molecule3D")
-    x@atoms
+atoms <- function(x) {
+  assertions::assert_class(x, "structures::Molecule3D")
+  x@atoms
 }
 
 #' Retrieve atom data.frame from molecule
@@ -1112,9 +1256,9 @@ atoms <- function(x){
 #' bonds(molecule)
 #'
 #' @seealso [atoms()]
-bonds <- function(x){
-    assertions::assert_class(x, "structures::Molecule3D")
-    x@bonds
+bonds <- function(x) {
+  assertions::assert_class(x, "structures::Molecule3D")
+  x@bonds
 }
 
 
@@ -1147,7 +1291,9 @@ bonds <- function(x){
 fetch_atom_position <- function(x, eleno, careful = TRUE) {
   if (careful) {
     assertions::assert_class(x, "structures::Molecule3D")
-    if (!all(eleno %in% x@atom_ids)) stop("atom ID (eleno) [", eleno, "] could not be found in molecule")
+    if (!all(eleno %in% x@atom_ids)) {
+      stop("atom ID (eleno) [", eleno, "] could not be found in molecule")
+    }
   }
   mx_positions <- x@atom_positions
   idx <- match(eleno, rownames(mx_positions))
@@ -1159,7 +1305,6 @@ fetch_atom_position <- function(x, eleno, careful = TRUE) {
 
   return(positions)
 }
-
 
 
 #' Fetch atom identifiers by name
@@ -1215,9 +1360,13 @@ fetch_eleno_by_element <- function(x, element) {
 #'
 #' # Get Iron and dummy atoms
 #' fetch_eleno_by_atom_type(molecule, c("Fe", "Du", "Du.C"))
-fetch_eleno_by_atom_type <- function(x, atom_type){
+fetch_eleno_by_atom_type <- function(x, atom_type) {
   assertions::assert_class(x, class = "structures::Molecule3D")
-  unique(unlist(x@atoms[x@atoms$atom_type %in% atom_type, "eleno", drop = FALSE]))
+  unique(unlist(x@atoms[
+    x@atoms$atom_type %in% atom_type,
+    "eleno",
+    drop = FALSE
+  ]))
 }
 
 
@@ -1266,22 +1415,42 @@ fetch_eleno_by_atom_type <- function(x, atom_type){
 #' ids
 #'
 #' @export
-fetch_eleno_downstream_of_bond <- function(molecule, bond_id, direction_atom_id) {
+fetch_eleno_downstream_of_bond <- function(
+  molecule,
+  bond_id,
+  direction_atom_id
+) {
   assertions::assert_class(molecule, "structures::Molecule3D")
   assertions::assert_includes(molecule@bond_ids, required = bond_id)
 
-  connected_atom_ids <- fetch_eleno_connected_by_bond(molecule, bond_id = bond_id)
-  if (!direction_atom_id %in% connected_atom_ids) stop(sprintf("direction atom id: [%s] is not connected by bond id [%s]. Valid atom IDs are: [%s]", direction_atom_id, bond_id, toString(connected_atom_ids)))
+  connected_atom_ids <- fetch_eleno_connected_by_bond(
+    molecule,
+    bond_id = bond_id
+  )
+  if (!direction_atom_id %in% connected_atom_ids) {
+    stop(sprintf(
+      "direction atom id: [%s] is not connected by bond id [%s]. Valid atom IDs are: [%s]",
+      direction_atom_id,
+      bond_id,
+      toString(connected_atom_ids)
+    ))
+  }
 
   other_atom_id <- setdiff(connected_atom_ids, direction_atom_id)
   molecule_broken <- remove_atoms(molecule, other_atom_id)
   clusters <- molecule_broken@connectivity
 
-  if (length(clusters) == 1) stop("All points remain connected.")
+  if (length(clusters) == 1) {
+    stop("All points remain connected.")
+  }
 
-  chosen_cluster <- clusters[vapply(clusters, function(ids) {
-    direction_atom_id %in% ids
-  }, FUN.VALUE = logical(1))]
+  chosen_cluster <- clusters[vapply(
+    clusters,
+    function(ids) {
+      direction_atom_id %in% ids
+    },
+    FUN.VALUE = logical(1)
+  )]
   cluster_atom_ids <- unname(unlist(utils::head(chosen_cluster, n = 1)))
   return(cluster_atom_ids)
 }
@@ -1307,7 +1476,10 @@ fetch_eleno_downstream_of_bond <- function(molecule, bond_id, direction_atom_id)
 #' @export
 fetch_eleno_connected_by_bond <- function(molecule, bond_id) {
   assertions::assert_class(molecule, "structures::Molecule3D")
-  unname(unlist(molecule@bonds[molecule@bonds$bond_id %in% bond_id, c("origin_atom_id", "target_atom_id")]))
+  unname(unlist(molecule@bonds[
+    molecule@bonds$bond_id %in% bond_id,
+    c("origin_atom_id", "target_atom_id")
+  ]))
 }
 
 #' Fetch a single symmetry element by ID
@@ -1345,9 +1517,17 @@ fetch_eleno_connected_by_bond <- function(molecule, bond_id) {
 #' ax_id <- m@symmetry_elements@summary$ids[1]
 #' ax <- fetch_symmetry_element_from_molecule(m, ax_id)
 #' ax
-fetch_symmetry_element_from_molecule <- function(molecule, id, error_if_missing = TRUE) {
+fetch_symmetry_element_from_molecule <- function(
+  molecule,
+  id,
+  error_if_missing = TRUE
+) {
   collection <- molecule@symmetry_elements
-  fetch_symmetry_element_from_collection(collection, id = id, error_if_missing = error_if_missing)
+  fetch_symmetry_element_from_collection(
+    collection,
+    id = id,
+    error_if_missing = error_if_missing
+  )
 }
 
 
@@ -1408,12 +1588,18 @@ fetch_symmetry_element_from_molecule <- function(molecule, id, error_if_missing 
 #'   [`structures::ProperRotationAxis`]
 #'
 #' @export
-fetch_id_of_first_proper_rotation_axis_with_order <- function(molecule, Cn){
+fetch_id_of_first_proper_rotation_axis_with_order <- function(molecule, Cn) {
   elements <- molecule@symmetry_elements
-  is_proper_rotation_axis_with_order <- vapply(elements@elements, function(el){
-    if(!is_proper_rotation_axis(el)) return(FALSE)
-    return(el@n %in% Cn)
-  }, FUN.VALUE = logical(1))
+  is_proper_rotation_axis_with_order <- vapply(
+    elements@elements,
+    function(el) {
+      if (!is_proper_rotation_axis(el)) {
+        return(FALSE)
+      }
+      return(el@n %in% Cn)
+    },
+    FUN.VALUE = logical(1)
+  )
 
   elements@ids[is_proper_rotation_axis_with_order][1]
 }
@@ -1469,8 +1655,6 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
 }
 
 
-
-
 ## Computations ------------------------------------------------------------
 
 #' Compute a direction vector
@@ -1490,14 +1674,28 @@ fetch_all_proper_rotation_axes_with_order <- function(molecule, Cn) {
 #' @examples
 #' m <- read_mol2(system.file("benzene.mol2", package = "structures"))
 #' compute_direction_from_one_atom_to_another(m, eleno1 = 1, eleno2 = 2)
-compute_direction_from_one_atom_to_another <- function(molecule, eleno1, eleno2, unit = FALSE, careful=TRUE){
+compute_direction_from_one_atom_to_another <- function(
+  molecule,
+  eleno1,
+  eleno2,
+  unit = FALSE,
+  careful = TRUE
+) {
   assertions::assert_class(molecule, "structures::Molecule3D")
-  positions <- fetch_atom_position(molecule, c(eleno1, eleno2), careful = careful)
+  positions <- fetch_atom_position(
+    molecule,
+    c(eleno1, eleno2),
+    careful = careful
+  )
 
-  if(!careful) {
-    if(anyNA(positions)) return(c(NA_real_, NA_real_, NA_real_))
+  if (!careful) {
+    if (anyNA(positions)) return(c(NA_real_, NA_real_, NA_real_))
   }
-  move::create_vector_from_start_end(start = positions[1,], end = positions[2,], unit = unit)
+  move::create_vector_from_start_end(
+    start = positions[1, ],
+    end = positions[2, ],
+    unit = unit
+  )
 }
 
 #' Compute a best-fit plane through all atoms of a Molecule3D
@@ -1517,7 +1715,7 @@ compute_direction_from_one_atom_to_another <- function(molecule, eleno1, eleno2,
 #' plane$normal
 #'
 #' @export
-compute_plane_from_atoms <- function(molecule){
+compute_plane_from_atoms <- function(molecule) {
   assertions::assert_class(molecule, "structures::Molecule3D")
   mx <- molecule@atom_positions
   move::compute_plane_from_points(mx)
@@ -1560,17 +1758,35 @@ transform_molecule <- function(x, transformation, ...) {
   assertions::assert_function(transformation)
 
   mx_coords <- x@atom_positions
-  res <- apply(X = mx_coords, MARGIN = 1, FUN = transformation, ..., simplify = FALSE)
+  res <- apply(
+    X = mx_coords,
+    MARGIN = 1,
+    FUN = transformation,
+    ...,
+    simplify = FALSE
+  )
 
-  x@atoms$x <- vapply(res, FUN = \(d){
-    d[1]
-  }, FUN.VALUE = numeric(1))
-  x@atoms$y <- vapply(res, FUN = \(d){
-    d[2]
-  }, FUN.VALUE = numeric(1))
-  x@atoms$z <- vapply(res, FUN = \(d){
-    d[3]
-  }, FUN.VALUE = numeric(1))
+  x@atoms$x <- vapply(
+    res,
+    FUN = \(d) {
+      d[1]
+    },
+    FUN.VALUE = numeric(1)
+  )
+  x@atoms$y <- vapply(
+    res,
+    FUN = \(d) {
+      d[2]
+    },
+    FUN.VALUE = numeric(1)
+  )
+  x@atoms$z <- vapply(
+    res,
+    FUN = \(d) {
+      d[3]
+    },
+    FUN.VALUE = numeric(1)
+  )
 
   # Also apply transformation to anchor position to
   # preserve its relative position to the rest of the molecule
@@ -1579,7 +1795,12 @@ transform_molecule <- function(x, transformation, ...) {
   # Also apply transformation to all symmetry elements to
   # preserve their relative position to the rest of the molecule.
   elements <- x@symmetry_elements@elements
-  elements_new <- lapply(elements, transform_symmetry_element, transformation = transformation, ...)
+  elements_new <- lapply(
+    elements,
+    transform_symmetry_element,
+    transformation = transformation,
+    ...
+  )
 
   x@symmetry_elements <- S7::set_props(
     x@symmetry_elements,
@@ -1621,8 +1842,12 @@ locate_molecule_center <- function(x) {
 compute_distance_between_atoms <- function(x, eleno1, eleno2) {
   assertions::assert_class(x, "structures::Molecule3D")
   valid_ids <- x@atom_ids
-  if (!eleno1 %in% valid_ids) stop("atom ID (eleno) [", eleno1, "] could not be found in molecule")
-  if (!eleno2 %in% valid_ids) stop("atom ID (eleno) [", eleno2, "] could not be found in molecule")
+  if (!eleno1 %in% valid_ids) {
+    stop("atom ID (eleno) [", eleno1, "] could not be found in molecule")
+  }
+  if (!eleno2 %in% valid_ids) {
+    stop("atom ID (eleno) [", eleno2, "] could not be found in molecule")
+  }
 
   pos1 <- fetch_atom_position(x, eleno1, careful = FALSE)
   pos2 <- fetch_atom_position(x, eleno2, careful = FALSE)
@@ -1758,7 +1983,7 @@ translate_molecule_by_vector <- function(x, vector) {
 #'
 #' @examples
 #' # m <- translate_molecule_in_direction(m, direction = c(1, 0, 0), magnitude = 2)
-translate_molecule_in_direction <- function(x, direction, magnitude){
+translate_molecule_in_direction <- function(x, direction, magnitude) {
   transform_molecule(
     x = x,
     transformation = move::translate_position_in_direction,
@@ -1796,7 +2021,12 @@ translate_molecule_in_direction <- function(x, direction, magnitude){
 #'
 #' @seealso \code{\link{transform_molecule}}, \code{move::rotate_vector_around_axis_through_point}
 #' @export
-rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0), angle) {
+rotate_molecule_around_vector <- function(
+  molecule,
+  axis,
+  position = c(0, 0, 0),
+  angle
+) {
   transform_molecule(
     molecule,
     transformation = move::rotate_vector_around_axis_through_point,
@@ -1805,7 +2035,6 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
     angle = angle
   )
 }
-
 
 
 ## Transformations Around ProperRotationAxis ------------------------------------------
@@ -1872,20 +2101,45 @@ rotate_molecule_around_vector <- function(molecule, axis, position = c(0, 0, 0),
 #'   [`fetch_symmetry_element_from_molecule()`]
 #'
 #' @export
-rotate_molecule_so_symmetry_axis_aligns_with_vector <- function(molecule, symmetry_element_id, target, careful=TRUE){
-  if(careful){
+rotate_molecule_so_symmetry_axis_aligns_with_vector <- function(
+  molecule,
+  symmetry_element_id,
+  target,
+  careful = TRUE
+) {
+  if (careful) {
     assertions::assert_class(molecule, "structures::Molecule3D")
     assertions::assert_length(symmetry_element_id, length = 1)
     assertions::assert_length(target, length = 3)
   }
 
-  sym_element <- fetch_symmetry_element_from_molecule(molecule, id = symmetry_element_id, error_if_missing = TRUE)
+  sym_element <- fetch_symmetry_element_from_molecule(
+    molecule,
+    id = symmetry_element_id,
+    error_if_missing = TRUE
+  )
 
-  if(careful) assertions::assert_class(sym_element, class = c("structures::ProperRotationAxis", "structures::ImproperRotationAxis"))
+  if (careful) {
+    assertions::assert_class(
+      sym_element,
+      class = c(
+        "structures::ProperRotationAxis",
+        "structures::ImproperRotationAxis"
+      )
+    )
+  }
 
   # Rotate molecule to align with target
-  params <- move::rotate_vector_to_align_with_target(sym_element@direction, target = target, return = "axis_plus_angle")
-  rotate_molecule_around_vector(molecule = molecule, axis = params$axis, angle = params$angle)
+  params <- move::rotate_vector_to_align_with_target(
+    sym_element@direction,
+    target = target,
+    return = "axis_plus_angle"
+  )
+  rotate_molecule_around_vector(
+    molecule = molecule,
+    axis = params$axis,
+    angle = params$angle
+  )
 }
 
 
@@ -1961,15 +2215,30 @@ rotate_molecule_so_symmetry_axis_aligns_with_vector <- function(molecule, symmet
 #'   `move::rotate_vector_around_axis_through_point()`
 #'
 #' @export
-rotate_molecule_around_symmetry_axis <- function(molecule, symmetry_element_id, angle, careful=TRUE){
-  if(careful) assertions::assert_class(molecule, class = "structures::Molecule3D")
+rotate_molecule_around_symmetry_axis <- function(
+  molecule,
+  symmetry_element_id,
+  angle,
+  careful = TRUE
+) {
+  if (careful) {
+    assertions::assert_class(molecule, class = "structures::Molecule3D")
+  }
   sym_element <- fetch_symmetry_element_from_molecule(
     molecule,
     id = symmetry_element_id,
     error_if_missing = TRUE
   )
 
-  if(careful) assertions::assert_class(sym_element, class = c("structures::ProperRotationAxis", "structures::ImproperRotationAxis"))
+  if (careful) {
+    assertions::assert_class(
+      sym_element,
+      class = c(
+        "structures::ProperRotationAxis",
+        "structures::ImproperRotationAxis"
+      )
+    )
+  }
 
   # Rotate about axis
   rotate_molecule_around_vector(
@@ -1979,7 +2248,6 @@ rotate_molecule_around_symmetry_axis <- function(molecule, symmetry_element_id, 
     angle = angle
   )
 }
-
 
 
 ## Operators (Adding and subtracting molecules)---------------------------------------------------------------
@@ -2035,7 +2303,12 @@ rotate_molecule_around_symmetry_axis <- function(molecule, symmetry_element_id, 
 #' @seealso \code{\link{Molecule3D}}, \code{\link{translate_molecule_to_origin}},
 #'   \code{\link{set_anchor_by_atom}}
 #' @export
-combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_ids = TRUE) {
+combine_molecules <- function(
+  molecule1,
+  molecule2,
+  create_bonds = NULL,
+  update_ids = TRUE
+) {
   assertions::assert_class(molecule1, "structures::Molecule3D")
   assertions::assert_class(molecule2, "structures::Molecule3D")
 
@@ -2055,7 +2328,7 @@ combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_
   old_atom_ids2 <- atoms2$eleno
   new_atom_ids2 <- old_atom_ids2 + atom_offset
   atom_map2 <- new_atom_ids2
-  names(atom_map2) <- old_atom_ids2  # names are old ids (as character)
+  names(atom_map2) <- old_atom_ids2 # names are old ids (as character)
 
   # 3) Apply renumbering to molecule2 atoms + its internal bonds
   if (isTRUE(update_ids)) {
@@ -2063,8 +2336,12 @@ combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_
 
     if (nrow(bonds2) > 0) {
       bonds2$bond_id <- bonds2$bond_id + bond_offset
-      bonds2$origin_atom_id <- unname(atom_map2[as.character(bonds2$origin_atom_id)])
-      bonds2$target_atom_id <- unname(atom_map2[as.character(bonds2$target_atom_id)])
+      bonds2$origin_atom_id <- unname(atom_map2[as.character(
+        bonds2$origin_atom_id
+      )])
+      bonds2$target_atom_id <- unname(atom_map2[as.character(
+        bonds2$target_atom_id
+      )])
     }
   }
 
@@ -2086,17 +2363,21 @@ combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_
     if (anyNA(cb_target_new)) {
       # Should never happen because we validated, but keeps failures readable.
       bad <- cb$eleno2[is.na(cb_target_new)]
-      stop("Internal error: failed to map create_bonds eleno2 ids: [", toString(bad), "]")
+      stop(
+        "Internal error: failed to map create_bonds eleno2 ids: [",
+        toString(bad),
+        "]"
+      )
     }
 
     next_bond_id <- max(c(0, bonds$bond_id), na.rm = TRUE)
 
     new_link_bonds <- data.frame(
-      bond_id        = next_bond_id + seq_len(nrow(cb)),
-      origin_atom_id = cb$eleno1,        # molecule1 ids unchanged
-      target_atom_id = cb_target_new,    # molecule2 ids mapped to combined space
-      bond_type      = cb$bond_type,
-      source         = paste0(molecule1@name, "__", molecule2@name),
+      bond_id = next_bond_id + seq_len(nrow(cb)),
+      origin_atom_id = cb$eleno1, # molecule1 ids unchanged
+      target_atom_id = cb_target_new, # molecule2 ids mapped to combined space
+      bond_type = cb$bond_type,
+      source = paste0(molecule1@name, "__", molecule2@name),
       stringsAsFactors = FALSE
     )
 
@@ -2111,13 +2392,20 @@ combine_molecules <- function(molecule1, molecule2, create_bonds = NULL, update_
 
   # 7) Build result object
   new <- molecule1
-  new <- S7::set_props(new, atoms = atoms, bonds = bonds, symmetry_elements = new_symmetry_elements)
+  new <- S7::set_props(
+    new,
+    atoms = atoms,
+    bonds = bonds,
+    symmetry_elements = new_symmetry_elements
+  )
 
   return(new)
 }
 
 normalize_create_bonds <- function(create_bonds, default_bond_type = "un") {
-  if (is.null(create_bonds)) return(NULL)
+  if (is.null(create_bonds)) {
+    return(NULL)
+  }
 
   # Accept: data.frame / tibble / matrix
   if (is.matrix(create_bonds)) {
@@ -2129,21 +2417,30 @@ normalize_create_bonds <- function(create_bonds, default_bond_type = "un") {
 
     # If user didn’t name columns, assume first two are endpoints
     if (!all(c("eleno1", "eleno2") %in% names(df))) {
-      if (ncol(df) < 2) stop("create_bonds must have at least 2 columns (eleno1, eleno2).")
+      if (ncol(df) < 2) {
+        stop("create_bonds must have at least 2 columns (eleno1, eleno2).")
+      }
       names(df)[1:2] <- c("eleno1", "eleno2")
     }
-
   } else if (is.list(create_bonds)) {
     # Accept shorthand list(list(...)) or list(c(a,b), c(a,b))
     if (all(vapply(create_bonds, is.numeric, logical(1)))) {
       mat <- do.call(rbind, create_bonds)
-      if (ncol(mat) != 2) stop("create_bonds list entries must be numeric vectors of length 2.")
-      df <- data.frame(eleno1 = mat[, 1], eleno2 = mat[, 2], stringsAsFactors = FALSE)
+      if (ncol(mat) != 2) {
+        stop("create_bonds list entries must be numeric vectors of length 2.")
+      }
+      df <- data.frame(
+        eleno1 = mat[, 1],
+        eleno2 = mat[, 2],
+        stringsAsFactors = FALSE
+      )
     } else {
       # list of lists/data.frames (more flexible)
       df <- dplyr::bind_rows(lapply(create_bonds, as.data.frame))
       if (!all(c("eleno1", "eleno2") %in% names(df))) {
-        stop("create_bonds list form must contain eleno1 and eleno2 fields in each entry.")
+        stop(
+          "create_bonds list form must contain eleno1 and eleno2 fields in each entry."
+        )
       }
     }
   } else {
@@ -2151,7 +2448,9 @@ normalize_create_bonds <- function(create_bonds, default_bond_type = "un") {
   }
 
   # bond_type optional
-  if (!"bond_type" %in% names(df)) df$bond_type <- default_bond_type
+  if (!"bond_type" %in% names(df)) {
+    df$bond_type <- default_bond_type
+  }
 
   # Coerce types
   df$eleno1 <- as.numeric(df$eleno1)
@@ -2163,33 +2462,58 @@ normalize_create_bonds <- function(create_bonds, default_bond_type = "un") {
   bt_codes <- unname(bt_map)
   bt_names <- names(bt_map)
 
-  df$bond_type <- ifelse(df$bond_type %in% bt_names, unname(bt_map[df$bond_type]), df$bond_type)
+  df$bond_type <- ifelse(
+    df$bond_type %in% bt_names,
+    unname(bt_map[df$bond_type]),
+    df$bond_type
+  )
 
   # Validate bond_type values (optional but recommended)
   bad_bt <- setdiff(unique(df$bond_type), bt_codes)
   if (length(bad_bt) > 0) {
-    stop("Invalid bond_type in create_bonds: [", toString(bad_bt),
-         "]. Must be one of: [", toString(bt_codes), "] (or names: [", toString(bt_names), "]).")
+    stop(
+      "Invalid bond_type in create_bonds: [",
+      toString(bad_bt),
+      "]. Must be one of: [",
+      toString(bt_codes),
+      "] (or names: [",
+      toString(bt_names),
+      "])."
+    )
   }
 
   # Basic shape checks
-  if (anyNA(df$eleno1) || anyNA(df$eleno2)) stop("create_bonds contains NA eleno1/eleno2 after coercion.")
-  if (nrow(df) == 0) return(NULL)
+  if (anyNA(df$eleno1) || anyNA(df$eleno2)) {
+    stop("create_bonds contains NA eleno1/eleno2 after coercion.")
+  }
+  if (nrow(df) == 0) {
+    return(NULL)
+  }
 
   df
 }
 
 validate_create_bonds <- function(molecule1, molecule2, df_create_bonds) {
-  if (is.null(df_create_bonds)) return(invisible(TRUE))
+  if (is.null(df_create_bonds)) {
+    return(invisible(TRUE))
+  }
 
   missing1 <- setdiff(unique(df_create_bonds$eleno1), molecule1@atom_ids)
   missing2 <- setdiff(unique(df_create_bonds$eleno2), molecule2@atom_ids)
 
   if (length(missing1) > 0) {
-    stop("create_bonds references atom ids not in molecule1: [", toString(missing1), "]")
+    stop(
+      "create_bonds references atom ids not in molecule1: [",
+      toString(missing1),
+      "]"
+    )
   }
   if (length(missing2) > 0) {
-    stop("create_bonds references atom ids not in molecule2: [", toString(missing2), "]")
+    stop(
+      "create_bonds references atom ids not in molecule2: [",
+      toString(missing2),
+      "]"
+    )
   }
 
   invisible(TRUE)
@@ -2210,7 +2534,6 @@ validate_create_bonds <- function(molecule1, molecule2, df_create_bonds) {
 #     }
 #   }
 # }
-
 
 #' Add one or more bonds to a Molecule3D object
 #'
@@ -2257,7 +2580,12 @@ validate_create_bonds <- function(molecule1, molecule2, df_create_bonds) {
 #'
 #' @seealso [structures::valid_bond_types()], [combine_molecules()]
 #' @export
-add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un") {
+add_bonds <- function(
+  molecule,
+  origin_atom_id,
+  target_atom_ids,
+  bond_type = "un"
+) {
   assertions::assert_class(molecule, "structures::Molecule3D")
   max_bond_id <- molecule@maximum_bond_id
   origin_atom_id <- as.numeric(origin_atom_id)
@@ -2338,11 +2666,24 @@ add_bonds <- function(molecule, origin_atom_id, target_atom_ids, bond_type = "un
 #' @seealso \code{\link{add_bonds}}, \code{\link{combine_molecules}},
 #'   \code{\link{fetch_atom_position}}, \code{\link{Molecule3D}}
 #' @export
-add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_length, torsion_angle, bond_angle, bond_type = "du", elena = "Du") {
+add_dummy_atom <- function(
+  molecule,
+  atom_id_a,
+  atom_id_b,
+  atom_id_c,
+  bond_length,
+  torsion_angle,
+  bond_angle,
+  bond_type = "du",
+  elena = "Du"
+) {
   assertions::assert_class(molecule, "structures::Molecule3D")
 
   # positions is a 3x3 (or 3xN) matrix of A,B,C coordinates (rows = eleno, cols x/y/z)
-  positions <- fetch_atom_position(molecule, eleno = c(atom_id_a, atom_id_b, atom_id_c))
+  positions <- fetch_atom_position(
+    molecule,
+    eleno = c(atom_id_a, atom_id_b, atom_id_c)
+  )
 
   # compas expects angles in degrees
   dummy_position <- compas::calCo(
@@ -2406,8 +2747,7 @@ add_dummy_atom <- function(molecule, atom_id_a, atom_id_b, atom_id_c, bond_lengt
 #' m2 <- renumber_atoms_and_bonds(m)
 #' m2@atoms$eleno
 #' m2@bonds[, c("origin_atom_id", "target_atom_id", "bond_id")]
-renumber_atoms_and_bonds <- function(molecule){
-
+renumber_atoms_and_bonds <- function(molecule) {
   # Assertions
   assertions::assert_class(molecule, "structures::Molecule3D")
 
@@ -2423,8 +2763,16 @@ renumber_atoms_and_bonds <- function(molecule){
   df_atoms$eleno <- new_ids
 
   # Update bonds dataframe with new atom IDs
-  df_bonds$origin_atom_id <- replace_by_value(df_bonds$origin_atom_id, old_ids, new_ids)
-  df_bonds$target_atom_id <- replace_by_value(df_bonds$target_atom_id, old_ids, new_ids)
+  df_bonds$origin_atom_id <- replace_by_value(
+    df_bonds$origin_atom_id,
+    old_ids,
+    new_ids
+  )
+  df_bonds$target_atom_id <- replace_by_value(
+    df_bonds$target_atom_id,
+    old_ids,
+    new_ids
+  )
 
   # Update bonds IDs (not used elsewhere yet, so we can just update
   df_bonds$bond_id <- seq_along(df_bonds$bond_id)
@@ -2432,5 +2780,3 @@ renumber_atoms_and_bonds <- function(molecule){
   # Return new molecule
   S7::set_props(molecule, atoms = df_atoms, bonds = df_bonds)
 }
-
-

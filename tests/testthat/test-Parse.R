@@ -18,12 +18,12 @@ test_that("write_mol2 writes a valid minimal mol2 file with correct header", {
   )
 
   m <- Molecule3D(
-    name   = "WriteTest",
-    atoms  = atoms,
-    bonds  = bonds,
-    mol_type    = "BIOPOLYMER",
+    name = "WriteTest",
+    atoms = atoms,
+    bonds = bonds,
+    mol_type = "BIOPOLYMER",
     charge_type = "MMFF94_CHARGES",
-    anchor = c(0,0,0)
+    anchor = c(0, 0, 0)
   )
 
   path <- tempfile(fileext = ".mol2")
@@ -36,13 +36,13 @@ test_that("write_mol2 writes a valid minimal mol2 file with correct header", {
   lines <- readLines(path)
   # Basic structure
   expect_true(any(grepl("^@<TRIPOS>MOLECULE", lines)))
-  expect_true(any(grepl("^@<TRIPOS>ATOM",     lines)))
-  expect_true(any(grepl("^@<TRIPOS>BOND",     lines)))
+  expect_true(any(grepl("^@<TRIPOS>ATOM", lines)))
+  expect_true(any(grepl("^@<TRIPOS>BOND", lines)))
 
   idx_mol <- which(grepl("^@<TRIPOS>MOLECULE", lines))
   # Immediately following lines: name, counts, mol_type, charge_type
   expect_equal(lines[idx_mol + 1], "WriteTest")
-  expect_match(lines[idx_mol + 2], "\\s*2\\s+1\\s*$")  # 2 atoms, 1 bond
+  expect_match(lines[idx_mol + 2], "\\s*2\\s+1\\s*$") # 2 atoms, 1 bond
   expect_equal(lines[idx_mol + 3], "BIOPOLYMER")
   expect_equal(lines[idx_mol + 4], "MMFF94_CHARGES")
 })
@@ -51,8 +51,8 @@ test_that("write_mol2 uses non-scientific numeric formatting for coordinates", {
   atoms <- data.frame(
     eleno = c(1),
     elena = c("C"),
-    x = 1e-6,          # would normally be in scientific format
-    y = 1234567.89,    # also often formatted scientific
+    x = 1e-6, # would normally be in scientific format
+    y = 1234567.89, # also often formatted scientific
     z = 3.14159265,
     atom_type = "C.3"
   )
@@ -74,11 +74,11 @@ test_that("write_mol2 uses non-scientific numeric formatting for coordinates", {
 test_that("write_mol2 and read_mol2 round-trip atoms, bonds, and types", {
   atoms <- data.frame(
     eleno = c(1, 2, 3),
-    elena = c("C","O","H"),
+    elena = c("C", "O", "H"),
     x = c(0.123456, 1.234567, -2.345678),
     y = c(0, 1, 0),
     z = c(0, 0, 1),
-    atom_type = c("C.3","O.2","H")
+    atom_type = c("C.3", "O.2", "H")
   )
   bonds <- data.frame(
     bond_id = c(1, 2),
@@ -89,10 +89,10 @@ test_that("write_mol2 and read_mol2 round-trip atoms, bonds, and types", {
   )
 
   m <- Molecule3D(
-    name   = "RoundTrip",
-    atoms  = atoms,
-    bonds  = bonds,
-    mol_type    = "PROTEIN",
+    name = "RoundTrip",
+    atoms = atoms,
+    bonds = bonds,
+    mol_type = "PROTEIN",
     charge_type = "GAUSS80_CHARGES"
   )
 
